@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class FlowFieldGrid : MonoBehaviour
 {
     public int width = 50;
     public int height = 50;
     public float cellSize = 2f;
-    public Terrain terrain;
     public Vector2Int destination;
 
     private FlowFieldCell[,] cells;
@@ -14,7 +14,6 @@ public class FlowFieldGrid : MonoBehaviour
     void Start()
     {
         GenerateGrid();
-        GenerateFlowfield(destination);
     }
 
     // 1. Generar grid sobre el terrain
@@ -25,25 +24,34 @@ public class FlowFieldGrid : MonoBehaviour
         {
             for (int y = 0; y < height; y++)
             {
-                Vector3 worldPos = new Vector3(x * cellSize, 0, y * cellSize);
-                bool isObstacle = false;
-                if (terrain != null)
-                {
-                    float heightSample = terrain.SampleHeight(worldPos);
-                    worldPos.y = heightSample;
+                Vector3 origin = new Vector3(x * cellSize + (cellSize/2), 100f, y * cellSize + (cellSize / 2)); // desde arriba
+                RaycastHit hit;
 
-                    RaycastHit hit;
-                    if (Physics.Raycast(worldPos + Vector3.up * 10, Vector3.down, out hit, 20f))
+                bool hitSomething = Physics.Raycast(origin, Vector3.down, out hit, 200f);
+
+                bool isOnNavMesh = false;
+                Vector3 worldPos = origin;
+
+                if (hitSomething)
+                {
+                    NavMeshHit navHit;
+                    Debug.DrawLine(origin, hit.point, Color.red, 5f);
+
+                    if (NavMesh.SamplePosition(hit.point, out navHit, cellSize * 0.5f, NavMesh.AllAreas))
                     {
-                        float angle = Vector3.Angle(hit.normal, Vector3.up);
-                        if (angle > 30f) // umbral de inclinación
-                        {
-                            isObstacle = true;
-                        }
+                        isOnNavMesh = true;
+                        worldPos = navHit.position;
+                        Debug.Log("NavMesh hit at: " + navHit.position);
+                    }
+                    else
+                    {
+                        worldPos = hit.point;
                     }
                 }
+
+                // Crear celda
                 cells[x, y] = new FlowFieldCell(worldPos);
-                cells[x, y].isObstacle = isObstacle;
+                cells[x, y].isObstacle = !isOnNavMesh;
             }
         }
     }
@@ -54,6 +62,7 @@ public class FlowFieldGrid : MonoBehaviour
         foreach (var cell in cells)
         {
             cell.cost = int.MaxValue;
+            cell.direction = Vector2.zero;
         }
          
         Queue<Vector2Int> frontier = new Queue<Vector2Int>();
@@ -133,15 +142,17 @@ public class FlowFieldGrid : MonoBehaviour
 
     public Vector3 DestinationWorldCentre()
     {
-        Vector3 centre = new Vector3(
-            (destination.x + 0.5f) * cellSize,
-            0,
-            (destination.y + 0.5f) * cellSize
-        );
-        if (terrain != null)
-        {
-            centre.y = terrain.SampleHeight(centre);
-        }
+        Vector3 centre = Cells[destination.x, destination.y].worldPos;
         return centre;
+    }
+
+    public void SetDestination(Vector3 worldPos)
+    {
+        Vector2Int newDest = WorldToCell(worldPos);
+        if (IsInside(newDest))
+        {
+            destination = newDest;
+            GenerateFlowfield(destination);
+        }
     }
 }

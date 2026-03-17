@@ -6,6 +6,7 @@ public class FlowFieldVisualizer : MonoBehaviour
     public Mesh arrowMesh;
     public Material arrowMaterial;
     public float arrowsScale = 0.5f;
+    public bool showGizmos = true;
 
     public void Awake()
     {
@@ -17,7 +18,7 @@ public class FlowFieldVisualizer : MonoBehaviour
 
     void Update()
     {
-        if (grid == null || grid.Cells == null) return;
+        if (grid == null || grid.Cells == null || !showGizmos) return;
 
         Vector3 scale = Vector3.one * grid.cellSize * arrowsScale;
 

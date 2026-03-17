@@ -19,11 +19,17 @@ public class InputManager : MonoBehaviour
     public float ZoomInput { get; private set; }
     public bool IsRotating { get; private set; }
 
+    public Vector2 MouseScreenPosition { get; private set; }
+    public bool IsSelecting { get; private set; }
+
     // Referencias internas a acciones
     private InputAction moveAction;
     private InputAction lookAction;
     private InputAction zoomAction;
     private InputAction rotateAction;
+
+    private InputAction mousePositionAction;
+    private InputAction selectAction;
 
     private void Awake()
     {
@@ -53,6 +59,8 @@ public class InputManager : MonoBehaviour
         lookAction = cameraMap.FindAction("Look");
         zoomAction = cameraMap.FindAction("Zoom");
         rotateAction = cameraMap.FindAction("Rotate");
+        mousePositionAction = cameraMap.FindAction("MousePosition");
+        selectAction = cameraMap.FindAction("Select");
     }
 
     private void OnDisable()
@@ -72,5 +80,9 @@ public class InputManager : MonoBehaviour
         if (zoomAction != null) ZoomInput = zoomAction.ReadValue<float>();
 
         if (rotateAction != null) IsRotating = rotateAction.IsPressed();
+
+        if (mousePositionAction != null) MouseScreenPosition = mousePositionAction.ReadValue<Vector2>();
+
+        if (selectAction != null) IsSelecting = selectAction.WasPressedThisFrame();
     }
 }

@@ -8,6 +8,7 @@ public class FlowFieldAgentVisualizer : MonoBehaviour
     public float minDistance = 0.2f; // distancia mínima entre puntos para dibujar
     public Color pathColor = Color.cyan;
     public float lineWidth = 0.1f;
+    public bool showPath = true;
 
     private LineRenderer lr;
     private List<Vector3> points = new List<Vector3>();
@@ -29,6 +30,8 @@ public class FlowFieldAgentVisualizer : MonoBehaviour
 
     void Update()
     {
+        if (!showPath) return;
+
         Vector3 currentPos = transform.position;
 
         if (points.Count == 0 || Vector3.Distance(points[points.Count - 1], currentPos) > minDistance)
