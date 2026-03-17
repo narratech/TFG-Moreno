@@ -142,8 +142,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &11418585
 LineRenderer:
   serializedVersion: 3
@@ -411,8 +411,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &190676618
 LineRenderer:
   serializedVersion: 3
@@ -1066,8 +1066,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &358194592
 LineRenderer:
   serializedVersion: 3
@@ -1201,8 +1201,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &362633930
 LineRenderer:
   serializedVersion: 3
@@ -1336,8 +1336,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &404233351
 LineRenderer:
   serializedVersion: 3
@@ -1799,8 +1799,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &609516368
 LineRenderer:
   serializedVersion: 3
@@ -2001,8 +2001,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &726918313
 LineRenderer:
   serializedVersion: 3
@@ -2270,8 +2270,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &830271641
 LineRenderer:
   serializedVersion: 3
@@ -2588,8 +2588,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &1030505440
 LineRenderer:
   serializedVersion: 3
@@ -2723,8 +2723,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &1043805738
 LineRenderer:
   serializedVersion: 3
@@ -2903,8 +2903,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &1116829904
 LineRenderer:
   serializedVersion: 3
@@ -3038,8 +3038,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &1205418643
 LineRenderer:
   serializedVersion: 3
@@ -3224,8 +3224,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &1383892283
 LineRenderer:
   serializedVersion: 3
@@ -3359,8 +3359,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &1388810261
 LineRenderer:
   serializedVersion: 3
@@ -3502,7 +3502,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldVisualizer
   grid: {fileID: 1398638012}
-  arrowColor: {r: 0, g: 1, b: 0, a: 1}
+  arrowMesh: {fileID: -3110426253272953252, guid: e2e1bd5c58f15c842a0c583771f9136c, type: 3}
+  arrowMaterial: {fileID: 2100000, guid: f9d793486d22f6e4493dd4d142dd5536, type: 2}
+  arrowsScale: 0.5
 --- !u!114 &1398638012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3558,8 +3560,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &1489309219
 LineRenderer:
   serializedVersion: 3
@@ -3827,8 +3829,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &1516568521
 LineRenderer:
   serializedVersion: 3
@@ -4096,8 +4098,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &1696139141
 LineRenderer:
   serializedVersion: 3
@@ -4429,8 +4431,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &2044469851
 LineRenderer:
   serializedVersion: 3
@@ -4564,8 +4566,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &2098959574
 LineRenderer:
   serializedVersion: 3
@@ -4699,8 +4701,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   minDistance: 0.2
-  pathColor: {r: 1, g: 0.09362641, b: 0, a: 1}
-  lineWidth: 0.5
+  pathColor: {r: 1, g: 0, b: 0, a: 1}
+  lineWidth: 0.3
 --- !u!120 &2104715086
 LineRenderer:
   serializedVersion: 3

@@ -3,7 +3,9 @@ using UnityEngine;
 public class FlowFieldVisualizer : MonoBehaviour
 {
     public FlowFieldGrid grid;
-    public Color arrowColor = Color.darkGreen;
+    public Mesh arrowMesh;
+    public Material arrowMaterial;
+    public float arrowsScale = 0.5f;
 
     public void Awake()
     {
@@ -13,35 +15,31 @@ public class FlowFieldVisualizer : MonoBehaviour
         }
     }
 
-    void OnDrawGizmos()
+    void Update()
     {
-        if (grid == null) return;
+        if (grid == null || grid.Cells == null) return;
 
-        Gizmos.color = arrowColor;
+        Vector3 scale = Vector3.one * grid.cellSize * arrowsScale;
+
         for (int x = 0; x < grid.width; x++)
         {
             for (int y = 0; y < grid.height; y++)
             {
-                if (grid.Cells == null) continue;
                 FlowFieldCell cell = grid.Cells[x, y];
-                if (cell.direction != Vector2Int.zero)
-                {
-                    Vector2 dir = cell.direction.normalized;
-                    // Draw arrow from cell center in the direction
-                    float aux = grid.cellSize / 2f;
-                    Vector3 start = cell.worldPos + new Vector3(aux,0.5f,aux);
-                    Vector3 end = start + new Vector3(dir.x, 0, dir.y) * 3;
-                    Gizmos.DrawLine(start, end);
-                    Gizmos.DrawSphere(start, 0.4f);
-                    Gizmos.DrawSphere(end, 0.2f);
-                }
+                if (cell.direction == Vector2Int.zero) continue;
+
+                Vector2 dir = cell.direction.normalized;
+                Vector3 dir3D = new Vector3(dir.x, 0, dir.y);
+
+                float aux = grid.cellSize / 2f;
+                Vector3 pos = cell.worldPos + new Vector3(aux, 0.5f, aux);
+
+                Quaternion rot = Quaternion.LookRotation(dir3D);
+
+                Matrix4x4 matrix = Matrix4x4.TRS(pos, rot, scale);
+
+                Graphics.DrawMesh(arrowMesh, matrix, arrowMaterial, 0);
             }
         }
-
-        Vector2 destination = grid.destination;
-        FlowFieldCell destCell = grid.Cells[(int)destination.x, (int)destination.y];
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere(destCell.worldPos + new Vector3(grid.cellSize / 2f, 0.5f, grid.cellSize / 2f), 2.0f);
-
     }
 }
