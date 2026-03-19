@@ -31,8 +31,8 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: Armature|Walking
-      takeName: Armature|Walking
+      name: TT2-Body-Armt|Walking
+      takeName: TT2-Body-Armt|Walking
       internalID: -4274770991410265338
       firstFrame: 0
       lastFrame: 30
@@ -61,7 +61,10 @@ ModelImporter:
       additiveReferencePoseFrame: 0
     isReadable: 0
   meshes:
-    lODScreenPercentages: []
+    lODScreenPercentages:
+    - 0.25
+    - 0.125
+    - 0.01
     globalScale: 1
     meshCompression: 0
     addColliders: 0
