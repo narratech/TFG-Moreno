@@ -26,6 +26,11 @@ public class SampleManager : MonoBehaviour
             {
                 Vector3 hitPoint = hit.point;
                 ffgrid.SetDestination(hitPoint);
+
+                // Para cada agente, establecer su offset en formación
+                FlowFieldAgent[] agents = FindObjectsByType<FlowFieldAgent>(FindObjectsSortMode.None);
+                FlowFieldGroup group = new FlowFieldGroup();
+                group.MakeFormation(FindObjectsByType<FlowFieldAgent>(FindObjectsSortMode.None), hitPoint);
             }
         }
     }

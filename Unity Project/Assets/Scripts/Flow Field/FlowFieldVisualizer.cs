@@ -32,8 +32,7 @@ public class FlowFieldVisualizer : MonoBehaviour
                 Vector2 dir = cell.direction.normalized;
                 Vector3 dir3D = new Vector3(dir.x, 0, dir.y);
 
-                float aux = grid.cellSize / 2f;
-                Vector3 pos = cell.worldPos + new Vector3(aux, 0.5f, aux);
+                Vector3 pos = cell.worldPos + new Vector3(0, 0.5f, 0);
 
                 Quaternion rot = Quaternion.LookRotation(dir3D);
 

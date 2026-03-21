@@ -35,13 +35,11 @@ public class FlowFieldGrid : MonoBehaviour
                 if (hitSomething)
                 {
                     NavMeshHit navHit;
-                    Debug.DrawLine(origin, hit.point, Color.red, 5f);
 
                     if (NavMesh.SamplePosition(hit.point, out navHit, cellSize * 0.5f, NavMesh.AllAreas))
                     {
                         isOnNavMesh = true;
                         worldPos = navHit.position;
-                        Debug.Log("NavMesh hit at: " + navHit.position);
                     }
                     else
                     {

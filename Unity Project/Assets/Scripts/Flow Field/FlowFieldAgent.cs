@@ -7,6 +7,11 @@ public class FlowFieldAgent : MonoBehaviour
 
     private NavMeshAgent navMeshAgent;
 
+    public Vector3 offset;
+    public Vector3 observedOffest;
+
+    private FlowFieldCell lookingCell;
+
     private void Start()
     {
         navMeshAgent = GetComponent<NavMeshAgent>();
@@ -26,13 +31,43 @@ public class FlowFieldAgent : MonoBehaviour
     {
         if (grid == null) return;
 
-        FlowFieldCell cell = grid.GetCellAtWorldPos(transform.position);
+        // --- POSICIÓN ACTUAL ---
+        Vector3 worldPos = transform.position + observedOffest;
 
-        Vector3 desiredDir = new Vector3(cell.direction.x, 0, cell.direction.y);
-        if (grid.IsDestination(cell))
+        FlowFieldCell cell = grid.GetCellAtWorldPos(worldPos);
+
+        if (cell == null) return;
+
+        if (lookingCell == null || cell != lookingCell)
+        {
+            lookingCell = cell;
+            observedOffest = Vector3.zero;
+
+            float distances = grid.cellSize * 0.5f;
+            Vector3 dir = offset.normalized;
+            int steps = 0;
+
+            while (offset.magnitude > distances * steps)
+            {
+                observedOffest += dir * distances;
+                steps++;
+                FlowFieldCell checkCell = grid.GetCellAtWorldPos(worldPos + observedOffest);
+                if (checkCell == null || checkCell.isObstacle)
+                {
+                    // Si encontramos un obstáculo, retrocedemos un paso y salimos
+                    observedOffest -= dir * distances;
+                    break;
+                }
+            }
+
+            worldPos = transform.position + observedOffest;
+        }
+
+        Vector3 desiredDir = new Vector3(lookingCell.direction.x, 0, lookingCell.direction.y);
+        if (grid.IsDestination(lookingCell))
         {
             // Si llegamos a la celda destino, ir hacia el centro de la celda
-            desiredDir = (grid.DestinationWorldCentre() - transform.position);
+            desiredDir = (grid.DestinationWorldCentre() - worldPos);
         }
 
         if (desiredDir.sqrMagnitude < 0.2f)
@@ -91,7 +126,4 @@ public class FlowFieldAgent : MonoBehaviour
             Time.deltaTime * navMeshAgent.acceleration
         );
     }
-
-
-
 }

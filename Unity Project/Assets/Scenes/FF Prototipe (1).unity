@@ -18718,10 +18718,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43cf6cacc17a12942af92b0dcd5d636d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldGrid
-  width: 50
-  height: 50
-  cellSize: 10
-  destination: {x: 20, y: 20}
+  width: 100
+  height: 100
+  cellSize: 5
+  destination: {x: 0, y: 0}
 --- !u!4 &1398638013
 Transform:
   m_ObjectHideFlags: 0
