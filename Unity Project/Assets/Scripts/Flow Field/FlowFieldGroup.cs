@@ -26,7 +26,7 @@ public class FlowFieldGroup
 
                 Vector3 offset = new Vector3(xPos, 0, zPos);
 
-                agents[agentIndex].offset = offset;
+                agents[agentIndex].setOffest(offset);
 
                 agentIndex++;
             }

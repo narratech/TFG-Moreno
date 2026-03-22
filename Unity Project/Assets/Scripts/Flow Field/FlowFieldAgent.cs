@@ -7,8 +7,10 @@ public class FlowFieldAgent : MonoBehaviour
 
     private NavMeshAgent navMeshAgent;
 
-    public Vector3 offset;
-    public Vector3 observedOffest;
+    private Vector3 offset;
+    private Vector3 observedOffest;
+    private int maxSteps;
+    private int acumalteSteps;
 
     private FlowFieldCell lookingCell;
 
@@ -24,13 +26,18 @@ public class FlowFieldAgent : MonoBehaviour
         navMeshAgent.updateRotation = false; // tú controlas la rotación
         navMeshAgent.acceleration = 50f;     // importante para suavidad
         navMeshAgent.autoBraking = false;
-
     }
 
     void Update()
     {
         if (grid == null) return;
 
+        ManageMovement();
+
+    }
+
+    private void ManageMovement()
+    {
         // --- POSICIÓN ACTUAL ---
         Vector3 worldPos = transform.position + observedOffest;
 
@@ -46,8 +53,8 @@ public class FlowFieldAgent : MonoBehaviour
             float distances = grid.cellSize * 0.5f;
             Vector3 dir = offset.normalized;
             int steps = 0;
-
-            while (offset.magnitude > distances * steps)
+            
+            while (offset.magnitude > distances * steps && steps < acumalteSteps)
             {
                 observedOffest += dir * distances;
                 steps++;
@@ -60,7 +67,21 @@ public class FlowFieldAgent : MonoBehaviour
                 }
             }
 
+            if (steps >= acumalteSteps)
+            {
+                acumalteSteps++;
+                if (acumalteSteps > maxSteps)
+                {
+                    acumalteSteps = maxSteps;
+                }
+            }
+            else
+            {
+                acumalteSteps = steps;
+            }
+
             worldPos = transform.position + observedOffest;
+
         }
 
         Vector3 desiredDir = new Vector3(lookingCell.direction.x, 0, lookingCell.direction.y);
@@ -95,8 +116,6 @@ public class FlowFieldAgent : MonoBehaviour
         // --- ÁNGULO ENTRE VELOCIDADES ---
         float angle = Vector3.Angle(currentDir, desiredDir); // 0..180
 
-        // 0 = alineado → rotación lenta
-        // 180 = opuesto → rotación rápida
         float rotationFactor = Mathf.InverseLerp(0f, 180f, angle);
 
         // --- ROTACIÓN DINÁMICA ---
@@ -126,4 +145,13 @@ public class FlowFieldAgent : MonoBehaviour
             Time.deltaTime * navMeshAgent.acceleration
         );
     }
+
+    public void setOffest(Vector3 vec)
+    {
+        offset = vec;
+        observedOffest = vec;
+        maxSteps = Mathf.CeilToInt(vec.magnitude / (grid.cellSize * 0.5f));
+        acumalteSteps = maxSteps;
+    }
+
 }
