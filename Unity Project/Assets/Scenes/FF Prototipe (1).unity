@@ -2348,7 +2348,7 @@ GameObject:
   - component: {fileID: 216912016}
   - component: {fileID: 216912015}
   - component: {fileID: 216912014}
-  m_Layer: 6
+  m_Layer: 3
   m_Name: Terrain
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -18722,6 +18722,9 @@ MonoBehaviour:
   height: 100
   cellSize: 5
   destination: {x: 0, y: 0}
+  terrainLayer:
+    serializedVersion: 2
+    m_Bits: 8
 --- !u!4 &1398638013
 Transform:
   m_ObjectHideFlags: 0

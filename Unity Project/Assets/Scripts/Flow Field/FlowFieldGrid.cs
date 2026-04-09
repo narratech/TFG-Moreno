@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -9,7 +10,24 @@ public class FlowFieldGrid : MonoBehaviour
     public float cellSize = 2f;
     public Vector2Int destination;
 
+    public LayerMask terrainLayer; // para raycast al generar grid
+
     private FlowFieldCell[,] cells;
+
+    // Patron singleton para acceso global
+    public static FlowFieldGrid Instance { get; private set; }
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            Instance = this;
+        }
+    }
 
     void Start()
     {
@@ -20,6 +38,7 @@ public class FlowFieldGrid : MonoBehaviour
     void GenerateGrid()
     {
         cells = new FlowFieldCell[width, height];
+
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -27,7 +46,7 @@ public class FlowFieldGrid : MonoBehaviour
                 Vector3 origin = new Vector3(x * cellSize + (cellSize/2), 100f, y * cellSize + (cellSize / 2)); // desde arriba
                 RaycastHit hit;
 
-                bool hitSomething = Physics.Raycast(origin, Vector3.down, out hit, 200f);
+                bool hitSomething = Physics.Raycast(origin, Vector3.down, out hit, 200f, terrainLayer);
 
                 bool isOnNavMesh = false;
                 Vector3 worldPos = origin;
@@ -57,12 +76,15 @@ public class FlowFieldGrid : MonoBehaviour
     // 2. BFS para generar campo de costos y direcciones
     public void GenerateFlowfield(Vector2Int target)
     {
-        foreach (var cell in cells)
+        for (int x = 0; x < width; x++)
         {
-            cell.cost = int.MaxValue;
-            cell.direction = Vector2.zero;
+            for (int y = 0; y < height; y++)
+            {
+                cells[x, y].cost = int.MaxValue;
+                cells[x, y].direction = Vector2.zero;
+            }
         }
-         
+
         Queue<Vector2Int> frontier = new Queue<Vector2Int>();
         cells[target.x, target.y].cost = 0;
         frontier.Enqueue(target);
@@ -152,5 +174,27 @@ public class FlowFieldGrid : MonoBehaviour
             destination = newDest;
             GenerateFlowfield(destination);
         }
+    }
+    public NativeArray<FlowFieldCellData> GetNativeCells(Allocator allocator)
+    {
+        NativeArray<FlowFieldCellData> nativeCells = new NativeArray<FlowFieldCellData>(width * height, allocator);
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                int index = x + y * width;
+                FlowFieldCell cell = cells[x, y];
+                nativeCells[index] = new FlowFieldCellData
+                {
+                    cost = cell.cost,
+                    direction = cell.direction,
+                    isObstacle = (byte)(cell.isObstacle ? 1 : 0),
+                    worldPos = cell.worldPos
+                };
+            }
+        }
+
+        return nativeCells;
     }
 }

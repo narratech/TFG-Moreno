@@ -10,21 +10,9 @@ public class AgentBaker : Baker<AgentAuthoring>
 
         UnityEngine.Debug.Log($"Baking entity: {entity}");
 
-        AddComponent(entity, LocalTransform.FromPosition(float3.zero));
-
-        AddComponent(entity, new Position
-        {
-            Value = float3.zero
-        });
-
-        AddComponent(entity, new Velocity
-        {
-            Value = float3.zero
-        });
-
         AddComponent(entity, new MoveSpeed
         {
-            Value = authoring.speed
+            Value = authoring.speed 
         });
     }
 }
