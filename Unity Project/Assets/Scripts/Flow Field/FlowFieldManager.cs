@@ -24,7 +24,7 @@ public class FlowFieldManager : MonoBehaviour
     public void CalculateFlowField(INavigationGraph graph, FlowFieldData data)
     {
         GenerateIntegrationField(graph, data);
-        GenerateFlowDirections(graph, data);
+        GenerateFlowConinuosDirection(graph, data);
 
         LastCalculatedData = data;
         LastUsedGraph = graph;
@@ -85,5 +85,34 @@ public class FlowFieldManager : MonoBehaviour
                 data.FlowDirections[i] = (neighborPos - currentPos).normalized;
             }
         }
+    }
+
+    // Segunda opcion: generar un FlowField con direcciones continuas (en vez de apuntar al vecino más cercano, calcular un vector promedio ponderado)
+
+    private void GenerateFlowConinuosDirection(INavigationGraph graph, FlowFieldData data)
+    {
+        for (int i = 0; i < graph.NodeCount; i++)
+        {
+            if (!graph.IsWalkable(i)) continue;
+            Vector3 currentPos = graph.GetNodePosition(i);
+            Vector3 flowDirection = Vector3.zero;
+            float totalWeight = 0f;
+            foreach (int neighbor in graph.GetNeighbors(i))
+            {
+                float costDifference = data.IntegrationField[i] - data.IntegrationField[neighbor];
+                if (costDifference > 0)
+                {
+                    Vector3 neighborPos = graph.GetNodePosition(neighbor);
+                    Vector3 directionToNeighbor = (neighborPos - currentPos).normalized;
+                    flowDirection += directionToNeighbor * costDifference; // Ponderamos por la diferencia de coste
+                    totalWeight += costDifference;
+                }
+            }
+            if (totalWeight > 0)
+            {
+                data.FlowDirections[i] = flowDirection.normalized; // Normalizamos el vector resultante
+            }
+        }
+
     }
 }
