@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class GridGraphProvider : MonoBehaviour
+public class Grid2DProvider : MonoBehaviour
 {
     [Header("Configuración del Grid")]
     [SerializeField] private int _width = 50;

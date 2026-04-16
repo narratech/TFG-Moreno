@@ -7,12 +7,13 @@ public interface INavigationGraph
 
     // Transformación de espacio
     Vector3 GetNodePosition(int index);
+    Vector3 GetNodeSize(int index);
     int GetClosestNode(Vector3 worldPosition);
 
     // Relaciones entre nodos
     IEnumerable<int> GetNeighbors(int index);
 
-    // Datos de coste (Lo que el Grid provee)
+    // Datos de coste
     float GetNodeCost(int index);
     bool IsWalkable(int index);
 

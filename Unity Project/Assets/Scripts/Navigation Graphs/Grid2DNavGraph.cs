@@ -47,6 +47,11 @@ public class Grid2DNavGraph : INavigationGraph
         return _origin + new Vector3(x * _cellSize, 0, y * _cellSize);
     }
 
+    public Vector3 GetNodeSize(int index)
+    {
+        return new Vector3(_cellSize, 0, _cellSize); // Asumimos que todas las celdas son del mismo tamaño
+    }
+
     public int GetClosestNode(Vector3 worldPos)
     {
         Vector3 local = worldPos - _origin;

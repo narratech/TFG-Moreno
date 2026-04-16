@@ -9,7 +9,6 @@ public class FlowFieldManager : MonoBehaviour
 
     // singleton para acceso global
     public static FlowFieldManager Instance { get; private set; }
-
     private void Awake()
     {
         if (Instance != null && Instance != this)

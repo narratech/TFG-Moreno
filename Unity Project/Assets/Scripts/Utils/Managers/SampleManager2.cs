@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 public class SampleManager2 : MonoBehaviour
 {
-    public GridGraphProvider graphProvider;
+    public Grid2DProvider graphProvider;
 
     private InputManager input;
 
