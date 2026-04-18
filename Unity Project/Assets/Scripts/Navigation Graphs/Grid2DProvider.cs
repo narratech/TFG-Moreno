@@ -5,6 +5,8 @@ public class Grid2DProvider : MonoBehaviour
     [Header("Configuración del Grid")]
     [SerializeField] private int _width = 50;
     [SerializeField] private int _height = 50;
+    [SerializeField] private int _regionWidth = 5;
+    [SerializeField] private int _regionHeight = 5;
     [SerializeField] private float _cellSize = 1.0f;
     [SerializeField] private LayerMask _obstacleMask;
 
@@ -19,7 +21,7 @@ public class Grid2DProvider : MonoBehaviour
     public void InitializeGraph()
     {
         // Creamos la instancia de la lógica que ya tenemos
-        Graph = new Grid2DNavGraph(_width, _height, _cellSize, transform.position);
+        Graph = new Grid2DNavGraph(_width, _height, _cellSize, _regionWidth, _regionHeight, transform.position);
 
         // Escaneamos el mundo para marcar obstáculos
         ScanObstacles();
@@ -37,7 +39,7 @@ public class Grid2DProvider : MonoBehaviour
 
             if (isObstacle)
             {
-                Graph.SetStaticObstacle(i, true);
+                Graph.SetWalkable(i, false);
             }
         }
     }
@@ -54,6 +56,18 @@ public class Grid2DProvider : MonoBehaviour
                 {
                     Vector3 pos = transform.position + new Vector3(x * _cellSize, 0, y * _cellSize);
                     Gizmos.DrawWireCube(pos, new Vector3(_cellSize, 0.1f, _cellSize));
+                }
+            }
+
+            // Dibujamos las regiones
+            Gizmos.color = Color.blue;
+            for (int x = 0; x < _width; x += _regionWidth)
+            {
+                for (int y = 0; y < _height; y += _regionHeight)
+                {
+                    Vector3 pos = transform.position + new Vector3(x * _cellSize, 0, y * _cellSize);
+                    Vector3 size = new Vector3(_regionWidth * _cellSize, 0.1f, _regionHeight * _cellSize);
+                    Gizmos.DrawWireCube(pos + size / 2 - new Vector3(_cellSize / 2, 0, _cellSize / 2), size);
                 }
             }
             return;

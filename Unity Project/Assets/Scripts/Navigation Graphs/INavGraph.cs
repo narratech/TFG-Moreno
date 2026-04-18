@@ -7,6 +7,7 @@ public interface INavGraph
 
     // --- Transformación de Espacio y Consultas ---
     Vector3 GetNodePosition(int index);
+    Vector3 GetNodeSize(int index);
     int GetClosestNode(Vector3 worldPosition);
 
     // --- Gestión de Regiones (Clustering) ---

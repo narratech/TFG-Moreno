@@ -1,26 +1,29 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Grid2DNavGraph : INavGraph
 {
+    // --- DATOS BÁSICOS DEL GRID ---
     private readonly int _width;
     private readonly int _height;
     private readonly float _cellSize;
     private readonly Vector3 _origin;
 
+    // --- DATOS DE REGIONES ---
     private readonly int _regionSize;
     private readonly int _regionsPerRow;
     private readonly int _regionsPerCol;
 
     // --- DATOS DEL COST FIELD ---
-    private readonly float[] _staticCosts;      // Coste del terreno (hierba, agua...)
-    private readonly float[] _dynamicCosts;   // Costes temporales (fuego, influencia...)
-    private readonly bool[] _unwalkableNodes; // Obstáculos estáticos (muros)
+    private readonly float[] _staticCosts;
+    private readonly float[] _dynamicCosts;
+    private readonly bool[] _walkability;
 
     public int NodeCount => _width * _height;
     public event System.Action OnGraphUpdated;
 
-    public Grid2DNavGraph(int width, int height, float cellSize, Vector3 origin, int regionSize)
+    public Grid2DNavGraph(int width, int height, float cellSize, int regionWidth, int regionHeight, Vector3 origin)
     {
         _width = width;
         _height = height;
@@ -28,12 +31,14 @@ public class Grid2DNavGraph : INavGraph
         _origin = origin;
 
         // Precalculamos el número de regiones
-        _regionsPerRow = Mathf.CeilToInt((float)_width / _regionSize);
-        _regionsPerCol = Mathf.CeilToInt((float)_height / _regionSize);
+        _regionsPerRow = Mathf.CeilToInt((float)width / regionWidth);
+        _regionsPerCol = Mathf.CeilToInt((float)height / regionHeight);
+        _regionSize = _regionsPerRow * _regionsPerCol;
 
         _staticCosts = new float[NodeCount];
         _dynamicCosts = new float[NodeCount];
-        _unwalkableNodes = new bool[NodeCount];
+        _walkability = new bool[NodeCount];
+        Array.Fill(_walkability, true); // Por defecto, todo es transitable
 
         for (int i = 0; i < NodeCount; i++) _staticCosts[i] = 1.0f;
     }
@@ -46,7 +51,7 @@ public class Grid2DNavGraph : INavGraph
         return _staticCosts[index] + _dynamicCosts[index];
     }
 
-    public bool IsWalkable(int index) => !_unwalkableNodes[index];
+    public bool IsWalkable(int index) => _walkability[index];
 
     public Vector3 GetNodePosition(int index)
     {
@@ -118,7 +123,7 @@ public class Grid2DNavGraph : INavGraph
 
     public void SetWalkable(int index, bool walkable)
     {
-        _unwalkableNodes[index] = !walkable;
+        _walkability[index] = walkable;
         OnGraphUpdated?.Invoke();
     }
 
