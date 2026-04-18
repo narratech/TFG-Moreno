@@ -1,12 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Grid2DNavGraph : INavigationGraph
+public class Grid2DNavGraph : INavGraph
 {
     private readonly int _width;
     private readonly int _height;
     private readonly float _cellSize;
     private readonly Vector3 _origin;
+
+    private readonly int _regionSize;
+    private readonly int _regionsPerRow;
+    private readonly int _regionsPerCol;
 
     // --- DATOS DEL COST FIELD ---
     private readonly float[] _staticCosts;      // Coste del terreno (hierba, agua...)
@@ -16,12 +20,16 @@ public class Grid2DNavGraph : INavigationGraph
     public int NodeCount => _width * _height;
     public event System.Action OnGraphUpdated;
 
-    public Grid2DNavGraph(int width, int height, float cellSize, Vector3 origin)
+    public Grid2DNavGraph(int width, int height, float cellSize, Vector3 origin, int regionSize)
     {
         _width = width;
         _height = height;
         _cellSize = cellSize;
         _origin = origin;
+
+        // Precalculamos el número de regiones
+        _regionsPerRow = Mathf.CeilToInt((float)_width / _regionSize);
+        _regionsPerCol = Mathf.CeilToInt((float)_height / _regionSize);
 
         _staticCosts = new float[NodeCount];
         _dynamicCosts = new float[NodeCount];
@@ -61,8 +69,8 @@ public class Grid2DNavGraph : INavigationGraph
     }
 
     // Constantes de distancias de vecinos (Optimizan legibilidad y rendimiento)
-    private const float MOVE_COST_STRAIGHT = 1.0f;
-    private const float MOVE_COST_DIAGONAL = 1.41421356f;
+    public float MoveCostStraight => _cellSize;
+    public float MoveCostDiagonal => 1.41421356f * _cellSize;
 
     public float GetDistanceBetweenNeighbors(int from, int to)
     {
@@ -74,7 +82,7 @@ public class Grid2DNavGraph : INavigationGraph
         int y2 = to / _width;
 
         // Si la diferencia en X y en Y es distinta de cero, es diagonal
-        return (x1 != x2 && y1 != y2) ? MOVE_COST_DIAGONAL : MOVE_COST_STRAIGHT;
+        return (x1 != x2 && y1 != y2) ? MoveCostDiagonal : MoveCostStraight;
     }
 
     public IEnumerable<int> GetNeighbors(int index)
@@ -108,9 +116,40 @@ public class Grid2DNavGraph : INavigationGraph
         OnGraphUpdated?.Invoke(); // Notifica que el mundo cambió
     }
 
-    public void SetStaticObstacle(int index, bool isObstacle)
+    public void SetWalkable(int index, bool walkable)
     {
-        _unwalkableNodes[index] = isObstacle;
+        _unwalkableNodes[index] = !walkable;
         OnGraphUpdated?.Invoke();
+    }
+
+    // --- IMPLEMENTACIÓN DE REGIONES ---
+    public int GetRegionId(int nodeIndex)
+    {
+        int x = nodeIndex % _width;
+        int y = nodeIndex / _width;
+
+        // Uso de división entera para agrupar en bloques
+        return (y / _regionSize) * _regionsPerRow + (x / _regionSize);
+    }
+
+    public IEnumerable<int> GetNodesInRegion(int regionId)
+    {
+        int regY = regionId / _regionsPerRow;
+        int regX = regionId % _regionsPerRow;
+
+        int xMin = regX * _regionSize;
+        int yMin = regY * _regionSize;
+
+        // Limitar para no salir del ancho/alto real del grid
+        int xMax = Mathf.Min(xMin + _regionSize, _width);
+        int yMax = Mathf.Min(yMin + _regionSize, _height);
+
+        for (int y = yMin; y < yMax; y++)
+        {
+            for (int x = xMin; x < xMax; x++)
+            {
+                yield return y * _width + x;
+            }
+        }
     }
 }

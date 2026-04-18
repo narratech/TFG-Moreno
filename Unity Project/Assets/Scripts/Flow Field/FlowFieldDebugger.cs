@@ -54,7 +54,7 @@ public class FlowFieldDebugger : MonoBehaviour
                     float cost = data.IntegrationField[i];
                     if (cost < float.MaxValue)
                     {
-                        Color c = Color.Lerp(Color.green, Color.blue, cost / 50f);
+                        Color c = Color.Lerp(Color.green, Color.blue, cost / 20f);
                         c.a = _planeOpacity;
                         DrawInGamePlane(graph.GetNodePosition(i), graph.GetNodeSize(i).x, c);
                     }

@@ -5,7 +5,7 @@ public class FlowFieldManager : MonoBehaviour
 {
     // Añade esta línea dentro de tu FlowFieldManager
     public FlowFieldData LastCalculatedData { get; private set; }
-    public INavigationGraph LastUsedGraph { get; private set; }
+    public INavGraph LastUsedGraph { get; private set; }
 
     // singleton para acceso global
     public static FlowFieldManager Instance { get; private set; }
@@ -20,7 +20,7 @@ public class FlowFieldManager : MonoBehaviour
     }
 
     // Método principal que "cocina" el FlowField
-    public void CalculateFlowField(INavigationGraph graph, FlowFieldData data)
+    public void CalculateFlowField(INavGraph graph, FlowFieldData data)
     {
         GenerateIntegrationField(graph, data);
         GenerateFlowConinuosDirection(graph, data);
@@ -30,7 +30,7 @@ public class FlowFieldManager : MonoBehaviour
     }
 
     // PASO 1: Dijkstra desde el destino hacia atrás
-    private void GenerateIntegrationField(INavigationGraph graph, FlowFieldData data)
+    private void GenerateIntegrationField(INavGraph graph, FlowFieldData data)
     {
         Queue<int> nodesToVisit = new Queue<int>();
 
@@ -59,7 +59,7 @@ public class FlowFieldManager : MonoBehaviour
     }
 
     // PASO 2: Generar vectores apuntando al vecino con menor coste (Gradiente)
-    private void GenerateFlowDirections(INavigationGraph graph, FlowFieldData data)
+    private void GenerateFlowDirections(INavGraph graph, FlowFieldData data)
     {
         for (int i = 0; i < graph.NodeCount; i++)
         {
@@ -88,7 +88,7 @@ public class FlowFieldManager : MonoBehaviour
 
     // Segunda opcion: generar un FlowField con direcciones continuas (en vez de apuntar al vecino más cercano, calcular un vector promedio ponderado)
 
-    private void GenerateFlowConinuosDirection(INavigationGraph graph, FlowFieldData data)
+    private void GenerateFlowConinuosDirection(INavGraph graph, FlowFieldData data)
     {
         for (int i = 0; i < graph.NodeCount; i++)
         {
