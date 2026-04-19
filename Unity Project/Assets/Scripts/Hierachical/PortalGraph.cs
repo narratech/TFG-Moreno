@@ -73,6 +73,8 @@ public class PortalGraph
     }
 
     public PortalNode GetPortal(int id) => _portals.Find(p => p.Id == id);
+
+    public IEnumerable<PortalNode> GetAllPortals() => _portals;
 }
 
 public class PortalNode

@@ -95,19 +95,23 @@ public class Grid2DNavGraph : INavGraph
         int x = index % _width;
         int y = index / _width;
 
-        for (int dy = -1; dy <= 1; dy++)
-        {
-            for (int dx = -1; dx <= 1; dx++)
-            {
-                if (dx == 0 && dy == 0) continue;
-                int nx = x + dx;
-                int ny = y + dy;
+        // Definimos las 4 direcciones: Derecha, Izquierda, Abajo, Arriba
+        int[] dx = { 1, -1, 0, 0 };
+        int[] dy = { 0, 0, 1, -1 };
 
-                if (nx >= 0 && nx < _width && ny >= 0 && ny < _height)
+        for (int i = 0; i < 4; i++)
+        {
+            int nx = x + dx[i];
+            int ny = y + dy[i];
+
+            // Validamos límites del mapa
+            if (nx >= 0 && nx < _width && ny >= 0 && ny < _height)
+            {
+                int neighborIndex = ny * _width + nx;
+
+                if (IsWalkable(neighborIndex))
                 {
-                    int neighborIndex = ny * _width + nx;
-                    if (IsWalkable(neighborIndex))
-                        yield return neighborIndex;
+                    yield return neighborIndex;
                 }
             }
         }
