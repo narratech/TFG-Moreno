@@ -20,6 +20,8 @@ public class Grid2DProvider : MonoBehaviour
 
     public void InitializeGraph()
     {
+        if (Graph != null) return;
+
         // Creamos la instancia de la lógica que ya tenemos
         Graph = new Grid2DNavGraph(_width, _height, _cellSize, _regionWidth, _regionHeight, transform.position);
 
@@ -46,33 +48,30 @@ public class Grid2DProvider : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        if (Graph == null)
+        // Dibujo previo si el juego no está ejecutándose
+        Gizmos.color = Color.white;
+        for (int x = 0; x < _width; x++)
         {
-            // Dibujo previo si el juego no está ejecutándose
-            Gizmos.color = Color.white;
-            for (int x = 0; x < _width; x++)
+            for (int y = 0; y < _height; y++)
             {
-                for (int y = 0; y < _height; y++)
-                {
-                    Vector3 pos = transform.position + new Vector3(x * _cellSize, 0, y * _cellSize);
-                    Gizmos.DrawWireCube(pos, new Vector3(_cellSize, 0.1f, _cellSize));
-                }
+                Vector3 pos = transform.position + new Vector3(x * _cellSize, 0, y * _cellSize);
+                Gizmos.DrawWireCube(pos, new Vector3(_cellSize, 0.1f, _cellSize));
             }
-
-            // Dibujamos las regiones
-            Gizmos.color = Color.blue;
-            for (int x = 0; x < _width; x += _regionWidth)
-            {
-                for (int y = 0; y < _height; y += _regionHeight)
-                {
-                    Vector3 pos = transform.position + new Vector3(x * _cellSize, 0, y * _cellSize);
-                    Vector3 size = new Vector3(_regionWidth * _cellSize, 0.1f, _regionHeight * _cellSize);
-                    Gizmos.DrawWireCube(pos + size / 2 - new Vector3(_cellSize / 2, 0, _cellSize / 2), size);
-                }
-            }
-            return;
         }
 
+        // Dibujamos las regiones
+        Gizmos.color = Color.blue;
+        for (int x = 0; x < _width; x += _regionWidth)
+        {
+            for (int y = 0; y < _height; y += _regionHeight)
+            {
+                Vector3 pos = transform.position + new Vector3(x * _cellSize, 0, y * _cellSize);
+                Vector3 size = new Vector3(_regionWidth * _cellSize, 0.1f, _regionHeight * _cellSize);
+                Gizmos.DrawWireCube(pos + size / 2 - new Vector3(_cellSize / 2, 0, _cellSize / 2), size);
+            }
+        }
+
+        if (Graph == null) return;
         // Dibujo dinámico cuando el juego corre
         for (int i = 0; i < Graph.NodeCount; i++)
         {

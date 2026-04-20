@@ -11,7 +11,8 @@ public class Grid2DNavGraph : INavGraph
     private readonly Vector3 _origin;
 
     // --- DATOS DE REGIONES ---
-    private readonly int _regionSize;
+    private readonly int _regW;
+    private readonly int _regH;
     private readonly int _regionsPerRow;
     private readonly int _regionsPerCol;
 
@@ -29,11 +30,12 @@ public class Grid2DNavGraph : INavGraph
         _height = height;
         _cellSize = cellSize;
         _origin = origin;
+        _regW = regionWidth;
+        _regH = regionHeight;
 
         // Precalculamos el número de regiones
         _regionsPerRow = Mathf.CeilToInt((float)width / regionWidth);
         _regionsPerCol = Mathf.CeilToInt((float)height / regionHeight);
-        _regionSize = _regionsPerRow * _regionsPerCol;
 
         _staticCosts = new float[NodeCount];
         _dynamicCosts = new float[NodeCount];
@@ -137,8 +139,11 @@ public class Grid2DNavGraph : INavGraph
         int x = nodeIndex % _width;
         int y = nodeIndex / _width;
 
-        // Uso de división entera para agrupar en bloques
-        return (y / _regionSize) * _regionsPerRow + (x / _regionSize);
+        // Dividimos la coordenada actual entre el tamaño de la región
+        int regionX = x / _regW;
+        int regionY = y / _regH;
+
+        return (regionY * _regionsPerRow) + regionX;
     }
 
     public IEnumerable<int> GetNodesInRegion(int regionId)
@@ -146,12 +151,13 @@ public class Grid2DNavGraph : INavGraph
         int regY = regionId / _regionsPerRow;
         int regX = regionId % _regionsPerRow;
 
-        int xMin = regX * _regionSize;
-        int yMin = regY * _regionSize;
+        // Inicio de la región en coordenadas de nodo
+        int xMin = regX * _regW;
+        int yMin = regY * _regH;
 
-        // Limitar para no salir del ancho/alto real del grid
-        int xMax = Mathf.Min(xMin + _regionSize, _width);
-        int yMax = Mathf.Min(yMin + _regionSize, _height);
+        // Final de la región (sin pasarse del borde del mundo)
+        int xMax = Mathf.Min(xMin + _regW, _width);
+        int yMax = Mathf.Min(yMin + _regH, _height);
 
         for (int y = yMin; y < yMax; y++)
         {

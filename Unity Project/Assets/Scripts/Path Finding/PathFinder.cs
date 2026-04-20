@@ -8,7 +8,7 @@ public static class PathFinder
     {
         // Pre-asignamos el array con el tamaño total de nodos
         float[] distances = new float[navGraph.NodeCount];
-        for (int i = 0; i < distances.Length; i++) distances[i] = -1f; // -1 significa no visitado
+        for (int i = 0; i < distances.Length; i++) distances[i] = float.MaxValue;
 
         PriorityQueue<int, float> pq = new PriorityQueue<int, float>();
 
@@ -27,7 +27,7 @@ public static class PathFinder
 
                 float newDist = d + navGraph.GetDistanceBetweenNeighbors(current, neighbor);
 
-                if (distances[neighbor] == -1f || newDist < distances[neighbor])
+                if (newDist < distances[neighbor])
                 {
                     distances[neighbor] = newDist;
                     pq.Enqueue(neighbor, newDist);

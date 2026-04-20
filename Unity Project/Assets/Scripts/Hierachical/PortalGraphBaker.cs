@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PortalGraphBaker
+public static class PortalGraphBaker
 {
-    private int _idCounter = 0;
+    static private int _idCounter = 0;
 
-    public void Bake(INavGraph navGraph, PortalGraph portalGraph)
+    static public void Bake(INavGraph navGraph, PortalGraph portalGraph)
     {
         _idCounter = 0;
         // 1: Generar las fronteras entre regiones
@@ -16,19 +16,21 @@ public class PortalGraphBaker
         ConnectPortals(navGraph, portalGraph);
     }
 
-    public void Clear(PortalGraph portalGraph)
+    static public void Clear(PortalGraph portalGraph)
     {
-
+        portalGraph.Clear();
     }
 
-    public void Rebake(INavGraph navGraph, PortalGraph portalGraph)
+    static public void Rebake(INavGraph navGraph, PortalGraph portalGraph)
     {
         Clear(portalGraph);
         Bake(navGraph, portalGraph);
     }
 
-    public Dictionary<(int, int), List<(int nodeA, int nodeB)>> GenerateFrontiers(INavGraph navGraph, PortalGraph portalGraph)
+    static private Dictionary<(int, int), List<(int nodeA, int nodeB)>> GenerateFrontiers(INavGraph navGraph, PortalGraph portalGraph)
     {
+        // Clave: (RegionA, RegionB) con RegionA < RegionB para evitar duplicados
+        // Valor: Lista de pares de nodos (nodeA, nodeB) que forman la frontera entre esas regiones
         var boundaries = new Dictionary<(int, int), List<(int nodeA, int nodeB)>>();
 
         for (int i = 0; i < navGraph.NodeCount; i++)
@@ -52,7 +54,7 @@ public class PortalGraphBaker
         return boundaries;
     }
 
-    public void GeneratePortals(INavGraph navGraph, PortalGraph portalGraph, Dictionary<(int, int), List<(int nodeA, int nodeB)>> boundaries)
+    static private void GeneratePortals(INavGraph navGraph, PortalGraph portalGraph, Dictionary<(int, int), List<(int nodeA, int nodeB)>> boundaries)
     {
         foreach (var boundary in boundaries)
         {
@@ -73,7 +75,7 @@ public class PortalGraphBaker
         }
     }
 
-    private void ConnectPortals(INavGraph navGraph, PortalGraph portalGraph)
+    static private void ConnectPortals(INavGraph navGraph, PortalGraph portalGraph)
     {
         var regionToPortals = new Dictionary<int, List<PortalNode>>();
         foreach (PortalNode portal in portalGraph.GetAllPortals())
@@ -112,7 +114,7 @@ public class PortalGraphBaker
 
                     int targetNode = (endPortal.RegionA == regionId) ? endPortal.NodeA : endPortal.NodeB;
 
-                    // Si el FloodFill usa float[] (con -1 o float.MaxValue para 'no visitado')
+                    // Generar el costo desde startNode a targetNode
                     float cost = distanceMap[targetNode];
 
                     if (cost >= 0 && cost < float.MaxValue)
@@ -125,7 +127,7 @@ public class PortalGraphBaker
         }
     }
 
-    private void AddPortalToMap(Dictionary<int, List<PortalNode>> map, int regionId, PortalNode portal)
+    static private void AddPortalToMap(Dictionary<int, List<PortalNode>> map, int regionId, PortalNode portal)
     {
         if (!map.ContainsKey(regionId)) map[regionId] = new List<PortalNode>();
         if (!map[regionId].Contains(portal)) map[regionId].Add(portal);

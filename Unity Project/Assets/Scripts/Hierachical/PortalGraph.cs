@@ -10,8 +10,15 @@ using UnityEngine;
 /// </summary>
 public class PortalGraph
 {
-    private List<PortalNode> _portals = new List<PortalNode>();
-    private Dictionary<int, List<PortalEdge>> _adjacency = new Dictionary<int, List<PortalEdge>>();
+    private List<PortalNode> _portals;
+    // Clave: Id del portal, Valor: Lista de aristas hacia otros portales
+    private Dictionary<int, List<PortalEdge>> _adjacency;
+
+    public PortalGraph()
+    {
+        _portals = new List<PortalNode>();
+        _adjacency = new Dictionary<int, List<PortalEdge>>();
+    }
 
     public void AddPortal(PortalNode portal)
     {
@@ -65,6 +72,18 @@ public class PortalGraph
 
         if (_adjacency.ContainsKey(portalId2))
             _adjacency[portalId2].RemoveAll(e => e.TargetPortalId == portalId1);
+    }
+
+    public void Clear()
+    {
+        if (_portals.Count > 0) 
+            _portals.Clear();
+
+        foreach (var edges in _adjacency.Values)
+            edges.Clear();
+
+        if (_adjacency.Count > 0) 
+            _adjacency.Clear();
     }
 
     public IEnumerable<PortalEdge> GetNeighbors(int portalId)
