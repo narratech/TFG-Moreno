@@ -1483,8 +1483,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1999247481}
-  - component: {fileID: 1999247480}
-  - component: {fileID: 1999247479}
   - component: {fileID: 1999247478}
   - component: {fileID: 1999247482}
   m_Layer: 0
@@ -1514,36 +1512,6 @@ MonoBehaviour:
   _obstacleMask:
     serializedVersion: 2
     m_Bits: 64
---- !u!114 &1999247479
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1999247477}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a62a886c82af3644791879b151940d7b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FlowFieldDebugger
-  _showInGame: 0
-  _showIntegration: 1
-  _showDirections: 1
-  _arrowLength: 0.4
-  _arrowColor: {r: 1, g: 0, b: 0, a: 1}
-  _planeOpacity: 0.5
---- !u!114 &1999247480
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1999247477}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eaa64342807098f4eb5dd429d0e6af49, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FlowFieldManager
 --- !u!4 &1999247481
 Transform:
   m_ObjectHideFlags: 0

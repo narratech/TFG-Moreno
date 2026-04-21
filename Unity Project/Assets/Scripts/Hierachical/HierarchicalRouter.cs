@@ -87,21 +87,18 @@ public class HierarchicalRouter
     /// <param name="portal"></param>
     /// <param name="distanceMap"></param>
     /// <returns></returns>
-    public int GetNextPortal(int currentPortalId, Dictionary<int, float> distanceMap)
+    public int GetNextPortal(int portalId, Dictionary<int, float> distanceMap)
     {
         int nextPortal = -1;
-        float minDist = float.MaxValue;
+        float minDist = distanceMap.ContainsKey(portalId) ? distanceMap[portalId] : float.MaxValue;
 
-        foreach (var edge in _portalGraph.GetNeighbors(currentPortalId))
+        foreach (var edge in _portalGraph.GetNeighbors(portalId))
         {
-            // Si el portal vecino no es alcanzable, lo ignoramos
-            if (distanceMap.TryGetValue(edge.TargetPortalId, out float d))
+            if (distanceMap.TryGetValue(edge.TargetPortalId, out float neighborDist))
             {
-                float totalPathCost = edge.Cost + d;
-
-                if (totalPathCost < minDist)
+                if (neighborDist < minDist)
                 {
-                    minDist = totalPathCost;
+                    minDist = neighborDist;
                     nextPortal = edge.TargetPortalId;
                 }
             }

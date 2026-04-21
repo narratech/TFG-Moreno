@@ -1,12 +1,12 @@
 using UnityEngine;
 
-public class FlowFieldData
+public class FlowField
 {
     public readonly float[] IntegrationField; // Coste acumulado al destino
     public readonly Vector3[] FlowDirections; // Vectores de dirección finales
     public readonly int DestinationNode;      // El objetivo de este campo
 
-    public FlowFieldData(int nodeCount, int destinationNode)
+    public FlowField(int nodeCount, int destinationNode)
     {
         DestinationNode = destinationNode;
         IntegrationField = new float[nodeCount];

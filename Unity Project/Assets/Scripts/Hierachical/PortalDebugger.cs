@@ -1,10 +1,10 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PortalDebugger : MonoBehaviour
 {
     public Grid2DProvider graphProvider;
     private INavGraph _navGraph;
-    private PortalGraph _portalGraph;
     private bool _isBaked = false;
 
     // Esto solo funcionará en Play Mode
@@ -31,8 +31,7 @@ public class PortalDebugger : MonoBehaviour
 
         if (_navGraph != null)
         {
-            _portalGraph = new PortalGraph();
-            PortalGraphBaker.Bake(_navGraph, _portalGraph);
+            FlowFieldManager.Instance.RegisterContext("Grid_1", _navGraph);
             _isBaked = true;
         }
     }
@@ -45,10 +44,10 @@ public class PortalDebugger : MonoBehaviour
             EnsureBake();
         }
 
-        if (_navGraph == null || _portalGraph == null) return;
+        if (_navGraph == null) return;
 
         Gizmos.color = Color.magenta;
-        foreach (var portal in _portalGraph.GetAllPortals())
+        foreach (var portal in FlowFieldManager.Instance.GetPortalGraph("Grid_1").GetAllPortals())
         {
             // Usamos las posiciones que ya tiene el portal (si las guardaste en el Bake)
             // o las pedimos al navGraph

@@ -22,8 +22,9 @@ public class SampleManager2 : MonoBehaviour
             {
                 Debug.Log("Hit point: " + hit.point);
                 Vector3 hitPoint = hit.point;
-                FlowFieldData data = new FlowFieldData(graphProvider.Graph.NodeCount, graphProvider.Graph.GetClosestNode(hitPoint));
-                FlowFieldManager.Instance.CalculateFlowField(graphProvider.Graph, data);
+                //FlowFieldData data = new FlowFieldData(graphProvider.Graph.NodeCount, graphProvider.Graph.GetClosestNode(hitPoint));
+                //FlowFieldManager.Instance.CalculateFlowField(graphProvider.Graph, data);
+
             }
         }
     }

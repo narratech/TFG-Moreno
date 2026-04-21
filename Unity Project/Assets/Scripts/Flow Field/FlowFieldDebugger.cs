@@ -1,5 +1,5 @@
 using UnityEngine;
-
+/*
 public class FlowFieldDebugger : MonoBehaviour
 {
     [Header("Configuración Visual")]
@@ -163,4 +163,4 @@ public class FlowFieldDebugger : MonoBehaviour
         _lineMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
         _lineMaterial.SetInt("_ZWrite", 0);
     }
-}
+}*/
