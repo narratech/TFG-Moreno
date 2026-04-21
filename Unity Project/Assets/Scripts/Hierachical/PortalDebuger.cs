@@ -37,7 +37,7 @@ public class PortalDebuger : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         // En lugar de esperar al Start, lo intentamos aquí cada vez que sea null
         if (!_isBaked)
@@ -45,17 +45,7 @@ public class PortalDebuger : MonoBehaviour
             EnsureBake();
         }
 
-        if (_navGraph == null)
-        {
-            Debug.LogWarning("PortalDebuger: No se pudo obtener el NavGraph.");
-            return;
-        }
-
-        if (_portalGraph == null)
-        {
-            Debug.LogWarning("PortalDebuger: No se pudo obtener el PortalGraph.");
-            return;
-        }
+        if (_navGraph == null || _portalGraph == null) return;
 
         Gizmos.color = Color.magenta;
         foreach (var portal in _portalGraph.GetAllPortals())

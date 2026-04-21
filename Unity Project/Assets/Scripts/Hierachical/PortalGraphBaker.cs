@@ -1,18 +1,31 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public static class PortalGraphBaker
 {
     static private int _idCounter = 0;
 
+    public class BoundarySegment
+    {
+        public int RegionA;
+        public int RegionB;
+        public List<(int nodeA, int nodeB)> Contacts = new List<(int, int)>();
+
+        public BoundarySegment(int regA, int regB)
+        {
+            RegionA = regA;
+            RegionB = regB;
+        }
+    }
+
     static public void Bake(INavGraph navGraph, PortalGraph portalGraph)
     {
         _idCounter = 0;
         // 1: Generar las fronteras entre regiones
-        var boundaries = GenerateFrontiers(navGraph, portalGraph);
+        var boundaries = GenerateSegments(navGraph);
         // 2: Generar los portales (Fronteras)
         GeneratePortals(navGraph, portalGraph, boundaries);
-        // 3: Conectar los portales entre s� (Caminos internos)
+        // 3: Conectar los portales entre sí (Caminos internos)
         ConnectPortals(navGraph, portalGraph);
     }
 
@@ -27,39 +40,86 @@ public static class PortalGraphBaker
         Bake(navGraph, portalGraph);
     }
 
-    static private Dictionary<(int, int), List<(int nodeA, int nodeB)>> GenerateFrontiers(INavGraph navGraph, PortalGraph portalGraph)
+    static private List<BoundarySegment> GenerateSegments(INavGraph navGraph)
     {
-        // Clave: (RegionA, RegionB) con RegionA < RegionB para evitar duplicados
-        // Valor: Lista de pares de nodos (nodeA, nodeB) que forman la frontera entre esas regiones
-        var boundaries = new Dictionary<(int, int), List<(int nodeA, int nodeB)>>();
+        List<BoundarySegment> allSegments = new List<BoundarySegment>();
+        HashSet<(int, int)> processedEdges = new HashSet<(int, int)>();
 
         for (int i = 0; i < navGraph.NodeCount; i++)
         {
             if (!navGraph.IsWalkable(i)) continue;
-
             int regA = navGraph.GetRegionId(i);
+
             foreach (int neighbor in navGraph.GetNeighbors(i))
             {
+                if (!navGraph.IsWalkable(neighbor)) continue;
+
                 int regB = navGraph.GetRegionId(neighbor);
 
-                if (regA != regB && regA != -1 && regB != -1)
+                // Solo nos interesan conexiones entre regiones distintas y válidas
+                if (regA < 0 || regB < 0 || regA == regB) continue;
+
+                // Evitar procesar A->B y luego B->A (Nodos dobles)
+                var edgeKey = i < neighbor ? (i, neighbor) : (neighbor, i);
+                if (processedEdges.Contains(edgeKey)) continue;
+                processedEdges.Add(edgeKey);
+
+                // Intentar añadir este par a un segmento existente que esté cerca
+                bool addedToExisting = false;
+                foreach (var segment in allSegments)
                 {
-                    var key = regA < regB ? (regA, regB) : (regB, regA);
-                    if (!boundaries.ContainsKey(key)) boundaries[key] = new List<(int, int)>();
-                    boundaries[key].Add((i, neighbor));
+                    // Si el segmento es para las mismas dos regiones
+                    if ((segment.RegionA == regA && segment.RegionB == regB) ||
+                        (segment.RegionA == regB && segment.RegionB == regA))
+                    {
+                        if (IsNodeAdjacentToSegment(navGraph, i, neighbor, segment))
+                        {
+                            segment.Contacts.Add((i, neighbor));
+                            addedToExisting = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Si no está cerca de ningún segmento actual, crear uno nuevo
+                if (!addedToExisting)
+                {
+                    var newSegment = new BoundarySegment(regA, regB);
+                    newSegment.Contacts.Add((i, neighbor));
+                    allSegments.Add(newSegment);
                 }
             }
         }
-
-        return boundaries;
+        return allSegments;
     }
 
-    static private void GeneratePortals(INavGraph navGraph, PortalGraph portalGraph, Dictionary<(int, int), List<(int nodeA, int nodeB)>> boundaries)
+    static private bool IsNodeAdjacentToSegment(INavGraph navGraph, int nodeA, int nodeB, BoundarySegment segment)
     {
-        foreach (var boundary in boundaries)
+        // Un par de nodos pertenece al mismo segmento si alguno de ellos es vecino
+        // de un nodo que ya está en la lista de ese segmento.
+        foreach (var contact in segment.Contacts)
         {
-            var nodes = boundary.Value;
-            var middlePair = nodes[nodes.Count / 2];
+            if (AreNodesNeighbors(navGraph, nodeA, contact.nodeA) ||
+                AreNodesNeighbors(navGraph, nodeB, contact.nodeB))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static private bool AreNodesNeighbors(INavGraph navGraph, int a, int b)
+    {
+        foreach (int n in navGraph.GetNeighbors(a)) if (n == b) return true;
+        return false;
+    }
+
+    static private void GeneratePortals(INavGraph navGraph, PortalGraph portalGraph, List<BoundarySegment> segments)
+    {
+        foreach (var segment in segments)
+        {
+            // Tomamos el punto medio de la lista de contactos del segmento
+            var middlePair = segment.Contacts[segment.Contacts.Count / 2];
 
             PortalNode newPortal = new PortalNode(
                 _idCounter++,
