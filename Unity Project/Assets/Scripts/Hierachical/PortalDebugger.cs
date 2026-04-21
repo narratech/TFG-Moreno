@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PortalDebuger : MonoBehaviour
+public class PortalDebugger : MonoBehaviour
 {
     public Grid2DProvider graphProvider;
     private INavGraph _navGraph;
