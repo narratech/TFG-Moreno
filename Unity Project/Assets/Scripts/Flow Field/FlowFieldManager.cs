@@ -96,10 +96,8 @@ public class FlowFieldManager
         // 2. Si no, mandamos al Obrero (Engine) a trabajar
         ctx.RegionStates[regionId] = RegionState.Calculating;
 
-        FlowField newData = new FlowField(ctx.NavGraph.NodeCount, targetNode);
-
         // Llamada al Engine (el cerebro de cálculo)
-        FlowFieldEngine.CalculateFlowField(ctx.NavGraph, regionId, targetNode, newData);
+        FlowField newData = FlowFieldEngine.CalculateFlowField(ctx.NavGraph, regionId, targetNode);
 
         ctx.FlowFieldCache[cacheKey] = newData;
         ctx.RegionStates[regionId] = RegionState.Ready;

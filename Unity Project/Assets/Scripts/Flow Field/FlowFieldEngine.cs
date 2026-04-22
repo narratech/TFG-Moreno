@@ -3,69 +3,85 @@ using UnityEngine;
 
 public static class FlowFieldEngine
 {
-    public static void CalculateFlowField(INavGraph graph, int regionId, int targetNode, FlowField data)
+    public static FlowField CalculateFlowField(INavGraph graph, int regionId, int targetNode)
     {
+        FlowField data = new FlowField(graph.GetRegionSize(regionId), targetNode);
         GenerateIntegrationField(graph, regionId, targetNode, data);
-        GenerateContinuousDirections(graph, regionId, data);
+        GenerateVectorField(graph, regionId, data);
+        return data;
     }
 
-    private static void GenerateIntegrationField(INavGraph graph, int regionId, int targetNode, FlowField data)
+    private static void GenerateIntegrationField(INavGraph graph, int regionId, int globalTargetNode, FlowField data)
     {
         PriorityQueue<int, float> pq = new PriorityQueue<int, float>();
 
-        data.IntegrationField[targetNode] = 0;
-        pq.Enqueue(targetNode, 0);
+        // Usamos el mapeo para escribir en el array pequeño del FlowField
+        int localTarget = graph.GetLocalNode(globalTargetNode);
+        data.IntegrationField[localTarget] = 0;
+
+        // En la PriorityQueue guardamos siempre el GlobalID para pedir vecinos al grafo
+        pq.Enqueue(globalTargetNode, 0);
 
         while (pq.Count > 0)
         {
-            int curr = pq.Dequeue();
-            float currDist = data.IntegrationField[curr];
+            int currGlobal = pq.Dequeue();
+            int currLocal = graph.GetLocalNode(currGlobal);
+            float currDist = data.IntegrationField[currLocal];
 
-            foreach (int neighbor in graph.GetNeighbors(curr))
+            foreach (int neighborGlobal in graph.GetNeighbors(currGlobal))
             {
-                // Filtro por región y caminabilidad
-                if (graph.GetRegionId(neighbor) != regionId || !graph.IsWalkable(neighbor))
+                // Solo vecinos de la misma región y caminables
+                if (graph.GetRegionId(neighborGlobal) != regionId || !graph.IsWalkable(neighborGlobal))
                     continue;
 
-                float stepDist = graph.GetDistanceBetweenNeighbors(curr, neighbor);
-                float newDist = currDist + (stepDist * graph.GetNodeCost(neighbor));
+                int neighborLocal = graph.GetLocalNode(neighborGlobal);
+                float stepDist = graph.GetDistanceBetweenNeighbors(currGlobal, neighborGlobal);
+                float newDist = currDist + (stepDist * graph.GetNodeCost(neighborGlobal));
 
-                if (newDist < data.IntegrationField[neighbor])
+                // Actualizamos el array local usando el índice local
+                if (newDist < data.IntegrationField[neighborLocal])
                 {
-                    data.IntegrationField[neighbor] = newDist;
-                    pq.Enqueue(neighbor, newDist);
+                    data.IntegrationField[neighborLocal] = newDist;
+                    pq.Enqueue(neighborGlobal, newDist);
                 }
             }
         }
     }
 
-    private static void GenerateContinuousDirections(INavGraph graph, int regionId, FlowField data)
+    private static void GenerateVectorField(INavGraph graph, int regionId, FlowField data)
     {
-        for (int i = 0; i < graph.NodeCount; i++)
+        // Solo iteramos sobre los nodos que caben en esta región
+        // data.IntegrationField.Length es regW * regH
+        for (int localIdx = 0; localIdx < data.IntegrationField.Length; localIdx++)
         {
-            if (graph.GetRegionId(i) != regionId || !graph.IsWalkable(i)) continue;
-            if (data.IntegrationField[i] == 0) continue; // Es el target
+            int globalIdx = graph.GetGlobalNode(localIdx, regionId);
 
-            Vector3 currentPos = graph.GetNodePosition(i);
+            // Si el mapa no es múltiplo, GetGlobalNode devolverá -1 para nodos fuera de límites
+            if (globalIdx == -1 || !graph.IsWalkable(globalIdx)) continue;
+            if (data.IntegrationField[localIdx] == 0) continue; // Destino
+
+            Vector3 currentPos = graph.GetNodePosition(globalIdx);
             Vector3 flowDir = Vector3.zero;
             float totalWeight = 0f;
 
-            foreach (int neighbor in graph.GetNeighbors(i))
+            foreach (int neighborGlobal in graph.GetNeighbors(globalIdx))
             {
-                if (graph.GetRegionId(neighbor) != regionId) continue;
+                if (graph.GetRegionId(neighborGlobal) != regionId) continue;
 
-                float costDiff = data.IntegrationField[i] - data.IntegrationField[neighbor];
+                int neighborLocal = graph.GetLocalNode(neighborGlobal);
+                float costDiff = data.IntegrationField[localIdx] - data.IntegrationField[neighborLocal];
 
-                if (costDiff > 0 && data.IntegrationField[neighbor] != float.MaxValue)
+                if (costDiff > 0 && data.IntegrationField[neighborLocal] != float.MaxValue)
                 {
-                    Vector3 dir = (graph.GetNodePosition(neighbor) - currentPos).normalized;
+                    Vector3 neighborPos = graph.GetNodePosition(neighborGlobal);
+                    Vector3 dir = (neighborPos - currentPos).normalized;
                     flowDir += dir * costDiff;
                     totalWeight += costDiff;
                 }
             }
 
             if (totalWeight > 0)
-                data.FlowDirections[i] = flowDir.normalized;
+                data.FlowDirections[localIdx] = flowDir.normalized;
         }
     }
 }

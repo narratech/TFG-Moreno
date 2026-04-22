@@ -4,12 +4,13 @@ using UnityEngine;
 public interface INavGraph
 {
     int NodeCount { get; }
-    int RegionCount { get; }
 
     // --- Transformación de Espacio y Consultas ---
     Vector3 GetNodePosition(int index);
     Vector3 GetNodeSize(int index);
     int GetClosestNode(Vector3 worldPosition);
+    int GetLocalNode(int globalNode);
+    int GetGlobalNode(int localNode, int regionId);
 
     // --- Gestión de Regiones (Clustering) ---
     /// <summary>
@@ -21,6 +22,8 @@ public interface INavGraph
     /// Devuelve todos los nodos que pertenecen a una región específica.
     /// </summary>
     IEnumerable<int> GetNodesInRegion(int regionId);
+
+    int GetRegionSize(int regionId);
 
     // --- Relaciones entre Nodos ---
     IEnumerable<int> GetNeighbors(int index);

@@ -15,6 +15,7 @@ public class Grid2DNavGraph : INavGraph
     private readonly int _regH;
     private readonly int _regionsPerRow;
     private readonly int _regionsPerCol;
+    private readonly int _nodesPerRegion;
 
     // --- DATOS DEL COST FIELD ---
     private readonly float[] _staticCosts;
@@ -22,7 +23,7 @@ public class Grid2DNavGraph : INavGraph
     private readonly bool[] _walkability;
 
     public int NodeCount => _width * _height;
-    public int RegionCount => _regionsPerRow * _regionsPerCol;
+
     public event System.Action OnGraphUpdated;
 
     public Grid2DNavGraph(int width, int height, float cellSize, int regionWidth, int regionHeight, Vector3 origin)
@@ -37,6 +38,7 @@ public class Grid2DNavGraph : INavGraph
         // Precalculamos el número de regiones
         _regionsPerRow = Mathf.CeilToInt((float)width / regionWidth);
         _regionsPerCol = Mathf.CeilToInt((float)height / regionHeight);
+        _nodesPerRegion = regionWidth * regionHeight;
 
         _staticCosts = new float[NodeCount];
         _dynamicCosts = new float[NodeCount];
@@ -74,6 +76,37 @@ public class Grid2DNavGraph : INavGraph
         int x = Mathf.Clamp(Mathf.RoundToInt(local.x / _cellSize), 0, _width - 1);
         int z = Mathf.Clamp(Mathf.RoundToInt(local.z / _cellSize), 0, _height - 1);
         return z * _width + x;
+    }
+
+    public int GetLocalNode(int globalNode)
+    {
+        int globalX = globalNode % _width;
+        int globalY = globalNode / _width;
+
+        int localX = globalX % _regW;
+        int localY = globalY % _regH;
+
+        return localY * _regW + localX;
+    }
+
+    public int GetGlobalNode(int localNode, int regionId)
+    {
+        int regY = regionId / _regionsPerRow;
+        int regX = regionId % _regionsPerRow;
+
+        int localX = localNode % _regW;
+        int localY = localNode / _regW;
+
+        int globalX = (regX * _regW) + localX;
+        int globalY = (regY * _regH) + localY;
+
+        // VALIDACIÓN CRÍTICA:
+        // Si la región está en el borde derecho o inferior, 
+        // el nodo global podría estar fuera del mapa real.
+        if (globalX >= _width || globalY >= _height)
+            return -1;
+
+        return (globalY * _width) + globalX;
     }
 
     // Constantes de distancias de vecinos (Optimizan legibilidad y rendimiento)
@@ -167,5 +200,18 @@ public class Grid2DNavGraph : INavGraph
                 yield return y * _width + x;
             }
         }
+    }
+
+    public int GetRegionSize(int regionId)
+    {
+        int regY = regionId / _regionsPerRow;
+        int regX = regionId % _regionsPerRow;
+        // Inicio de la región en coordenadas de nodo
+        int xMin = regX * _regW;
+        int yMin = regY * _regH;
+        // Final de la región (sin pasarse del borde del mundo)
+        int xMax = Mathf.Min(xMin + _regW, _width);
+        int yMax = Mathf.Min(yMin + _regH, _height);
+        return (xMax - xMin) * (yMax - yMin);
     }
 }
