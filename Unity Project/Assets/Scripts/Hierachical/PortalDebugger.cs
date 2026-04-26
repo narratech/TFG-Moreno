@@ -3,60 +3,28 @@ using UnityEngine.InputSystem;
 
 public class PortalDebugger : MonoBehaviour
 {
-    public Grid2DProvider graphProvider;
-    private INavGraph _navGraph;
-    private bool _isBaked = false;
+    Grid2DProvider _provider;
 
-    // Esto solo funcionará en Play Mode
-    private void Start()
+    private void Awake()
     {
-        EnsureBake();
-    }
-
-    private void EnsureBake()
-    {
-        if (_isBaked) return;
-
-        // Intentamos obtener el grafo
-        if (graphProvider != null)
-        {
-            graphProvider.InitializeGraph();
-        }
-        else
-        {
-            return;
-        }
-
-        _navGraph = graphProvider.Graph;
-
-        if (_navGraph != null)
-        {
-            FlowFieldManager.Instance.RegisterContext("Grid_1", _navGraph);
-            _isBaked = true;
-        }
+        _provider = GetComponent<Grid2DProvider>();
     }
 
     private void OnDrawGizmosSelected()
     {
-        // En lugar de esperar al Start, lo intentamos aquí cada vez que sea null
-        if (!_isBaked)
-        {
-            EnsureBake();
-        }
-
-        if (_navGraph == null) return;
+        if (_provider == null)
+            return;
+        if (FlowFieldManager.Instance == null)
+            return;
+        if (!FlowFieldManager.Instance.TryGetContext(_provider.Graph))
+            return;
 
         Gizmos.color = Color.magenta;
-        foreach (var portal in FlowFieldManager.Instance.GetPortalGraph("Grid_1").GetAllPortals())
+        foreach (var portal in FlowFieldManager.Instance.GetPortalGraph(_provider.Graph).GetAllPortals())
         {
-            // Usamos las posiciones que ya tiene el portal (si las guardaste en el Bake)
-            // o las pedimos al navGraph
-            Vector3 posA = portal.PositionA;
-            Vector3 posB = portal.PositionB;
+            Vector3 midle = (portal.PositionA + portal.PositionB) / 2;
 
-            Gizmos.DrawLine(posA, posB);
-            Gizmos.DrawWireSphere(posA, 0.5f);
-            Gizmos.DrawWireSphere(posB, 0.5f);
+            Gizmos.DrawSphere(midle, 0.5f);
         }
     }
 }

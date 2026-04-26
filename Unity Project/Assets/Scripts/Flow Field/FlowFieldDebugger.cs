@@ -1,5 +1,5 @@
 using UnityEngine;
-/*
+
 public class FlowFieldDebugger : MonoBehaviour
 {
     [Header("Configuración Visual")]
@@ -9,6 +9,10 @@ public class FlowFieldDebugger : MonoBehaviour
     [SerializeField] private float _arrowLength = 0.4f;
     [SerializeField] private Color _arrowColor = Color.red;
     [SerializeField][Range(0f, 1f)] private float _planeOpacity = 0.5f;
+
+    public Grid2DProvider grid;
+    
+    private INavGraph graph => grid != null ? grid.Graph : null;
 
     private Material _lineMaterial;
 
@@ -23,24 +27,28 @@ public class FlowFieldDebugger : MonoBehaviour
     private void OnRenderObject()
     {
         if (!_showInGame) return;
-        DrawFlowFieldInternal(true);
+        DrawAllFlows(true);
     }
 
     private void OnDrawGizmos()
     {
         if (_showInGame && Application.isPlaying) return;
-        DrawFlowFieldInternal(false);
+        DrawAllFlows(false);
     }
 
-    private void DrawFlowFieldInternal(bool isInGame)
+    private void DrawAllFlows(bool isInGame)
     {
-        if (FlowFieldManager.Instance == null) return;
 
-        var data = FlowFieldManager.Instance.LastCalculatedData;
-        var graph = FlowFieldManager.Instance.LastUsedGraph;
+        if (FlowFieldManager.Instance == null || graph == null) return;
+        foreach (var kvp in FlowFieldManager.Instance.GetFlowFieldCache(graph))
+        {
+            FlowField data = kvp.Value;
+            DrawFlowField(data, graph, isInGame);
+        }
+    }
 
-        if (data == null || graph == null) return;
-
+    private void DrawFlowField(FlowField data, INavGraph graph, bool isInGame)
+    {
         if (isInGame)
         {
             _lineMaterial.SetPass(0);
@@ -49,27 +57,28 @@ public class FlowFieldDebugger : MonoBehaviour
             if (_showIntegration)
             {
                 GL.Begin(GL.QUADS);
-                for (int i = 0; i < graph.NodeCount; i++)
+                for (int i = 0; i < data.IntegrationField.Length; i++)
                 {
                     float cost = data.IntegrationField[i];
                     if (cost < float.MaxValue)
                     {
                         Color c = Color.Lerp(Color.green, Color.blue, cost / 20f);
                         c.a = _planeOpacity;
-                        DrawInGamePlane(graph.GetNodePosition(i), graph.GetNodeSize(i).x, c);
+                        int globalNode = graph.GetGlobalNode(i, data.RegionId);
+                        DrawInGamePlane(graph.GetNodePosition(globalNode), graph.GetNodeSize(globalNode).x, c);
                     }
                 }
                 GL.End();
             }
-
             // Luego las flechas (LINES)
             if (_showDirections)
             {
                 GL.Begin(GL.LINES);
-                for (int i = 0; i < graph.NodeCount; i++)
+                for (int i = 0; i < data.FlowDirections.Length; i++)
                 {
                     Vector3 dir = data.FlowDirections[i];
-                    if (dir != Vector3.zero) DrawArrow(graph.GetNodePosition(i), dir, true);
+                    int globalNode = graph.GetGlobalNode(i, data.RegionId);
+                    if (dir != Vector3.zero) DrawArrow(graph.GetNodePosition(globalNode), dir, true);
                 }
                 GL.End();
             }
@@ -78,9 +87,10 @@ public class FlowFieldDebugger : MonoBehaviour
         else
         {
             // Lógica normal de Gizmos para el Editor
-            for (int i = 0; i < graph.NodeCount; i++)
+            for (int i = 0; i < data.IntegrationField.Length; i++)
             {
-                Vector3 pos = graph.GetNodePosition(i);
+                int globalNode = graph.GetGlobalNode(i, data.RegionId);
+                Vector3 pos = graph.GetNodePosition(globalNode);
                 if (_showIntegration)
                 {
                     float cost = data.IntegrationField[i];
@@ -163,4 +173,4 @@ public class FlowFieldDebugger : MonoBehaviour
         _lineMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
         _lineMaterial.SetInt("_ZWrite", 0);
     }
-}*/
+}

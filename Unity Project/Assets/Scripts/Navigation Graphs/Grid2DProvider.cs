@@ -27,6 +27,8 @@ public class Grid2DProvider : MonoBehaviour
 
         // Escaneamos el mundo para marcar obstáculos
         ScanObstacles();
+
+        FlowFieldManager.Instance.RegisterContext(Graph);
     }
 
     private void ScanObstacles()

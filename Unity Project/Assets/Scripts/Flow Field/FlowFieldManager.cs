@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Gestor centralizado para manejar múltiples contextos de navegación y sus respectivos campos de flujo.
@@ -13,7 +14,6 @@ public class FlowFieldManager
 
     public class NavContext
     {
-        public INavGraph NavGraph;
         public PortalGraph PortalGraph;
         public HierarchicalRouter Router;
         public RegionState[] RegionStates;
@@ -21,68 +21,72 @@ public class FlowFieldManager
         public Dictionary<(int, int), FlowField> FlowFieldCache = new Dictionary<(int, int), FlowField>();
     }
 
-    private Dictionary<string, NavContext> _contexts = new Dictionary<string, NavContext>();
+    private Dictionary<INavGraph, NavContext> _contexts = new Dictionary<INavGraph, NavContext>();
 
     private FlowFieldManager() { }
 
-    public void RegisterContext(string key, INavGraph nav)
+    public void RegisterContext(INavGraph nav)
     {
-        if (_contexts.ContainsKey(key))
+        if (nav == null)
         {
-            Debug.LogWarning($"Contexto '{key}' ya registrado. Ignorando.");
+            Debug.LogError($"No se puede registrar un contexto con NavGraph nulo.");
             return;
         }
 
-        if (nav == null)
+        if (_contexts.ContainsKey(nav))
         {
-            Debug.LogError($"No se puede registrar un contexto con NavGraph nulo para la clave '{key}'.");
+            Debug.LogWarning($"Contexto ya registrado. Ignorando.");
             return;
         }
 
         PortalGraph pg = new PortalGraph();
         PortalGraphBaker.Bake(nav, pg);
 
-        _contexts[key] = new NavContext
+        _contexts[nav] = new NavContext
         {
-            NavGraph = nav,
             PortalGraph = pg,
             Router = new HierarchicalRouter(pg, nav),
             RegionStates = new RegionState[nav.RegionCount]
         };
     }
 
-    public NavContext GetContext(string key)
+    public NavContext GetContext(INavGraph nav)
     {
-        if (_contexts.TryGetValue(key, out var ctx))
+        if (_contexts.TryGetValue(nav, out var ctx))
             return ctx;
-        Debug.LogError($"Contexto '{key}' no encontrado.");
+        Debug.LogError($"Contexto '{nav}' no encontrado.");
         return null;
     }
-    public INavGraph GetNavGraph(string key)
+    public PortalGraph GetPortalGraph(INavGraph nav)
     {
-        if (_contexts.TryGetValue(key, out var ctx))
-            return ctx.NavGraph;
-        Debug.LogError($"Contexto '{key}' no encontrado.");
-        return null;
-    }
-    public PortalGraph GetPortalGraph(string key)
-    {
-        if (_contexts.TryGetValue(key, out var ctx))
+        if (_contexts.TryGetValue(nav, out var ctx))
             return ctx.PortalGraph;
-        Debug.LogError($"Contexto '{key}' no encontrado.");
+        Debug.LogError($"Contexto '{nav}' no encontrado.");
         return null;
     }
-    public HierarchicalRouter GetRouter(string key)
+    public HierarchicalRouter GetRouter(INavGraph nav)
     {
-        if (_contexts.TryGetValue(key, out var ctx))
+        if (_contexts.TryGetValue(nav, out var ctx))
             return ctx.Router;
-        Debug.LogError($"Contexto '{key}' no encontrado.");
+        Debug.LogError($"Contexto '{nav}' no encontrado.");
+        return null;
+    }
+    public Dictionary<(int, int), FlowField> GetFlowFieldCache(INavGraph nav)
+    {
+        if (_contexts.TryGetValue(nav, out var ctx))
+            return ctx.FlowFieldCache;
+        Debug.LogError($"Contexto '{nav}' no encontrado.");
         return null;
     }
 
-    public FlowField GetFlowField(string contextKey, int regionId, int targetNode)
+    public bool TryGetContext(INavGraph nav)
     {
-        if (!_contexts.TryGetValue(contextKey, out var ctx)) return null;
+        return _contexts.TryGetValue(nav, out var ctx);
+    }
+
+    public FlowField GetFlowField(INavGraph nav, int regionId, int targetNode)
+    {
+        if (!_contexts.TryGetValue(nav, out var ctx)) return null;
 
         var cacheKey = (regionId, targetNode);
 
@@ -97,11 +101,10 @@ public class FlowFieldManager
         ctx.RegionStates[regionId] = RegionState.Calculating;
 
         // Llamada al Engine (el cerebro de cálculo)
-        FlowField newData = FlowFieldEngine.CalculateFlowField(ctx.NavGraph, regionId, targetNode);
-
-        ctx.FlowFieldCache[cacheKey] = newData;
+        
+        FlowFieldEngine.CalculateFlowField(nav, regionId, targetNode);
         ctx.RegionStates[regionId] = RegionState.Ready;
 
-        return newData;
+        return ctx.FlowFieldCache[cacheKey];
     }
 }

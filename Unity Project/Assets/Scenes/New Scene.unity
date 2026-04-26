@@ -740,7 +740,7 @@ Transform:
   m_GameObject: {fileID: 1264470531}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.7, y: 0, z: 36.8}
+  m_LocalPosition: {x: 11.7, y: 0.77, z: 36.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -836,6 +836,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7124073cf7c5f8b4ca3641178805837d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowAgent
+  targetNode: 0
+  speed: 5
 --- !u!1 &1469837800
 GameObject:
   m_ObjectHideFlags: 0
@@ -1092,37 +1094,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1573324627}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1683297621
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1683297622}
-  m_Layer: 0
-  m_Name: Target
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1683297622
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1683297621}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.28, y: -0, z: 9.49}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1808175719
 GameObject:
   m_ObjectHideFlags: 0
@@ -1539,14 +1510,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6822cf1a31fe464aaea629a9e5dd54b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PortalDebuger
-  graphProvider: {fileID: 1999247478}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1055241787}
   - {fileID: 1897352271}
-  - {fileID: 1683297622}
   - {fileID: 1252518796}
   - {fileID: 1999247481}
   - {fileID: 1007383738}

@@ -4,6 +4,7 @@ using UnityEngine;
 public interface INavGraph
 {
     int NodeCount { get; }
+    int RegionCount { get; }
 
     // --- Transformación de Espacio y Consultas ---
     Vector3 GetNodePosition(int index);

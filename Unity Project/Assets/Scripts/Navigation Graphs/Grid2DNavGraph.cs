@@ -23,6 +23,7 @@ public class Grid2DNavGraph : INavGraph
     private readonly bool[] _walkability;
 
     public int NodeCount => _width * _height;
+    public int RegionCount => _regionsPerRow * _regionsPerCol;
 
     public event System.Action OnGraphUpdated;
 

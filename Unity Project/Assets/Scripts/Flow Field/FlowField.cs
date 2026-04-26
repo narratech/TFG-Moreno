@@ -4,13 +4,13 @@ public class FlowField
 {
     public readonly float[] IntegrationField; // Coste acumulado al destino
     public readonly Vector3[] FlowDirections; // Vectores de dirección finales
-    public readonly int DestinationNode;      // El objetivo de este campo
+    public readonly int RegionId; // Región a la que pertenece este campo de flujo
 
-    public FlowField(int nodeCount, int destinationNode)
+    public FlowField(int nodeCount, int regionId)
     {
-        DestinationNode = destinationNode;
         IntegrationField = new float[nodeCount];
         FlowDirections = new Vector3[nodeCount];
+        RegionId = regionId;
 
         // Inicialización: Infinito para costes, cero para direcciones
         for (int i = 0; i < nodeCount; i++)
