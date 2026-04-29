@@ -15,9 +15,8 @@ public class HierarchicalRouter
     /// <summary>
     /// Devuelve un diccionario con la distancia mínima desde startPos a todos los portales alcanzables.
     /// </summary>
-    public Dictionary<int, float> GetPortalDistanceField(Vector3 targetPos)
+    public Dictionary<int, float> GetPortalDistanceField(int targetNode)
     {
-        int targetNode = _navGraph.GetClosestNode(targetPos);
         int targetRegion = _navGraph.GetRegionId(targetNode);
 
         // 1. FloodFill desde el destino hasta los portales de SU región

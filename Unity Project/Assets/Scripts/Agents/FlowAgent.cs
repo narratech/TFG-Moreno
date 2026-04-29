@@ -3,12 +3,16 @@ using UnityEngine;
 public class FlowFieldAgent : MonoBehaviour
 {
     public INavGraph graph;
-    public int targetNode;
     public float speed = 5f;
 
-    private void Awake()
+    public Grid2DProvider grid;
+    public Transform targetTransform;
+    private void Start()
     {
-
+        if (grid != null)
+        {
+            graph = grid.Graph;
+        }
     }
 
     void Update()
@@ -17,14 +21,16 @@ public class FlowFieldAgent : MonoBehaviour
 
         int myGlobalNode = graph.GetClosestNode(transform.position);
 
+        int targetGlobalNode = graph.GetClosestNode(targetTransform.position);
+
         int myRegion = graph.GetRegionId(myGlobalNode);
 
         FlowField field = null;
-        if (targetNode >= 0)
+        if (targetGlobalNode >= 0)
         {
-            field = FlowFieldManager.Instance.GetFlowField(graph, myRegion, targetNode);
+            field = FlowFieldManager.Instance.GetFlowField(graph, myRegion, targetGlobalNode);
         }
-
+        Debug.Log($"Agent at node {myGlobalNode} in region {myRegion} targeting node {targetGlobalNode}. Field found: {field != null}");
         if (field != null)
         {
             int localIdx = graph.GetLocalNode(myGlobalNode);

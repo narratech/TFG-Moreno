@@ -1,4 +1,5 @@
 using UnityEngine;
+using static FlowFieldManager;
 
 public class FlowFieldDebugger : MonoBehaviour
 {
@@ -38,12 +39,13 @@ public class FlowFieldDebugger : MonoBehaviour
 
     private void DrawAllFlows(bool isInGame)
     {
-
         if (FlowFieldManager.Instance == null || graph == null) return;
-        foreach (var kvp in FlowFieldManager.Instance.GetFlowFieldCache(graph))
+        int targetNode = FlowFieldManager.Instance.lastTargetNode;
+        FlowFieldRoute route = FlowFieldManager.Instance.GetRoute(graph, targetNode);
+        if (route == null) return;
+        foreach (var kvp in route.FlowFields)
         {
-            FlowField data = kvp.Value;
-            DrawFlowField(data, graph, isInGame);
+            DrawFlowField(kvp.Value, graph, isInGame);
         }
     }
 

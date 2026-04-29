@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using static FlowFieldManager;
 
 public class PortalDebugger : MonoBehaviour
 {
@@ -20,7 +21,8 @@ public class PortalDebugger : MonoBehaviour
             return;
 
         Gizmos.color = Color.magenta;
-        foreach (var portal in FlowFieldManager.Instance.GetPortalGraph(_provider.Graph).GetAllPortals())
+        NavContext ctx = FlowFieldManager.Instance.GetContext(_provider.Graph);
+        foreach (var portal in ctx.PortalGraph.GetAllPortals())
         {
             Vector3 midle = (portal.PositionA + portal.PositionB) / 2;
 

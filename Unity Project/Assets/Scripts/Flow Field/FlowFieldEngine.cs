@@ -1,80 +1,87 @@
-﻿using System.Collections.Generic;
+﻿using NUnit.Framework;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
+using static FlowFieldManager;
 
 public static class FlowFieldEngine
 {
-    public static void CalculateFlowField(INavGraph graph, int regionId, int targetNode)
+    private static int NUM_REGIONLEVELS = 1; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
+
+    public static FlowField GetFlowFieldForDestination(
+        INavGraph graph,
+        int targetNode,
+        int initalNode)
     {
-        // Creamos un mapa de una sola región para reutilizar la lógica multi
-        Dictionary<int, FlowField> regionDataMap = new Dictionary<int, FlowField>
-        {
-            { regionId, new FlowField(graph.GetRegionSize(regionId), regionId) }
-        };
-
-        GenerateMultiIntegrationField(graph, new List<int> { regionId }, targetNode, regionDataMap);
-        GenerateMultiVectorField(graph, regionDataMap);
-
-        // Guardamos en memoria
+        // Verificar si hay Ruta directa sin necesidad de generar flowfield
         FlowFieldManager manager = FlowFieldManager.Instance;
-        if (manager.TryGetContext(graph))
+        FlowFieldRoute route = null;
+        if (!manager.TryGetRoute(graph, targetNode))
         {
-            var context = manager.GetContext(graph);
-            context.FlowFieldCache[(regionId, targetNode)] = regionDataMap[regionId];
+            manager.RegisterRoute(graph, targetNode);
         }
-    }
+        route = manager.GetRoute(graph, targetNode);
 
-    public static bool CalculateMultiFlowField(INavGraph graph, List<int> regionIds, int targetNode)
-    {
-        FlowFieldManager manager = FlowFieldManager.Instance;
-        if (graph == null)
+        if (route.FlowFields.ContainsKey(graph.GetRegionId(initalNode)))
         {
-            Debug.LogError("El NavGraph proporcionado es nulo.");
-            return false;
+            return route.FlowFields[graph.GetRegionId(initalNode)];
         }
-        if (!manager.TryGetContext(graph)) return false;
 
-        // 1. Inicialización
+        // Generar FlowFields para el destino dado
+        // 1. Identificar las regiones relevantes para el nodo destino y la cantidad de niveles que queremos generar
+
+        List<int> regionIds = new List<int>();
+        List<int> lastRegionIds = new List<int>();
+        List<int> portalIds = new List<int>();
+
+        Dictionary<int, float> portalDistMap = route.DistanceMaps;
+
+
+        // Generamos camposde integración para cada región relevante
+        NavContext context = manager.GetContext(graph);
+        PortalGraph portalGraph = context.PortalGraph;
         Dictionary<int, FlowField> regionDataMap = new Dictionary<int, FlowField>();
-        foreach (int rid in regionIds)
+        List<int> allRegionIds = regionIds + lastRegionIds;
+        Dictionary<int, float> destinantions = new Dictionary<int, float>();
+        foreach (var item in portalIds)
         {
-            regionDataMap[rid] = new FlowField(graph.GetRegionSize(rid), rid);
+            PortalNode pn = portalGraph.GetPortal(item);
+            int regIdA = pn.RegionA;
+            int regIdB = pn.RegionB;
+            
+            destinantions[item] = portalDistMap[item];
         }
+        GenerateIntegartionFields(graph, allRegionIds, destinantions, regionDataMap);
 
-        // Seguridad: ¿El target está en las regiones pedidas?
-        int targetRegion = graph.GetRegionId(targetNode);
-        if (!regionDataMap.ContainsKey(targetRegion))
-        {
-            Debug.LogError("El TargetNode no pertenece a ninguna de las regiones proporcionadas.");
-            return false;
-        }
-
-        // 2. Ejecución de algoritmos
-        GenerateMultiIntegrationField(graph, regionIds, targetNode, regionDataMap);
-        GenerateMultiVectorField(graph, regionDataMap);
-
-        // 3. Persistencia en Memoria
-        var context = manager.GetContext(graph);
-        foreach (var kvp in regionDataMap)
-        {
-            context.FlowFieldCache[(kvp.Key, targetNode)] = kvp.Value;
-        }
-
-        return true;
     }
 
-    public static void GenerateMultiIntegrationField(INavGraph graph, List<int> regionIds, int globalTargetNode, Dictionary<int, FlowField> regionDataMap)
+    private static void GenerateIntegartionFields(
+        INavGraph graph,
+        List<int> regionIds,
+        Dictionary<int, float> destinations,
+        Dictionary<int, FlowField> regionDataMap)
     {
-        HashSet<int> regionSet = new HashSet<int>(regionDataMap.Keys);
-
-        // 2. Dijkstra Multi-Región
+        // 1. Setup para búsqueda rápida de validez de región
+        HashSet<int> activeRegions = new HashSet<int>(regionIds);
         PriorityQueue<int, float> pq = new PriorityQueue<int, float>();
 
-        // El target está en una de las regiones. Lo inicializamos.
-        int targetRegion = graph.GetRegionId(globalTargetNode);
-        int localTarget = graph.GetLocalNode(globalTargetNode);
-        regionDataMap[targetRegion].IntegrationField[localTarget] = 0;
-        pq.Enqueue(globalTargetNode, 0);
+        // 2. Sembrar los puntos de destino (Sinks)
+        foreach (var kvp in destinations)
+        {
+            int globalNode = kvp.Key;
+            float initialCost = kvp.Value;
+            int rId = graph.GetRegionId(globalNode);
 
+            // Solo sembramos si el nodo pertenece a nuestras regiones de interés
+            if (activeRegions.Contains(rId))
+            {
+                int localIdx = graph.GetLocalNode(globalNode);
+                regionDataMap[rId].IntegrationField[localIdx] = initialCost;
+                pq.Enqueue(globalNode, initialCost);
+            }
+        }
+
+        // 3. Algoritmo de Dijkstra Multi-Región
         while (pq.Count > 0)
         {
             int currGlobal = pq.Dequeue();
@@ -84,25 +91,28 @@ public static class FlowFieldEngine
 
             foreach (int neighborGlobal in graph.GetNeighbors(currGlobal))
             {
-                int neighborRegion = graph.GetRegionId(neighborGlobal);
+                int nRegion = graph.GetRegionId(neighborGlobal);
 
-                if (!regionSet.Contains(neighborRegion) || !graph.IsWalkable(neighborGlobal))
+                // Regla de Oro: Solo expandir si el vecino está en el set de regiones 
+                // que estamos calculando y es caminable.
+                if (!activeRegions.Contains(nRegion) || !graph.IsWalkable(neighborGlobal))
                     continue;
 
-                int neighborLocal = graph.GetLocalNode(neighborGlobal);
+                int nLocal = graph.GetLocalNode(neighborGlobal);
                 float stepDist = graph.GetDistanceBetweenNeighbors(currGlobal, neighborGlobal);
                 float newDist = currDist + (stepDist * graph.GetNodeCost(neighborGlobal));
 
-                if (newDist < regionDataMap[neighborRegion].IntegrationField[neighborLocal])
+                // Si encontramos un camino más corto hacia este nodo
+                if (newDist < regionDataMap[nRegion].IntegrationField[nLocal])
                 {
-                    regionDataMap[neighborRegion].IntegrationField[neighborLocal] = newDist;
+                    regionDataMap[nRegion].IntegrationField[nLocal] = newDist;
                     pq.Enqueue(neighborGlobal, newDist);
                 }
             }
         }
     }
 
-    private static void GenerateMultiVectorField(INavGraph graph, Dictionary<int, FlowField> regionDataMap)
+    private static void GenerateVectorFields(INavGraph graph, Dictionary<int, FlowField> regionDataMap)
     {
         // Creamos el set de regiones una sola vez para búsqueda rápida O(1)
         HashSet<int> regionSet = new HashSet<int>(regionDataMap.Keys);

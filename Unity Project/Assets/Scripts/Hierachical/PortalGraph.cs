@@ -40,7 +40,7 @@ public class PortalGraph
         foreach (var edge in _adjacency[portalId])
         {
             int neighborId = edge.TargetPortalId;
-            if (_adjacency.ContainsKey(neighborId))
+            if (_adjacency.ContainsKey(neighborId)) 
             {
                 // El vecino quita la arista que apunta al portal eliminado
                 _adjacency[neighborId].RemoveAll(e => e.TargetPortalId == portalId);
@@ -94,6 +94,21 @@ public class PortalGraph
     public PortalNode GetPortal(int id) => _portals.Find(p => p.Id == id);
 
     public IEnumerable<PortalNode> GetAllPortals() => _portals;
+    public int Size => _portals.Count;
+
+    public List<int> GetPortalsBetweenRegions(int regionA, int regionB)
+    {
+        List<int> result = new List<int>();
+        foreach (var portal in _portals)
+        {
+            if ((portal.RegionA == regionA && portal.RegionB == regionB) ||
+                (portal.RegionA == regionB && portal.RegionB == regionA))
+            {
+                result.Add(portal.Id);
+            }
+        }
+        return result;
+    }
 }
 
 public class PortalNode

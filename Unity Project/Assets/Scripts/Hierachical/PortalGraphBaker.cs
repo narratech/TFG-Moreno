@@ -3,8 +3,6 @@ using UnityEngine;
 
 public static class PortalGraphBaker
 {
-    static private int _idCounter = 0;
-
     public class BoundarySegment
     {
         public int RegionA;
@@ -20,7 +18,6 @@ public static class PortalGraphBaker
 
     static public void Bake(INavGraph navGraph, PortalGraph portalGraph)
     {
-        _idCounter = 0;
         // 1: Generar las fronteras entre regiones
         var boundaries = GenerateSegments(navGraph);
         // 2: Generar los portales (Fronteras)
@@ -122,7 +119,7 @@ public static class PortalGraphBaker
             var middlePair = segment.Contacts[segment.Contacts.Count / 2];
 
             PortalNode newPortal = new PortalNode(
-                _idCounter++,
+                portalGraph.Size,
                 middlePair.nodeA,
                 middlePair.nodeB,
                 navGraph.GetRegionId(middlePair.nodeA),
@@ -191,5 +188,41 @@ public static class PortalGraphBaker
     {
         if (!map.ContainsKey(regionId)) map[regionId] = new List<PortalNode>();
         if (!map[regionId].Contains(portal)) map[regionId].Add(portal);
+    }
+
+    public static BoundarySegment GetBoundaryForPortal(INavGraph navGraph, PortalGraph portalGraph, int portalId)
+    {
+        PortalNode portal = portalGraph.GetPortal(portalId);
+        // Generar un segmento en base a los nodos de contacto del portal
+        int regA = portal.RegionA;
+        int regB = portal.RegionB;
+
+        BoundarySegment segment = new BoundarySegment(regA, regB);
+        // Buscamos hacia los lados todos los nodos de la region A que estén conectados a la región B
+        // cola de nodos a procesar
+        Queue<int> toProcess = new Queue<int>();
+        toProcess.Enqueue(portal.NodeA);
+        HashSet<int> visited = new HashSet<int>();
+        while (toProcess.Count > 0)
+        {
+            int current = toProcess.Dequeue();
+            visited.Add(current);
+            foreach (int neighbor in navGraph.GetNeighbors(current))
+            {
+                if (!navGraph.IsWalkable(neighbor)) continue;
+                int neighborRegion = navGraph.GetRegionId(neighbor);
+                if (neighborRegion == regB)
+                {
+                    // Este nodo es un contacto entre regA y regB
+                    segment.Contacts.Add((current, neighbor));
+                }
+                else if (neighborRegion == regA && !visited.Contains(neighbor))
+                {
+                    // Este nodo es parte de la región A, seguir expandiendo
+                    toProcess.Enqueue(neighbor);
+                }
+            }
+        }
+        return segment;
     }
 }
