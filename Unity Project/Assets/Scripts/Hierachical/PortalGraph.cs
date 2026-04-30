@@ -14,10 +14,13 @@ public class PortalGraph
     // Clave: Id del portal, Valor: Lista de aristas hacia otros portales
     private Dictionary<int, List<PortalEdge>> _adjacency;
 
+    private Dictionary<int, List<PortalNode>> _regionToPortals;
+
     public PortalGraph()
     {
         _portals = new List<PortalNode>();
         _adjacency = new Dictionary<int, List<PortalEdge>>();
+        _regionToPortals = new Dictionary<int, List<PortalNode>>();
     }
 
     public void AddPortal(PortalNode portal)
@@ -26,6 +29,14 @@ public class PortalGraph
 
         _portals.Add(portal);
         _adjacency[portal.Id] = new List<PortalEdge>();
+
+        // Mapeamos el portal a sus regiones para facilitar búsquedas posteriores
+        if (!_regionToPortals.ContainsKey(portal.RegionA))
+            _regionToPortals[portal.RegionA] = new List<PortalNode>();
+        if (!_regionToPortals.ContainsKey(portal.RegionB))
+            _regionToPortals[portal.RegionB] = new List<PortalNode>();
+        _regionToPortals[portal.RegionA].Add(portal);
+        _regionToPortals[portal.RegionB].Add(portal);
     }
 
     /// <summary>
@@ -52,6 +63,14 @@ public class PortalGraph
 
         // 3. Lo quitamos de la lista maestra
         _portals.RemoveAll(p => p.Id == portalId);
+
+        // 4. Lo quitamos de los mapeos de regiones
+        PortalNode portal = GetPortal(portalId);
+        if (portal != null)
+        {
+            _regionToPortals[portal.RegionA].RemoveAll(p => p.Id == portalId);
+            _regionToPortals[portal.RegionB].RemoveAll(p => p.Id == portalId);
+        }
     }
 
     public void AddEdge(int portalId1, int portalId2, float cost)
@@ -61,8 +80,13 @@ public class PortalGraph
         // Evitar duplicados antes de añadir
         RemoveEdge(portalId1, portalId2);
 
-        _adjacency[portalId1].Add(new PortalEdge(portalId2, cost));
-        _adjacency[portalId2].Add(new PortalEdge(portalId1, cost));
+        // Región común entre los dos portales para asignar el costo correctamente
+        int regionId = GetPortal(portalId1).RegionA == GetPortal(portalId2).RegionA || 
+                       GetPortal(portalId1).RegionA == GetPortal(portalId2).RegionB ? 
+                       GetPortal(portalId1).RegionA : GetPortal(portalId1).RegionB;
+
+        _adjacency[portalId1].Add(new PortalEdge(portalId2, cost, regionId));
+        _adjacency[portalId2].Add(new PortalEdge(portalId1, cost, regionId));
     }
 
     public void RemoveEdge(int portalId1, int portalId2)
@@ -98,16 +122,23 @@ public class PortalGraph
 
     public List<int> GetPortalsBetweenRegions(int regionA, int regionB)
     {
-        List<int> result = new List<int>();
-        foreach (var portal in _portals)
+        List<int> portalIds = new List<int>();
+        if (_regionToPortals.TryGetValue(regionA, out var portalsA))
         {
-            if ((portal.RegionA == regionA && portal.RegionB == regionB) ||
-                (portal.RegionA == regionB && portal.RegionB == regionA))
+            foreach (var portal in portalsA)
             {
-                result.Add(portal.Id);
+                if ((portal.RegionA == regionB || portal.RegionB == regionB) && !portalIds.Contains(portal.Id))
+                {
+                    portalIds.Add(portal.Id);
+                }
             }
         }
-        return result;
+        return portalIds;
+    }
+
+    public List<PortalNode> GetPortalsInRegion(int regionId)
+    {
+        return _regionToPortals.TryGetValue(regionId, out var portals) ? portals : new List<PortalNode>();
     }
 }
 
@@ -142,10 +173,12 @@ public struct PortalEdge
 {
     public int TargetPortalId;
     public float Cost;
+    public int RegionId;
 
-    public PortalEdge(int id, float cost)
+    public PortalEdge(int id, float cost, int RegId)
     {
         TargetPortalId = id;
         Cost = cost;
+        RegionId = RegId;
     }
 }

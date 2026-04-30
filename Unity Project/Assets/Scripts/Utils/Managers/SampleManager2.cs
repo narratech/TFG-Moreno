@@ -31,7 +31,11 @@ public class SampleManager2 : MonoBehaviour
     {
         int destination = graphProvider.Graph.GetClosestNode(pos);
         if (destination == -1) return;
-        int regionId = graphProvider.Graph.GetRegionId(destination);
-        FlowFieldEngine.CalculateFlowField(graphProvider.Graph, regionId, destination);
+
+        FlowFieldManager.Instance.RegisterRoute(graphProvider.Graph, destination);
+        foreach (var agent in FlowFieldAgent.AllAgents)
+        {
+            agent.SetDestination(destination);
+        }
     }
 }

@@ -6,63 +6,119 @@ using static FlowFieldManager;
 
 public static class FlowFieldEngine
 {
-    private static int NUM_REGIONLEVELS = 1; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
+    private static int NUM_REGIONLEVELS = 2; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
 
-    public static FlowField GetFlowFieldForDestination(
-        INavGraph graph,
-        int targetNode,
-        int initalNode)
+    public static FlowField GetFlowFieldForDestination(INavGraph graph, int targetNode, int initialNode)
     {
-        // Verificar si hay Ruta directa sin necesidad de generar flowfield
+        if (targetNode == -1 || initialNode == -1)
+        {
+            Debug.LogError("Invalid target or initial node for FlowField calculation.");
+            return null;
+        }
         FlowFieldManager manager = FlowFieldManager.Instance;
-        FlowFieldRoute route = null;
+        int initialRegion = graph.GetRegionId(initialNode);
+        int targetRegion = graph.GetRegionId(targetNode);
+
         if (!manager.TryGetRoute(graph, targetNode))
         {
-            manager.RegisterRoute(graph, targetNode);
+            Debug.Log("No route cached, calculating new route for target node: " + targetNode);
+            return null;
         }
-        route = manager.GetRoute(graph, targetNode);
+        FlowFieldRoute route = manager.GetRoute(graph, targetNode);
 
-        if (route.FlowFields.ContainsKey(graph.GetRegionId(initalNode)))
+        // Si la región donde está el agente ya tiene FlowField, lo devolvemos inmediatamente
+        if (route.FlowFields.TryGetValue(initialRegion, out var cached)) return cached;
+
+        // --- FASE 1: IDENTIFICACIÓN DE REGIONES ---
+        HashSet<int> insideRegions = new HashSet<int>(); // Regiones que contienen el target o están dentro del rango de cálculo
+        HashSet<int> frontierRegions = new HashSet<int> { initialRegion }; // Regiones que forman la frontera de cálculo, empezando por la inicial
+        HierarchicalRouter router = manager.GetContext(graph).Router;
+        var portalDistMap = route.DistanceMaps;
+
+        for (int i = 0; i < NUM_REGIONLEVELS; i++)
         {
-            return route.FlowFields[graph.GetRegionId(initalNode)];
+            HashSet<int> nextIterationRegs = new HashSet<int>();
+            foreach (int rid in frontierRegions)
+            {
+                if (insideRegions.Contains(rid)) continue; // Si ya sabemos que esta región está dentro, no la procesamos
+
+                if (route.FlowFields.ContainsKey(rid))
+                {
+                    nextIterationRegs.Add(rid);
+                    continue;
+                }
+
+                if (rid == targetRegion) continue;
+                foreach (int nextRid in GetNextRegions(graph, rid, portalDistMap, router))
+                {
+                    nextIterationRegs.Add(nextRid);
+                }
+
+                insideRegions.Add(rid);
+            }
+            frontierRegions = nextIterationRegs;
         }
 
-        // Generar FlowFields para el destino dado
-        // 1. Identificar las regiones relevantes para el nodo destino y la cantidad de niveles que queremos generar
+        // --- FASE 2: PREPARACIÓN DE SUMIDEROS (SINKS) ---
+        Dictionary<int, float> destinations = new Dictionary<int, float>();
 
-        List<int> regionIds = new List<int>();
-        List<int> lastRegionIds = new List<int>();
-        List<int> portalIds = new List<int>();
+        // Portales de entrada de las regiones "frontera" para dar continuidad
+        foreach (int rid in frontierRegions)
+        {
+            if (rid == targetRegion)
+            {
+                destinations[targetNode] = 0f;
+                continue;
+            }
+            List<PortalNode> entryPortals = router.SelectEntryPortals(rid, portalDistMap);
+            foreach (var portal in entryPortals)
+            {
+                int node = portal.RegionA == rid ? portal.NodeA : portal.NodeB;
+                destinations[node] = portalDistMap[portal.Id];
+            }
+        }
 
-        Dictionary<int, float> portalDistMap = route.DistanceMaps;
-
-
-        // Generamos camposde integración para cada región relevante
-        NavContext context = manager.GetContext(graph);
-        PortalGraph portalGraph = context.PortalGraph;
+        // --- FASE 3: CÁLCULO ---
         Dictionary<int, FlowField> regionDataMap = new Dictionary<int, FlowField>();
-        List<int> allRegionIds = regionIds + lastRegionIds;
-        Dictionary<int, float> destinantions = new Dictionary<int, float>();
-        foreach (var item in portalIds)
-        {
-            PortalNode pn = portalGraph.GetPortal(item);
-            int regIdA = pn.RegionA;
-            int regIdB = pn.RegionB;
-            
-            destinantions[item] = portalDistMap[item];
-        }
-        GenerateIntegartionFields(graph, allRegionIds, destinantions, regionDataMap);
+        // Necesitamos crear FlowFields tanto para las nuevas como para las frontera para que Dijkstra fluya
+        HashSet<int> allRelevantRegs = new HashSet<int>(insideRegions);
+        foreach (int rid in frontierRegions) allRelevantRegs.Add(rid);
 
+        foreach (int rid in allRelevantRegs)
+            regionDataMap[rid] = new FlowField(graph.GetRegionSize(rid), rid);
+
+        GenerateIntegartionFields(graph, allRelevantRegs, destinations, regionDataMap);
+        GenerateVectorFields(graph, regionDataMap);
+
+        // --- FASE 4: PERSISTENCIA ---
+        foreach (int rid in insideRegions)
+        {
+
+            route.FlowFields[rid] = regionDataMap[rid];
+        }
+
+        return route.FlowFields[initialRegion];
+    }
+
+    private static List<int> GetNextRegions(INavGraph graph, int regionId, Dictionary<int, float> distanceMap, HierarchicalRouter router)
+    {
+        List<int> nextRegions = new List<int>();
+        List<PortalNode> portals = router.SelectExitPortals(regionId, distanceMap);
+        foreach (var portal in portals)
+        {
+            int nextRid = portal.RegionA == regionId ? portal.RegionB : portal.RegionA;
+            if (!nextRegions.Contains(nextRid)) nextRegions.Add(nextRid);
+        }
+        return nextRegions;
     }
 
     private static void GenerateIntegartionFields(
         INavGraph graph,
-        List<int> regionIds,
+        HashSet<int> regionIds,
         Dictionary<int, float> destinations,
         Dictionary<int, FlowField> regionDataMap)
     {
         // 1. Setup para búsqueda rápida de validez de región
-        HashSet<int> activeRegions = new HashSet<int>(regionIds);
         PriorityQueue<int, float> pq = new PriorityQueue<int, float>();
 
         // 2. Sembrar los puntos de destino (Sinks)
@@ -73,7 +129,7 @@ public static class FlowFieldEngine
             int rId = graph.GetRegionId(globalNode);
 
             // Solo sembramos si el nodo pertenece a nuestras regiones de interés
-            if (activeRegions.Contains(rId))
+            if (regionIds.Contains(rId))
             {
                 int localIdx = graph.GetLocalNode(globalNode);
                 regionDataMap[rId].IntegrationField[localIdx] = initialCost;
@@ -95,7 +151,7 @@ public static class FlowFieldEngine
 
                 // Regla de Oro: Solo expandir si el vecino está en el set de regiones 
                 // que estamos calculando y es caminable.
-                if (!activeRegions.Contains(nRegion) || !graph.IsWalkable(neighborGlobal))
+                if (!regionIds.Contains(nRegion) || !graph.IsWalkable(neighborGlobal))
                     continue;
 
                 int nLocal = graph.GetLocalNode(neighborGlobal);

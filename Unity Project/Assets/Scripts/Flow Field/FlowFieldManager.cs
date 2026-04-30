@@ -10,7 +10,7 @@ public class FlowFieldManager
     private static FlowFieldManager _instance;
     public static FlowFieldManager Instance => _instance ??= new FlowFieldManager();
 
-    public int lastTargetNode;
+    public int lastTargetNode = -1;
 
     public enum RegionState { Uninitialized, Calculating, Ready, Dirty }
 
@@ -136,14 +136,6 @@ public class FlowFieldManager
             {
                 return cachedField;
             }
-            else
-            {
-                Debug.LogError($"No se encontró FlowField para RegionId {regionId} en TargetNode {targetNode} en NavGraph '{nav}'.");
-            }
-        }
-        else
-        {
-            Debug.LogError($"No se encontró ruta para TargetNode {targetNode} en NavGraph '{nav}'.");
         }
 
         return null;

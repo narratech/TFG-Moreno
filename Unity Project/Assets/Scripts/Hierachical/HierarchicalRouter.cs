@@ -11,7 +11,7 @@ public class HierarchicalRouter
         _portalGraph = portalGraph;
         _navGraph = navGraph;
     }
-     
+
     /// <summary>
     /// Devuelve un diccionario con la distancia mínima desde startPos a todos los portales alcanzables.
     /// </summary>
@@ -103,5 +103,38 @@ public class HierarchicalRouter
             }
         }
         return nextPortal;
+    }
+    public List<PortalNode> SelectExitPortals(int regionId, Dictionary<int, float> distanceMap)
+    {
+        List<PortalNode> portals = _portalGraph.GetPortalsInRegion(regionId);
+        List<PortalNode> exitPortals = new List<PortalNode>();
+        foreach (var portal in portals)
+        {
+            int nextPortalId = GetNextPortal(portal.Id, distanceMap);
+            if (nextPortalId == -1) continue; // No hay camino desde este portal
+            PortalNode nextPortal = _portalGraph.GetPortal(nextPortalId);
+            if (nextPortal.RegionA != regionId && nextPortal.RegionB == regionId)
+            { // Este portal es una salida de la región
+                exitPortals.Add(portal);
+            }
+        }
+        return portals;
+    }
+
+    public List<PortalNode> SelectEntryPortals(int regionId, Dictionary<int, float> distanceMap)
+    {
+        List<PortalNode> portals = _portalGraph.GetPortalsInRegion(regionId);
+        List<PortalNode> entryPortals = new List<PortalNode>();
+        foreach (var portal in portals)
+        {
+            int nextPortalId = GetNextPortal(portal.Id, distanceMap);
+            if (nextPortalId == -1) continue; // No hay camino desde este portal
+            PortalNode nextPortal = _portalGraph.GetPortal(nextPortalId);
+            if (nextPortal.RegionA == regionId || nextPortal.RegionB == regionId)
+            { // Este portal es una entrada a la región
+                entryPortals.Add(portal);
+            }
+        }
+        return entryPortals;
     }
 }

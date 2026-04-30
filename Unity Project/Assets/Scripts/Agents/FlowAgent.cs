@@ -1,12 +1,17 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class FlowFieldAgent : MonoBehaviour
 {
     public INavGraph graph;
     public float speed = 5f;
-
+    public int targetNode = -1;
     public Grid2DProvider grid;
-    public Transform targetTransform;
+
+    public static List<FlowFieldAgent> AllAgents = new List<FlowFieldAgent>();
+    void OnEnable() => AllAgents.Add(this);
+    void OnDisable() => AllAgents.Remove(this);
+
     private void Start()
     {
         if (grid != null)
@@ -21,16 +26,18 @@ public class FlowFieldAgent : MonoBehaviour
 
         int myGlobalNode = graph.GetClosestNode(transform.position);
 
-        int targetGlobalNode = graph.GetClosestNode(targetTransform.position);
-
         int myRegion = graph.GetRegionId(myGlobalNode);
 
         FlowField field = null;
-        if (targetGlobalNode >= 0)
+        if (targetNode >= 0)
         {
-            field = FlowFieldManager.Instance.GetFlowField(graph, myRegion, targetGlobalNode);
+            field = FlowFieldManager.Instance.GetFlowField(graph, myRegion, targetNode);
+            if (field == null)
+            {
+                FlowFieldEngine.GetFlowFieldForDestination(graph, targetNode, myGlobalNode);
+            }
         }
-        Debug.Log($"Agent at node {myGlobalNode} in region {myRegion} targeting node {targetGlobalNode}. Field found: {field != null}");
+
         if (field != null)
         {
             int localIdx = graph.GetLocalNode(myGlobalNode);
@@ -42,5 +49,13 @@ public class FlowFieldAgent : MonoBehaviour
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir), 0.1f);
             }
         }
+    }
+
+    public void SetDestination(int globalNode)
+    {
+        // Aquí podrías agregar lógica adicional si quieres que el agente haga algo específico al cambiar de destino
+        Debug.Log($"Destino del agente establecido a nodo global {globalNode}");
+        targetNode = globalNode;
+
     }
 }

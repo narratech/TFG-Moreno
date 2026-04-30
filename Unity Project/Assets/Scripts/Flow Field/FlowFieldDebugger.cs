@@ -41,6 +41,7 @@ public class FlowFieldDebugger : MonoBehaviour
     {
         if (FlowFieldManager.Instance == null || graph == null) return;
         int targetNode = FlowFieldManager.Instance.lastTargetNode;
+        if (targetNode == -1) return;
         FlowFieldRoute route = FlowFieldManager.Instance.GetRoute(graph, targetNode);
         if (route == null) return;
         foreach (var kvp in route.FlowFields)
