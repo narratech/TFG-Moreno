@@ -6,7 +6,7 @@ using static FlowFieldManager;
 
 public static class FlowFieldEngine
 {
-    private static int NUM_REGIONLEVELS = 2; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
+    private static int NUM_REGIONLEVELS = 3; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
 
     public static FlowField GetFlowFieldForDestination(INavGraph graph, int targetNode, int initialNode)
     {
@@ -35,20 +35,29 @@ public static class FlowFieldEngine
         HierarchicalRouter router = manager.GetContext(graph).Router;
         var portalDistMap = route.DistanceMaps;
 
+        // --- FASE 1: IDENTIFICACIÓN ---
         for (int i = 0; i < NUM_REGIONLEVELS; i++)
         {
             HashSet<int> nextIterationRegs = new HashSet<int>();
             foreach (int rid in frontierRegions)
             {
-                if (insideRegions.Contains(rid)) continue; // Si ya sabemos que esta región está dentro, no la procesamos
+                if (insideRegions.Contains(rid)) continue;
 
+                // Si ya está cacheada, será un sumidero (Sink)
                 if (route.FlowFields.ContainsKey(rid))
                 {
                     nextIterationRegs.Add(rid);
                     continue;
                 }
 
-                if (rid == targetRegion) continue;
+                // IMPORTANTE: Si es la región del target, la marcamos para calcular
+                // pero NO expandimos sus vecinos (porque ya llegamos al final)
+                if (rid == targetRegion)
+                {
+                    insideRegions.Add(rid);
+                    continue;
+                }
+
                 foreach (int nextRid in GetNextRegions(graph, rid, portalDistMap, router))
                 {
                     nextIterationRegs.Add(nextRid);
@@ -59,17 +68,22 @@ public static class FlowFieldEngine
             frontierRegions = nextIterationRegs;
         }
 
-        // --- FASE 2: PREPARACIÓN DE SUMIDEROS (SINKS) ---
+        // --- FASE 2: SUMIDEROS ---
         Dictionary<int, float> destinations = new Dictionary<int, float>();
 
-        // Portales de entrada de las regiones "frontera" para dar continuidad
+        // EL TARGET SIEMPRE VA (si alguna de las regiones a calcular es la suya)
+        if (insideRegions.Contains(targetRegion))
+        {
+            destinations[targetNode] = 0f;
+        }
+
         foreach (int rid in frontierRegions)
         {
-            if (rid == targetRegion)
-            {
-                destinations[targetNode] = 0f;
-                continue;
-            }
+            // Si la región frontera es la del target y no la calculamos en esta iteración
+            if (rid == targetRegion) destinations[targetNode] = 0f;
+
+            // Si la región está cacheada, DEBERÍAS intentar leer sus portales (opcional pero recomendado)
+            // Por ahora, usamos tu lógica de portalDistMap que es segura:
             List<PortalNode> entryPortals = router.SelectEntryPortals(rid, portalDistMap);
             foreach (var portal in entryPortals)
             {
@@ -93,7 +107,6 @@ public static class FlowFieldEngine
         // --- FASE 4: PERSISTENCIA ---
         foreach (int rid in insideRegions)
         {
-
             route.FlowFields[rid] = regionDataMap[rid];
         }
 

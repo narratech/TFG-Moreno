@@ -106,32 +106,35 @@ public class HierarchicalRouter
     }
     public List<PortalNode> SelectExitPortals(int regionId, Dictionary<int, float> distanceMap)
     {
-        List<PortalNode> portals = _portalGraph.GetPortalsInRegion(regionId);
+        List<PortalNode> allInRegion = _portalGraph.GetPortalsInRegion(regionId);
         List<PortalNode> exitPortals = new List<PortalNode>();
-        foreach (var portal in portals)
+
+        foreach (var portal in allInRegion)
         {
             int nextPortalId = GetNextPortal(portal.Id, distanceMap);
-            if (nextPortalId == -1) continue; // No hay camino desde este portal
+            if (nextPortalId == -1) continue;
             PortalNode nextPortal = _portalGraph.GetPortal(nextPortalId);
-            if (nextPortal.RegionA != regionId && nextPortal.RegionB == regionId)
-            { // Este portal es una salida de la región
+            bool nextIsOutside = nextPortal.RegionA != regionId && nextPortal.RegionB != regionId;
+            if (nextIsOutside)
+            {
                 exitPortals.Add(portal);
             }
         }
-        return portals;
+        return exitPortals;
     }
 
     public List<PortalNode> SelectEntryPortals(int regionId, Dictionary<int, float> distanceMap)
     {
-        List<PortalNode> portals = _portalGraph.GetPortalsInRegion(regionId);
+        List<PortalNode> allInRegion = _portalGraph.GetPortalsInRegion(regionId);
         List<PortalNode> entryPortals = new List<PortalNode>();
-        foreach (var portal in portals)
+        foreach (var portal in allInRegion)
         {
             int nextPortalId = GetNextPortal(portal.Id, distanceMap);
-            if (nextPortalId == -1) continue; // No hay camino desde este portal
+            if (nextPortalId == -1) continue;
             PortalNode nextPortal = _portalGraph.GetPortal(nextPortalId);
-            if (nextPortal.RegionA == regionId || nextPortal.RegionB == regionId)
-            { // Este portal es una entrada a la región
+            bool nextIsInside = nextPortal.RegionA == regionId || nextPortal.RegionB == regionId;
+            if (nextIsInside)
+            {
                 entryPortals.Add(portal);
             }
         }
