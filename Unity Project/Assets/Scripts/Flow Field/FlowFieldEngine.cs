@@ -6,7 +6,7 @@ using static FlowFieldManager;
 
 public static class FlowFieldEngine
 {
-    private static int NUM_REGIONLEVELS = 2; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
+    private static int NUM_REGIONLEVELS = 1; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
 
     public static FlowField GenerateFlowPath(INavGraph graph, int targetNode, int initialNode)
     {
