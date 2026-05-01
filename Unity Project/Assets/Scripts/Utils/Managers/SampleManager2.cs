@@ -4,8 +4,22 @@ using UnityEngine.EventSystems;
 public class SampleManager2 : MonoBehaviour
 {
     public Grid2DProvider graphProvider;
-
+    public int targetNode = -1;
     private InputManager input;
+
+    // patron singleton de SampleManager2
+    public static SampleManager2 Instance { get; private set; }
+    private void Awake()
+    {
+        // Configurar singleton
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
 
     void Start()
     {
@@ -30,12 +44,13 @@ public class SampleManager2 : MonoBehaviour
     private void OnClickGround(Vector3 pos)
     {
         int destination = graphProvider.Graph.GetClosestNode(pos);
-        if (destination == -1) return;
+        if (destination == -1)
+        {
+            targetNode = -1;
+            return;
+        }
 
         FlowFieldManager.Instance.RegisterRoute(graphProvider.Graph, destination);
-        foreach (var agent in FlowFieldAgent.AllAgents)
-        {
-            agent.SetDestination(destination);
-        }
+        targetNode = destination;
     }
 }

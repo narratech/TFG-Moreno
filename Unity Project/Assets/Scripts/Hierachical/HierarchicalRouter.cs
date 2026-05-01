@@ -61,20 +61,21 @@ public class HierarchicalRouter
     }
 
     /// <summary>
-    /// Dado un portal de inicio y un distanceMap (resultado de GetPortalsDistancesFrom), devuelve la secuencia 
+    /// Dado un portal de inicio, la region destino y un distanceMap (resultado de GetPortalsDistancesFrom), devuelve la secuencia 
     /// de portales a tomar para llegar al destino.
     /// </summary>
     /// <param name="portal"></param>
+    /// <param name="targetRegion"></param>
     /// <param name="distanceMap"></param>
     /// <returns></returns>
-    public List<int> GetPathToDestination(int portal, Dictionary<int, float> distanceMap)
+    public List<int> GetPathToDestination(int portal, int targetRegion, Dictionary<int, float> distanceMap)
     {
         List<int> path = new List<int>();
         int currentPortal = portal;
         while (currentPortal != -1)
         {
             path.Add(currentPortal);
-            currentPortal = GetNextPortal(currentPortal, distanceMap);
+            currentPortal = GetNextPortal(currentPortal, targetRegion, distanceMap);
         }
         return path;
     }
@@ -86,13 +87,14 @@ public class HierarchicalRouter
     /// <param name="portal"></param>
     /// <param name="distanceMap"></param>
     /// <returns></returns>
-    public int GetNextPortal(int portalId, Dictionary<int, float> distanceMap)
+    public int GetNextPortal(int portalId, int targetRegion, Dictionary<int, float> distanceMap)
     {
         int nextPortal = -1;
         float minDist = distanceMap.ContainsKey(portalId) ? distanceMap[portalId] : float.MaxValue;
 
         foreach (var edge in _portalGraph.GetNeighbors(portalId))
         {
+            if (edge.RegionId == targetRegion) continue; // Si el portal esta en la region destino, no tine next portal
             if (distanceMap.TryGetValue(edge.TargetPortalId, out float neighborDist))
             {
                 if (neighborDist < minDist)
@@ -104,15 +106,19 @@ public class HierarchicalRouter
         }
         return nextPortal;
     }
-    public List<PortalNode> SelectExitPortals(int regionId, Dictionary<int, float> distanceMap)
+    public List<PortalNode> SelectExitPortals(int regionId, int targetRegion, Dictionary<int, float> distanceMap)
     {
         List<PortalNode> allInRegion = _portalGraph.GetPortalsInRegion(regionId);
         List<PortalNode> exitPortals = new List<PortalNode>();
 
         foreach (var portal in allInRegion)
         {
-            int nextPortalId = GetNextPortal(portal.Id, distanceMap);
-            if (nextPortalId == -1) continue;
+            int nextPortalId = GetNextPortal(portal.Id, targetRegion, distanceMap);
+            if (nextPortalId == -1)
+            {
+                exitPortals.Add(portal);
+                continue;
+            }
             PortalNode nextPortal = _portalGraph.GetPortal(nextPortalId);
             bool nextIsOutside = nextPortal.RegionA != regionId && nextPortal.RegionB != regionId;
             if (nextIsOutside)
@@ -123,13 +129,13 @@ public class HierarchicalRouter
         return exitPortals;
     }
 
-    public List<PortalNode> SelectEntryPortals(int regionId, Dictionary<int, float> distanceMap)
+    public List<PortalNode> SelectEntryPortals(int regionId, int targetRegion, Dictionary<int, float> distanceMap)
     {
         List<PortalNode> allInRegion = _portalGraph.GetPortalsInRegion(regionId);
         List<PortalNode> entryPortals = new List<PortalNode>();
         foreach (var portal in allInRegion)
         {
-            int nextPortalId = GetNextPortal(portal.Id, distanceMap);
+            int nextPortalId = GetNextPortal(portal.Id, targetRegion, distanceMap);
             if (nextPortalId == -1) continue;
             PortalNode nextPortal = _portalGraph.GetPortal(nextPortalId);
             bool nextIsInside = nextPortal.RegionA == regionId || nextPortal.RegionB == regionId;

@@ -8,10 +8,6 @@ public class FlowFieldAgent : MonoBehaviour
     public int targetNode = -1;
     public Grid2DProvider grid;
 
-    public static List<FlowFieldAgent> AllAgents = new List<FlowFieldAgent>();
-    void OnEnable() => AllAgents.Add(this);
-    void OnDisable() => AllAgents.Remove(this);
-
     private void Start()
     {
         if (grid != null)
@@ -22,7 +18,13 @@ public class FlowFieldAgent : MonoBehaviour
 
     void Update()
     {
-        if (graph == null) return;
+        targetNode = SampleManager2.Instance.targetNode;
+
+        if (graph == null)
+        {
+            Debug.LogWarning("Graph not assigned to FlowFieldAgent. Please assign a graph for the agent to navigate.");
+            return;
+        }
 
         int myGlobalNode = graph.GetClosestNode(transform.position);
 
@@ -34,7 +36,7 @@ public class FlowFieldAgent : MonoBehaviour
             field = FlowFieldManager.Instance.GetFlowField(graph, myRegion, targetNode);
             if (field == null)
             {
-                FlowFieldEngine.GetFlowFieldForDestination(graph, targetNode, myGlobalNode);
+                field = FlowFieldEngine.GenerateFlowPath(graph, targetNode, myGlobalNode);
             }
         }
 
@@ -48,6 +50,11 @@ public class FlowFieldAgent : MonoBehaviour
                 transform.position += moveDir * speed * Time.deltaTime;
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir), 0.1f);
             }
+        }
+
+        if (field == null && targetNode >= 0)
+        {
+            Debug.LogError($"Agente en nodo global {myGlobalNode} no tiene un campo de flujo disponible para el destino {targetNode}");
         }
     }
 

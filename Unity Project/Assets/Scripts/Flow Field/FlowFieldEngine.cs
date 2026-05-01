@@ -6,9 +6,9 @@ using static FlowFieldManager;
 
 public static class FlowFieldEngine
 {
-    private static int NUM_REGIONLEVELS = 3; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
+    private static int NUM_REGIONLEVELS = 2; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
 
-    public static FlowField GetFlowFieldForDestination(INavGraph graph, int targetNode, int initialNode)
+    public static FlowField GenerateFlowPath(INavGraph graph, int targetNode, int initialNode)
     {
         if (targetNode == -1 || initialNode == -1)
         {
@@ -35,7 +35,6 @@ public static class FlowFieldEngine
         HierarchicalRouter router = manager.GetContext(graph).Router;
         var portalDistMap = route.DistanceMaps;
 
-        // --- FASE 1: IDENTIFICACIÓN ---
         for (int i = 0; i < NUM_REGIONLEVELS; i++)
         {
             HashSet<int> nextIterationRegs = new HashSet<int>();
@@ -58,7 +57,7 @@ public static class FlowFieldEngine
                     continue;
                 }
 
-                foreach (int nextRid in GetNextRegions(graph, rid, portalDistMap, router))
+                foreach (int nextRid in GetNextRegions(graph, rid, targetRegion, portalDistMap, router))
                 {
                     nextIterationRegs.Add(nextRid);
                 }
@@ -84,12 +83,18 @@ public static class FlowFieldEngine
 
             // Si la región está cacheada, DEBERÍAS intentar leer sus portales (opcional pero recomendado)
             // Por ahora, usamos tu lógica de portalDistMap que es segura:
-            List<PortalNode> entryPortals = router.SelectEntryPortals(rid, portalDistMap);
+            List<PortalNode> entryPortals = router.SelectExitPortals(rid, targetRegion, portalDistMap);
             foreach (var portal in entryPortals)
             {
                 int node = portal.RegionA == rid ? portal.NodeA : portal.NodeB;
                 destinations[node] = portalDistMap[portal.Id];
             }
+        }
+
+        if (destinations.Count == 0)
+        {
+            Debug.LogError("No valid destinations found for FlowField calculation. Check if the target is reachable.");
+            return null;
         }
 
         // --- FASE 3: CÁLCULO ---
@@ -113,10 +118,15 @@ public static class FlowFieldEngine
         return route.FlowFields[initialRegion];
     }
 
-    private static List<int> GetNextRegions(INavGraph graph, int regionId, Dictionary<int, float> distanceMap, HierarchicalRouter router)
+    private static List<int> GetNextRegions(
+        INavGraph graph, 
+        int regionId, 
+        int targetRegion,
+        Dictionary<int, float> distanceMap, 
+        HierarchicalRouter router)
     {
         List<int> nextRegions = new List<int>();
-        List<PortalNode> portals = router.SelectExitPortals(regionId, distanceMap);
+        List<PortalNode> portals = router.SelectExitPortals(regionId, targetRegion, distanceMap);
         foreach (var portal in portals)
         {
             int nextRid = portal.RegionA == regionId ? portal.RegionB : portal.RegionA;
@@ -225,6 +235,93 @@ public static class FlowFieldEngine
 
                 if (totalWeight > 0)
                     data.FlowDirections[localIdx] = flowDir.normalized;
+            }
+        }
+    }
+
+    private static void GenerateContinuousFlowField(
+        INavGraph graph,
+        HashSet<int> regionIds,
+        Dictionary<int, float> destinations,
+        Dictionary<int, FlowField> regionDataMap)
+    {
+        // 1. PASADA DE INTEGRACIÓN: Llenar costes (Dijkstra)
+        PriorityQueue<int, float> pq = new PriorityQueue<int, float>();
+
+        foreach (var kvp in destinations)
+        {
+            int gNode = kvp.Key;
+            int rId = graph.GetRegionId(gNode);
+            if (regionIds.Contains(rId))
+            {
+                int lIdx = graph.GetLocalNode(gNode);
+                regionDataMap[rId].IntegrationField[lIdx] = kvp.Value;
+                pq.Enqueue(gNode, kvp.Value);
+            }
+        }
+
+        while (pq.Count > 0)
+        {
+            int currGlobal = pq.Dequeue();
+            int currRegion = graph.GetRegionId(currGlobal);
+            int currLocal = graph.GetLocalNode(currGlobal);
+            float currDist = regionDataMap[currRegion].IntegrationField[currLocal];
+
+            foreach (int neighborGlobal in graph.GetNeighbors(currGlobal))
+            {
+                int nRegion = graph.GetRegionId(neighborGlobal);
+                if (!regionIds.Contains(nRegion) || !graph.IsWalkable(neighborGlobal)) continue;
+
+                int nLocal = graph.GetLocalNode(neighborGlobal);
+                float stepDist = graph.GetDistanceBetweenNeighbors(currGlobal, neighborGlobal);
+                float newDist = currDist + (stepDist * graph.GetNodeCost(neighborGlobal));
+
+                if (newDist < regionDataMap[nRegion].IntegrationField[nLocal])
+                {
+                    regionDataMap[nRegion].IntegrationField[nLocal] = newDist;
+                    pq.Enqueue(neighborGlobal, newDist);
+                }
+            }
+        }
+
+        // 2. PASADA DE VECTORIZACIÓN: Generar Gradiente Continuo
+        foreach (int rId in regionIds)
+        {
+            FlowField data = regionDataMap[rId];
+            for (int localIdx = 0; localIdx < data.IntegrationField.Length; localIdx++)
+            {
+                int globalIdx = graph.GetGlobalNode(localIdx, rId);
+                if (!graph.IsWalkable(globalIdx) || data.IntegrationField[localIdx] == 0) continue;
+
+                Vector3 currentPos = graph.GetNodePosition(globalIdx);
+                float currentCost = data.IntegrationField[localIdx];
+
+                // Aquí es donde aplicamos tu lógica antigua de acumulación
+                Vector3 cumulativeForce = Vector3.zero;
+
+                foreach (int neighborGlobal in graph.GetNeighbors(globalIdx))
+                {
+                    int nReg = graph.GetRegionId(neighborGlobal);
+                    if (!regionIds.Contains(nReg)) continue;
+
+                    int nLoc = graph.GetLocalNode(neighborGlobal);
+                    float neighborCost = regionDataMap[nReg].IntegrationField[nLoc];
+
+                    // Si el vecino tiene menos coste, "tira" de nosotros
+                    if (neighborCost < currentCost)
+                    {
+                        float costDiff = currentCost - neighborCost;
+                        Vector3 dirToNeighbor = (graph.GetNodePosition(neighborGlobal) - currentPos).normalized;
+
+                        // La fuerza es proporcional a la caída de coste (Gradiente)
+                        cumulativeForce += dirToNeighbor * costDiff;
+                    }
+                }
+
+                if (cumulativeForce != Vector3.zero)
+                {
+                    data.FlowDirections[localIdx] = cumulativeForce.normalized;
+                }
             }
         }
     }
