@@ -27,7 +27,13 @@ public class Grid2DNavGraph : INavGraph
 
     public event System.Action OnGraphUpdated;
 
-    public Grid2DNavGraph(int width, int height, float cellSize, int regionWidth, int regionHeight, Vector3 origin)
+    public Grid2DNavGraph(
+        int width, 
+        int height, 
+        float cellSize, 
+        int regionWidth, 
+        int regionHeight, 
+        Vector3 origin)
     {
         _width = width;
         _height = height;
