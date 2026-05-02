@@ -1,5 +1,7 @@
 ﻿using NUnit.Framework;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 using static FlowFieldManager;
@@ -106,7 +108,7 @@ public static class FlowFieldEngine
         foreach (int rid in allRelevantRegs)
             regionDataMap[rid] = new FlowField(graph.GetRegionSize(rid), rid);
 
-        GenerateIntegartionFields(graph, allRelevantRegs, destinations, regionDataMap);
+        GenerateIntegrationFields(graph, allRelevantRegs, destinations, regionDataMap);
         GenerateVectorFields(graph, regionDataMap);
 
         // --- FASE 4: PERSISTENCIA ---
@@ -135,53 +137,93 @@ public static class FlowFieldEngine
         return nextRegions;
     }
 
-    private static void GenerateIntegartionFields(
-        INavGraph graph,
-        HashSet<int> regionIds,
-        Dictionary<int, float> destinations,
-        Dictionary<int, FlowField> regionDataMap)
+    public struct NeighborData
     {
-        // 1. Setup para búsqueda rápida de validez de región
+        // La posición absoluta en el mundo (Vector3 para ser agnóstico 2D/3D)
+        public Vector3 Pos;
+
+        // El valor acumulado en el Integration Field (T)
+        public float T;
+
+        // El coste intrínseco de este nodo
+        public float Cost;
+
+        public NeighborData(Vector3 pos, float t, float cost = 1.0f)
+        {
+            this.Pos = pos;
+            this.T = t;
+            this.Cost = cost;
+        }
+    }
+
+    private static void GenerateIntegrationFields(
+    INavGraph graph,
+    HashSet<int> regionIds,
+    Dictionary<int, float> destinations,
+    Dictionary<int, FlowField> regionDataMap)
+    {
         PriorityQueue<int, float> pq = new PriorityQueue<int, float>();
 
-        // 2. Sembrar los puntos de destino (Sinks)
+        // 1. Sembramos los destinos (igual que antes)
         foreach (var kvp in destinations)
         {
             int globalNode = kvp.Key;
-            float initialCost = kvp.Value;
-            int rId = graph.GetRegionId(globalNode);
-
-            // Solo sembramos si el nodo pertenece a nuestras regiones de interés
-            if (regionIds.Contains(rId))
+            if (regionIds.Contains(graph.GetRegionId(globalNode)))
             {
+                int rId = graph.GetRegionId(globalNode);
                 int localIdx = graph.GetLocalNode(globalNode);
-                regionDataMap[rId].IntegrationField[localIdx] = initialCost;
-                pq.Enqueue(globalNode, initialCost);
+                regionDataMap[rId].IntegrationField[localIdx] = kvp.Value;
+                pq.Enqueue(globalNode, kvp.Value);
             }
         }
 
-        // 3. Algoritmo de Dijkstra Multi-Región
+        // 2. Bucle Fast Marching
         while (pq.Count > 0)
         {
             int currGlobal = pq.Dequeue();
-            int currRegion = graph.GetRegionId(currGlobal);
-            int currLocal = graph.GetLocalNode(currGlobal);
-            float currDist = regionDataMap[currRegion].IntegrationField[currLocal];
 
+            // En Fast Marching, expandimos hacia los vecinos para RE-CALCULARLOS
             foreach (int neighborGlobal in graph.GetNeighbors(currGlobal))
             {
                 int nRegion = graph.GetRegionId(neighborGlobal);
 
-                // Regla de Oro: Solo expandir si el vecino está en el set de regiones 
-                // que estamos calculando y es caminable.
                 if (!regionIds.Contains(nRegion) || !graph.IsWalkable(neighborGlobal))
                     continue;
 
-                int nLocal = graph.GetLocalNode(neighborGlobal);
-                float stepDist = graph.GetDistanceBetweenNeighbors(currGlobal, neighborGlobal);
-                float newDist = currDist + (stepDist * graph.GetNodeCost(neighborGlobal));
+                // --- PASO CLAVE: Recopilar vecinos válidos ---
+                // Para calcular el coste de 'neighborGlobal', miramos sus propios vecinos 
+                // que ya tienen un coste asignado (incluyendo 'currGlobal').
+                List<NeighborData> acceptedNeighbors = new List<NeighborData>();
 
-                // Si encontramos un camino más corto hacia este nodo
+                foreach (int nOfN in graph.GetNeighbors(neighborGlobal))
+                {
+                    int nnRegion = graph.GetRegionId(nOfN);
+
+                    if (!regionIds.Contains(nnRegion) || !graph.IsWalkable(nOfN))
+                        continue;
+
+                    int nnLocal = graph.GetLocalNode(nOfN);
+                    float val = regionDataMap[nnRegion].IntegrationField[nnLocal];
+
+                    if (val < float.MaxValue)
+                    {
+                        acceptedNeighbors.Add(new NeighborData(
+                            graph.GetNodePosition(nOfN),
+                            val,
+                            graph.GetNodeCost(nOfN)
+                        ));
+                    }
+                }
+
+                // --- CALCULO EIKONAL ---
+                float nodeCost = graph.GetNodeCost(neighborGlobal);
+                Vector3 targetPos = graph.GetNodePosition(neighborGlobal);
+
+                // Usamos la función que creamos antes
+                float newDist = CalculateEikonalCost(targetPos, acceptedNeighbors, nodeCost);
+
+                // Si el nuevo coste calculado es mejor, actualizamos y encolamos
+                int nLocal = graph.GetLocalNode(neighborGlobal);
                 if (newDist < regionDataMap[nRegion].IntegrationField[nLocal])
                 {
                     regionDataMap[nRegion].IntegrationField[nLocal] = newDist;
@@ -189,6 +231,83 @@ public static class FlowFieldEngine
                 }
             }
         }
+    }
+
+    private static float CalculateEikonalCost(Vector3 targetPos, List<NeighborData> neighbors, float localCost)
+    {
+        // Ordenar vecinos de menor a mayor coste (Causalidad)
+        var sorted = neighbors.OrderBy(n => n.T).ToList();
+
+        // Si estamos en 3D, intentamos usar 3 vecinos para formar un tetraedro
+        if (sorted.Count >= 3)
+        {
+            float t = SolveQuadraticND(targetPos, sorted.Take(3).ToList(), localCost);
+            if (!float.IsNaN(t) && IsCausal(t, sorted.Take(3).ToList(), targetPos))
+                return t;
+        }
+
+        // Si falla o estamos en 2D, intentamos con 2 vecinos (Triángulo)
+        if (sorted.Count >= 2)
+        {
+            float t = SolveQuadraticND(targetPos, sorted.Take(2).ToList(), localCost);
+            if (!float.IsNaN(t) && IsCausal(t, sorted.Take(2).ToList(), targetPos))
+                return t;
+        }
+
+        // Aquí estamos en 1D Dijkstra puro (el vecino más barato + distancia)
+        return sorted[0].T + (Vector3.Distance(targetPos, sorted[0].Pos) * localCost);
+    }
+
+    private static float SolveQuadraticND(Vector3 pC, List<NeighborData> pts, float f)
+    {
+        // Construimos el sistema basado en distancias relativas
+        // Para simplificar a cualquier dimensión usamos una aproximación de Gram-Schmidt 
+        // o resolvemos el sistema lineal: (M^T * M) u = 1
+
+        int n = pts.Count;
+        Matrix4x4 m = new Matrix4x4(); // Usamos matriz para guardar vectores dirección
+        Vector3[] v = new Vector3[n];
+        float[] t = new float[n];
+
+        for (int i = 0; i < n; i++)
+        {
+            v[i] = pts[i].Pos - pC;
+            t[i] = pts[i].T;
+        }
+
+        // Aquí resolvemos: sum( (Tc - Ti) / dist_i )^2 = f^2
+        // En un TFG, la forma más limpia es usar la fórmula de "Kimmel":
+        // a*Tc^2 + b*Tc + c = 0
+
+        float a = 0, b = 0, c = -f * f;
+
+        // Simplificación para ejes ortonormales (fácil de entender):
+        // Si no son ortonormales, se usa el tensor métrico del simplex.
+        for (int i = 0; i < n; i++)
+        {
+            float d = v[i].magnitude;
+            a += 1 / (d * d);
+            b -= 2 * t[i] / (d * d);
+            c += (t[i] * t[i]) / (d * d);
+        }
+
+        float disc = b * b - 4 * a * c;
+        if (disc < 0) return float.NaN;
+
+        return (-b + MathF.Sqrt(disc)) / (2 * a);
+    }
+
+    private static bool IsCausal(float potential, List<NeighborData> pts, Vector3 pC)
+    {
+        // el potencial calculado debe ser mayor que el de todos los vecinos que lo crearon
+        foreach (var p in pts)
+        {
+            if (potential <= p.T) return false;
+        }
+
+        // Verificación de Ángulo: ¿viene la onda desde el interior del simplex?
+        // Se calcula viendo si el gradiente cae dentro de las caras del triángulo/tetraedro
+        return true;
     }
 
     private static void GenerateVectorFields(INavGraph graph, Dictionary<int, FlowField> regionDataMap)
@@ -235,93 +354,6 @@ public static class FlowFieldEngine
 
                 if (totalWeight > 0)
                     data.FlowDirections[localIdx] = flowDir.normalized;
-            }
-        }
-    }
-
-    private static void GenerateContinuousFlowField(
-        INavGraph graph,
-        HashSet<int> regionIds,
-        Dictionary<int, float> destinations,
-        Dictionary<int, FlowField> regionDataMap)
-    {
-        // 1. PASADA DE INTEGRACIÓN: Llenar costes (Dijkstra)
-        PriorityQueue<int, float> pq = new PriorityQueue<int, float>();
-
-        foreach (var kvp in destinations)
-        {
-            int gNode = kvp.Key;
-            int rId = graph.GetRegionId(gNode);
-            if (regionIds.Contains(rId))
-            {
-                int lIdx = graph.GetLocalNode(gNode);
-                regionDataMap[rId].IntegrationField[lIdx] = kvp.Value;
-                pq.Enqueue(gNode, kvp.Value);
-            }
-        }
-
-        while (pq.Count > 0)
-        {
-            int currGlobal = pq.Dequeue();
-            int currRegion = graph.GetRegionId(currGlobal);
-            int currLocal = graph.GetLocalNode(currGlobal);
-            float currDist = regionDataMap[currRegion].IntegrationField[currLocal];
-
-            foreach (int neighborGlobal in graph.GetNeighbors(currGlobal))
-            {
-                int nRegion = graph.GetRegionId(neighborGlobal);
-                if (!regionIds.Contains(nRegion) || !graph.IsWalkable(neighborGlobal)) continue;
-
-                int nLocal = graph.GetLocalNode(neighborGlobal);
-                float stepDist = graph.GetDistanceBetweenNeighbors(currGlobal, neighborGlobal);
-                float newDist = currDist + (stepDist * graph.GetNodeCost(neighborGlobal));
-
-                if (newDist < regionDataMap[nRegion].IntegrationField[nLocal])
-                {
-                    regionDataMap[nRegion].IntegrationField[nLocal] = newDist;
-                    pq.Enqueue(neighborGlobal, newDist);
-                }
-            }
-        }
-
-        // 2. PASADA DE VECTORIZACIÓN: Generar Gradiente Continuo
-        foreach (int rId in regionIds)
-        {
-            FlowField data = regionDataMap[rId];
-            for (int localIdx = 0; localIdx < data.IntegrationField.Length; localIdx++)
-            {
-                int globalIdx = graph.GetGlobalNode(localIdx, rId);
-                if (!graph.IsWalkable(globalIdx) || data.IntegrationField[localIdx] == 0) continue;
-
-                Vector3 currentPos = graph.GetNodePosition(globalIdx);
-                float currentCost = data.IntegrationField[localIdx];
-
-                // Aquí es donde aplicamos tu lógica antigua de acumulación
-                Vector3 cumulativeForce = Vector3.zero;
-
-                foreach (int neighborGlobal in graph.GetNeighbors(globalIdx))
-                {
-                    int nReg = graph.GetRegionId(neighborGlobal);
-                    if (!regionIds.Contains(nReg)) continue;
-
-                    int nLoc = graph.GetLocalNode(neighborGlobal);
-                    float neighborCost = regionDataMap[nReg].IntegrationField[nLoc];
-
-                    // Si el vecino tiene menos coste, "tira" de nosotros
-                    if (neighborCost < currentCost)
-                    {
-                        float costDiff = currentCost - neighborCost;
-                        Vector3 dirToNeighbor = (graph.GetNodePosition(neighborGlobal) - currentPos).normalized;
-
-                        // La fuerza es proporcional a la caída de coste (Gradiente)
-                        cumulativeForce += dirToNeighbor * costDiff;
-                    }
-                }
-
-                if (cumulativeForce != Vector3.zero)
-                {
-                    data.FlowDirections[localIdx] = cumulativeForce.normalized;
-                }
             }
         }
     }

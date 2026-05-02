@@ -6,7 +6,7 @@ public class FlowFieldAgent : MonoBehaviour
     public INavGraph graph;
     public float speed = 5f;
     public int targetNode = -1;
-    public Grid3DProvider grid;
+    public Grid2DProvider grid;
 
     private void Start()
     {
@@ -18,7 +18,7 @@ public class FlowFieldAgent : MonoBehaviour
 
     void Update()
     {
-        targetNode = SampleManager3.Instance.targetNode;
+        targetNode = SampleManager2.Instance.targetNode;
 
         if (graph == null)
         {
