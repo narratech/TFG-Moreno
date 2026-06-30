@@ -106,6 +106,51 @@ public class HierarchicalRouter
         }
         return nextPortal;
     }
+
+    /// <summary>
+    /// Calcula la distancia mínima en "niveles de región" desde una región de origen a una de destino.
+    /// Devuelve 0 si es la misma región, o int.MaxValue si no están conectadas.
+    /// </summary>
+    public int GetRegionDistance(int startRegionId, int targetRegionId)
+    {
+        if (startRegionId == targetRegionId) return 0;
+
+        // Cola para almacenar (RegionId, Distancia/Nivel actual)
+        Queue<System.ValueTuple<int, int>> queue = new Queue<System.ValueTuple<int, int>>();
+        HashSet<int> visited = new HashSet<int>();
+
+        queue.Enqueue((startRegionId, 0));
+        visited.Add(startRegionId);
+
+        while (queue.Count > 0)
+        {
+            var (currentRegion, currentLevel) = queue.Dequeue();
+
+            // Obtenemos todos los portales de la región actual para ver a qué regiones vecinas conectan
+            List<PortalNode> portalsInRegion = _portalGraph.GetPortalsInRegion(currentRegion);
+            if (portalsInRegion == null) continue;
+
+            foreach (var portal in portalsInRegion)
+            {
+                // Averiguamos cuál es la región del otro lado del portal
+                int neighborRegion = (portal.RegionA == currentRegion) ? portal.RegionB : portal.RegionA;
+
+                if (neighborRegion == targetRegionId)
+                {
+                    return currentLevel + 1;
+                }
+
+                if (!visited.Contains(neighborRegion))
+                {
+                    visited.Add(neighborRegion);
+                    queue.Enqueue((neighborRegion, currentLevel + 1));
+                }
+            }
+        }
+
+        return int.MaxValue; // No hay conexión jerárquica entre las regiones
+    }
+
     public List<PortalNode> SelectExitPortals(int regionId, int targetRegion, Dictionary<int, float> distanceMap)
     {
         List<PortalNode> allInRegion = _portalGraph.GetPortalsInRegion(regionId);
