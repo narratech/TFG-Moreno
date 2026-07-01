@@ -34,5 +34,6 @@ namespace DOTSFlowField
         public float Speed;
         public float3 Velocity;
         public int RouteId;
+        public int NavGraphId;
     }
 }
