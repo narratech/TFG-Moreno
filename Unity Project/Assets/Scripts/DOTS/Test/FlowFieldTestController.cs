@@ -77,6 +77,7 @@ public class FlowFieldTestController : MonoBehaviour
                         }
                     }
                     Debug.Log($"[FlowFieldTestController] Nodo más cercano al punto de clic: {closestNode}, Posición: {navGraph.GetNodePosition(closestNode)}");
+                    Debug.Log($"[FlowFieldTestController] Rutas Totatles: {FlowFieldBridge.Instance.ActiveRegionsLookup.Count()}.");
                 }
                 else
                 {

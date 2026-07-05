@@ -110,35 +110,27 @@ public partial class RouteExpansionSystem : SystemBase
                 frontierRegions = nextFrontier;
             }
 
-            UnityEngine.Debug.Log($"[RouteExpansionSystem] Route {route.ValueRO.RouteIndex} - InsideRegions: {string.Join(",", insideRegions)} - FrontierRegions: {string.Join(",", frontierRegions)}");
+            //UnityEngine.Debug.Log($"[RouteExpansionSystem] Route {route.ValueRO.RouteIndex} - InsideRegions: {string.Join(",", insideRegions)} - FrontierRegions: {string.Join(",", frontierRegions)}");
 
             // -----------------------------------------------------------------
-            // FASE 3A: Recorrer todas las regiones para actualizar su configuración.
+            // FASE 3A: Inicializar las regiones interiores.
             // -----------------------------------------------------------------
 
-            foreach (var (regConfig, regEntity) in SystemAPI.Query<RefRO<RegionRouteConfig>>().WithEntityAccess())
+            foreach (int rid in insideRegions)
             {
-                int2 key = new(route.ValueRO.RouteIndex, regConfig.ValueRO.RegionId);
+                int2 key = new(route.ValueRO.RouteIndex, rid);
 
-                if (lookup.TryGetValue(key, out Entity ent))
-                {
-                    UnityEngine.Debug.Log($"[        AAAAAA        ]Index: {key}, Entity: {regEntity}, regionId: {regConfig.ValueRO.RegionId}");
+                if (!lookup.TryGetValue(key, out Entity regEntity))
+                    continue;
 
-                    EntityManager.SetComponentData(regEntity,
-                        new RegionRouteConfig
-                        {
-                            RegionId = regConfig.ValueRO.RegionId,
-                            RouteIndex = route.ValueRO.RouteIndex,
-                            IsInsideWindow = true
-                        });
+                var config = EntityManager.GetComponentData<RegionRouteConfig>(regEntity);
+                config.IsInsideWindow = true;
+                EntityManager.SetComponentData(regEntity, config);
 
-                    var buffer = EntityManager.GetBuffer<IntegrationFieldBuffer>(regEntity);
+                var buffer = EntityManager.GetBuffer<IntegrationFieldBuffer>(regEntity);
 
-                    for (int i = 0; i < buffer.Length; i++)
-                        buffer[i] = float.MaxValue;
-
-                    lookup[key] = regEntity;
-                }
+                for (int i = 0; i < buffer.Length; i++)
+                    buffer[i] = float.MaxValue;
             }
 
             // -----------------------------------------------------------------
@@ -149,34 +141,28 @@ public partial class RouteExpansionSystem : SystemBase
             {
                 int2 key = new(route.ValueRO.RouteIndex, rid);
 
-                if (lookup.TryGetValue(key, out Entity regEntity))
+                if (!lookup.TryGetValue(key, out Entity regEntity))
+                    continue;
+
+                var config = EntityManager.GetComponentData<RegionRouteConfig>(regEntity);
+                config.IsInsideWindow = false;
+                EntityManager.SetComponentData(regEntity, config);
+
+                var buffer = EntityManager.GetBuffer<IntegrationFieldBuffer>(regEntity);
+
+                for (int i = 0; i < buffer.Length; i++)
+                    buffer[i] = float.MaxValue;
+
+                int2 portalOffset = navGraph.RegionPortalsOffsets[rid];
+
+                for (int p = 0; p < portalOffset.y; p++)
                 {
-                    UnityEngine.Debug.Log($"[        BBBBBB        ]Index: {key}, Entity: {regEntity}, regionId: {rid}");
+                    int portalNode = navGraph.RegionPortalsBuffer[portalOffset.x + p];
 
-                    EntityManager.SetComponentData(regEntity,
-                        new RegionRouteConfig
-                        {
-                            RegionId = rid,
-                            RouteIndex = route.ValueRO.RouteIndex,
-                            IsInsideWindow = false
-                        });
-
-                    var buffer = EntityManager.GetBuffer<IntegrationFieldBuffer>(regEntity);
-
-                    for (int i = 0; i < buffer.Length; i++)
-                        buffer[i] = float.MaxValue;
-
-                    int2 portalOffset = navGraph.RegionPortalsOffsets[rid];
-
-                    for (int p = 0; p < portalOffset.y; p++)
+                    if (bridge.GlobalPortalDistances.TryGetValue(portalNode, out float cost))
                     {
-                        int portalNode = navGraph.RegionPortalsBuffer[portalOffset.x + p];
-
-                        if (bridge.GlobalPortalDistances.TryGetValue(portalNode, out float cost))
-                        {
-                            int localIdx = navGraph.GlobalToLocalMap[portalNode];
-                            buffer[localIdx] = cost;
-                        }
+                        int localIdx = navGraph.GlobalToLocalMap[portalNode];
+                        buffer[localIdx] = cost;
                     }
                 }
             }
@@ -187,11 +173,14 @@ public partial class RouteExpansionSystem : SystemBase
 
             int2 targetKey = new(route.ValueRO.RouteIndex, targetRegion);
 
+            //UnityEngine.Debug.Log($"LOOKUP: {lookup.Count()}");
             if (lookup.TryGetValue(targetKey, out Entity targetRegEntity))
             {
                 var buffer = EntityManager.GetBuffer<IntegrationFieldBuffer>(targetRegEntity);
                 int localIdx = navGraph.GlobalToLocalMap[route.ValueRO.TargetNodeGlobal];
                 buffer[localIdx] = 0f;
+
+                //UnityEngine.Debug.Log($"------> {buffer.ToString()}");
             }
         }
 

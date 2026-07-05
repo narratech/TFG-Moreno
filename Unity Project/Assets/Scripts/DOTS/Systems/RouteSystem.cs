@@ -79,8 +79,8 @@ public partial class RouteSystem : SystemBase
 
             int targetRegion = navGraph.NodeRegionIds[route.ValueRO.TargetNodeGlobal];
 
-            HashSet<int> insideRegions = new();
-            HashSet<int> frontierRegions = new();
+            var insideRegions = new NativeHashSet<int>(64, Allocator.Temp);
+            var frontierRegions = new NativeHashSet<int>(64, Allocator.Temp);
 
             if (routeInitialRegions.TryGetFirstValue(route.ValueRO.RouteIndex, out int firstRegion, out var iterator))
             {
@@ -96,7 +96,7 @@ public partial class RouteSystem : SystemBase
 
             for (int i = 0; i < windowLevels; i++)
             {
-                HashSet<int> nextFrontier = new();
+                var nextFrontier = new NativeHashSet<int>(64, Allocator.Temp);
 
                 foreach (int rid in frontierRegions)
                 {
@@ -129,13 +129,16 @@ public partial class RouteSystem : SystemBase
                     insideRegions.Add(rid);
                 }
 
+                frontierRegions.Dispose();
                 frontierRegions = nextFrontier;
             }
 
-            HashSet<int> allRequiredRegions = new(insideRegions);
+            NativeHashSet<int> allRequiredRegions = new(insideRegions.Count, Allocator.Temp);
+            foreach (int rid in insideRegions)
+                allRequiredRegions.Add(rid);
 
-            foreach (int region in frontierRegions)
-                allRequiredRegions.Add(region);
+            foreach (int rid in frontierRegions)
+                allRequiredRegions.Add(rid);
 
             // -------------------------------------------------------------
             // FASE 3: Crear las regiones necesarias para la ruta.
@@ -145,42 +148,51 @@ public partial class RouteSystem : SystemBase
             {
                 int2 key = new(route.ValueRO.RouteIndex, rid);
 
-                if (!lookup.ContainsKey(key))
+                Entity newRegionRoute = ecb.CreateEntity();
+
+                ecb.AddComponent(newRegionRoute, new RegionRouteConfig
                 {
-                    Entity newRegionRoute = ecb.CreateEntity();
+                    RegionId = rid,
+                    RouteIndex = route.ValueRO.RouteIndex
+                });
 
-                    ecb.AddComponent(newRegionRoute, new RegionRouteConfig
+                var buffer = ecb.AddBuffer<IntegrationFieldBuffer>(newRegionRoute);
+
+                int regionSize = navGraph.RegionSizes[rid];
+                buffer.ResizeUninitialized(regionSize);
+
+                for (int i = 0; i < regionSize; i++)
+                {
+                    buffer.Add(new IntegrationFieldBuffer
                     {
-                        RegionId = rid,
-                        RouteIndex = route.ValueRO.RouteIndex
+                        Value = float.MaxValue
                     });
-
-                    var buffer = ecb.AddBuffer<IntegrationFieldBuffer>(newRegionRoute);
-
-                    int regionSize = navGraph.RegionSizes[rid];
-                    buffer.ResizeUninitialized(regionSize);
-
-                    for (int i = 0; i < regionSize; i++)
-                    {
-                        buffer.Add(new IntegrationFieldBuffer
-                        {
-                            Value = float.MaxValue
-                        });
-                    }
+                }
 
 #if UNITY_EDITOR
-                    ecb.SetName(newRegionRoute, $"RegionRouteBuffer_R{route.ValueRO.RouteIndex}_Reg{rid}");
+                ecb.SetName(newRegionRoute, $"RegionRouteBuffer_R{route.ValueRO.RouteIndex}_Reg{rid}");
 #endif
-
-                    lookup.TryAdd(key, newRegionRoute);
-                }
             }
+
+            insideRegions.Dispose();
+            frontierRegions.Dispose();
+            allRequiredRegions.Dispose();
         }
 
         routeInitialRegions.Dispose();
         existingRoutes.Dispose();
 
-        ecb.Playback(EntityManager); // <--- Aplica los cambios en el EntityManager
+        ecb.Playback(EntityManager);
         ecb.Dispose();
+
+        // Reconstruimos el lookup con las entidades reales
+        lookup.Clear();
+
+        foreach (var (config, entity) in SystemAPI.Query<RefRO<RegionRouteConfig>>().WithEntityAccess())
+        {
+            lookup.TryAdd(
+                new int2(config.ValueRO.RouteIndex, config.ValueRO.RegionId),
+                entity);
+        }
     }
 }
