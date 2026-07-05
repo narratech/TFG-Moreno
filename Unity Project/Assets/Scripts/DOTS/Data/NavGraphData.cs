@@ -32,6 +32,11 @@ namespace DOTSFlowField
         // --- Datos de Región ---
         [ReadOnly] public NativeArray<int> RegionSizes; // Cantidad de nodos por región
 
+        [ReadOnly] public NativeArray<int2> RegionPortalsOffsets;
+
+        // Array plano que guarda los IDs de los nodos globales que son portales
+        [ReadOnly] public NativeArray<int> RegionPortalsBuffer;
+
         /// <summary>
         /// Método rápido compatible con Burst para obtener el nodo global más cercano.
         /// (Búsqueda por fuerza bruta optimizada en SIMD, o aproximada si tu espacio lo permite)

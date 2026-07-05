@@ -12,7 +12,7 @@ public class AgentAuthoring : MonoBehaviour
         {
             var entity = GetEntity(TransformUsageFlags.Dynamic);
 
-            AddComponent(entity, new AgentMovementData
+            AddComponent(entity, new AgentComponent
             {
                 Speed = authoring.speed,
                 Velocity = float3.zero,
