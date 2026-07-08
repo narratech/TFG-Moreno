@@ -65,6 +65,9 @@ public class FlowFieldTestController : MonoBehaviour
                 int closestNode = navGraph.GetClosestNode(hitPoint);
                 if (closestNode >= 0)
                 {
+                    // Actualizar el GlobalPortalDistances en FlowFieldBridge con la ruta calculada desde el nodo más cercano
+                    RouteToDOTS(closestNode);
+
                     // Obtener todos los agentes y actualizar su RouteId usando EntityManager
                     var query = entityManager.CreateEntityQuery(typeof(AgentComponent));
                     using (var entities = query.ToEntityArray(Unity.Collections.Allocator.Temp))
@@ -185,7 +188,7 @@ public class FlowFieldTestController : MonoBehaviour
                     portalCountInRegion++;
                 }
             }
-
+             
             // x = índice de inicio en el buffer plano, y = cantidad de portales que tiene la región
             regionPortalsOffsets[r] = new int2(portalStart, portalCountInRegion);
         }
@@ -217,5 +220,52 @@ public class FlowFieldTestController : MonoBehaviour
 #if UNITY_EDITOR
         em.SetName(graphEntity, "NavGraphData_Singleton");
 #endif
+    }
+
+    private void RouteToDOTS(int routeId)
+    {
+        Debug.Log($"[FlowFieldTestController] Calculando ruta para el nodo {routeId} y actualizando GlobalPortalDistances en FlowFieldBridge.");
+        // Aquí se actualiza GlobalPortalDistances en FlowFieldBridge a partir de la ruta calculada en el grafo clásico
+        // Adquirir el grafo clásico y el router jerárquico
+        var graph = provider.Graph;
+        if (graph == null)
+        {
+            Debug.LogError("[FlowFieldTestController] No se pudo obtener el grafo clásico desde el proveedor.");
+            return;
+        }
+        if (!FlowFieldManager.Instance.TryGetContext(graph))
+        {
+            Debug.LogError("[FlowFieldTestController] No se pudo obtener el contexto del grafo clásico.");
+            return;
+        }
+
+        var context = FlowFieldManager.Instance.GetContext(graph);
+        if (context == null)
+        {
+            Debug.LogError("[FlowFieldTestController] No se pudo obtener el contexto del grafo clásico.");
+            return;
+        }
+
+        if (!context.FlowFieldCache.ContainsKey(routeId))
+        {
+            // Generemos la ruta si no existe en el cache
+            Debug.Log($"[FlowFieldTestController] La ruta con ID {routeId} no existe en el cache. Generando nueva ruta.");
+            FlowFieldManager.Instance.RegisterRoute(graph, routeId);
+        }
+
+        var route = context.FlowFieldCache[routeId];
+
+        Debug.Log($"[FlowFieldTestController] Actualizando GlobalPortalDistances para la ruta con ID {routeId}. Portales encontrados: {route.DistanceMaps.Count}.");
+
+        // Limpiar el GlobalPortalDistances antes de actualizarlo
+        var bridge = FlowFieldBridge.Instance;
+        bridge.GlobalPortalDistances.Clear();
+
+        // Actualizar GlobalPortalDistances con los portales y sus distancias desde el nodo de destino
+        foreach (var portal in route.DistanceMaps)
+        {
+            bridge.GlobalPortalDistances.TryAdd(portal.Key, portal.Key);
+        }
+
     }
 }
