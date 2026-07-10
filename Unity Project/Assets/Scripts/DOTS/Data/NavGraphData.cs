@@ -27,15 +27,22 @@ namespace DOTSFlowField
         // --- Estructura de Vecinos (Grafo de adyacencia aplanado para Burst) ---
         // Como cada nodo tiene un número variable de vecinos, usamos un formato de array plano + offsets
         [ReadOnly] public NativeArray<int> NeighborsBuffer; // Todos los vecinos juntos
-        [ReadOnly] public NativeArray<int2> NodeNeighborsOffsets; // X: Inicio en NeighborsBuffer, Y: Cantidad
+        [ReadOnly] public NativeParallelHashMap<int, int2> NodeNeighborsOffsets; // X: Inicio en NeighborsBuffer, Y: Cantidad
 
         // --- Datos de Región ---
         [ReadOnly] public NativeArray<int> RegionSizes; // Cantidad de nodos por región
 
+        // --- Datos de Portales ---
         [ReadOnly] public NativeArray<int2> RegionPortalsOffsets;
 
         // Array plano que guarda los IDs de los nodos globales que son portales
         [ReadOnly] public NativeArray<int> RegionPortalsBuffer;
+
+        // Array que relaciona el ID de portal con los dos nodos del portal
+        [ReadOnly] public NativeArray<int2> PortalNodes;
+
+        // Mapa que devuelve la distancia entre portales (clave: int2(PortalA, PortalB) -> Valor: Distancia)
+        [ReadOnly] public NativeParallelHashMap<int2, float> PortalDistances;
 
         /// <summary>
         /// Método rápido compatible con Burst para obtener el nodo global más cercano.

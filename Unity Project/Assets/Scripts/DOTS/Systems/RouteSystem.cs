@@ -6,7 +6,8 @@ using Unity.Mathematics;
 using Unity.Transforms;
 
 /// <summary>
-/// Gestiona las rutas activas y crea las regiones necesarias para cada una.
+/// Sistema unificado que gestiona las rutas activas, calcula la ventana de expansión 
+/// jerárquica por portales una sola vez y crea/gestiona estructuralmente las regiones.
 /// </summary>
 [UpdateInGroup(typeof(SimulationSystemGroup))]
 public partial class RouteSystem : SystemBase
@@ -17,33 +18,76 @@ public partial class RouteSystem : SystemBase
     {
         var navGraph = SystemAPI.GetSingleton<NavGraphData>();
         var bridge = FlowFieldBridge.Instance;
-        if (bridge == null) return;
 
-        if (!bridge.ActiveRegionsLookup.IsCreated)
-            bridge.ActiveRegionsLookup = new NativeParallelHashMap<int2, Entity>(512, Allocator.Persistent);
+        if (bridge == null || !bridge.ActiveRegionsLookup.IsCreated)
+            return;
 
         var ecb = new EntityCommandBuffer(Allocator.Temp);
         var lookup = bridge.ActiveRegionsLookup;
-        int windowLevels = bridge.NumRegionLevelsWindow;
 
-        // -----------------------------------------------------------------
-        // FASE 1: Registrar las rutas activas y las regiones iniciales.
-        // -----------------------------------------------------------------
+        // FASE 1: Registrar rutas activas basándose en la posición de los agentes
+        var existingRoutes = GatherExistingRoutes();
+        var routeInitialRegions = ProcessAgentsAndCreateRoutes(bridge, navGraph, existingRoutes, ecb);
 
+        // Capturamos el Lookup de configuraciones para actualizar los flags de ventana velozmente
+        var routeConfigLookup = GetComponentLookup<RegionRouteConfig>(false);
+
+        // FASE 2 y 3: Expandir la ventana por portales y asegurar la existencia de las entidades
+        foreach (var (route, routeEntity) in SystemAPI.Query<RefRW<RouteComponent>>().WithEntityAccess())
+        {
+            if (!route.ValueRO.IsDirty)
+                continue;
+
+            ProcessRouteWindowAndAllocation(
+                route.ValueRO.RouteIndex,
+                navGraph,
+                bridge,
+                routeInitialRegions,
+                lookup,
+                ecb,
+                routeConfigLookup
+            );
+        }
+
+        routeInitialRegions.Dispose();
+        existingRoutes.Dispose();
+
+        // Aplicamos los cambios estructurales en los chunks de memoria de ECS
+        ecb.Playback(EntityManager);
+        ecb.Dispose();
+
+        // FASE 4: Reconstruir lookup final con todas las entidades estables del mundo
+        RebuildActiveRegionsLookup(lookup);
+    }
+
+    /// <summary>
+    /// Registra en un set temporal las rutas que ya existen actualmente en el mundo.
+    /// </summary>
+    private NativeHashSet<int> GatherExistingRoutes()
+    {
         var existingRoutes = new NativeHashSet<int>(32, Allocator.Temp);
-
         foreach (var rComp in SystemAPI.Query<RefRO<RouteComponent>>())
         {
             existingRoutes.Add(rComp.ValueRO.RouteIndex);
         }
+        return existingRoutes;
+    }
 
+    /// <summary>
+    /// Analiza los agentes, mapea sus regiones de origen y crea la entidad Ruta si es nueva.
+    /// </summary>
+    private NativeParallelMultiHashMap<int, int> ProcessAgentsAndCreateRoutes(
+        FlowFieldBridge bridge,
+        NavGraphData navGraph,
+        NativeHashSet<int> existingRoutes,
+        EntityCommandBuffer ecb)
+    {
         var routeInitialRegions = new NativeParallelMultiHashMap<int, int>(256, Allocator.Temp);
 
         foreach (var (transform, agent) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<AgentComponent>>())
         {
             int routeId = agent.ValueRO.RouteId;
-            if (routeId < 0)
-                continue;
+            if (routeId < 0) continue;
 
             int nodeGlobal = bridge.gridNavGraph.GetClosestNode(transform.ValueRO.Position);
 
@@ -54,145 +98,170 @@ public partial class RouteSystem : SystemBase
                 if (!existingRoutes.Contains(routeId))
                 {
                     Entity newRoute = ecb.CreateEntity();
-
                     ecb.AddComponent(newRoute, new RouteComponent
                     {
                         RouteIndex = routeId,
-                        InitialNodeGlobal = nodeGlobal,
-                        TargetNodeGlobal = nodeGlobal,
                         IsDirty = true
                     });
-
                     existingRoutes.Add(routeId);
                 }
             }
         }
+        return routeInitialRegions;
+    }
 
-        // -----------------------------------------------------------------
-        // FASE 2: Calcular la ventana de regiones de cada ruta.
-        // -----------------------------------------------------------------
+    /// <summary>
+    /// Calcula la ventana geométrica por portales para una ruta y asegura que existan sus entidades/buffers.
+    /// </summary>
+    private void ProcessRouteWindowAndAllocation(
+        int routeIndex,
+        NavGraphData navGraph,
+        FlowFieldBridge bridge,
+        NativeParallelMultiHashMap<int, int> routeInitialRegions,
+        NativeParallelHashMap<int2, Entity> lookup,
+        EntityCommandBuffer ecb,
+        ComponentLookup<RegionRouteConfig> routeConfigLookup)
+    {
+        int targetRegion = navGraph.NodeRegionIds[routeIndex];
 
-        foreach (var (route, routeEntity) in SystemAPI.Query<RefRW<RouteComponent>>().WithEntityAccess())
+        UnityEngine.Debug.Log($"[RouteExpansionSystem] Route {routeIndex} - Recalculating window regions.");
+        UnityEngine.Debug.Log($"[RouteExpansionSystem] Route {routeIndex} - TargetRegion: {targetRegion} - TargetNode: {routeIndex}");
+
+        var insideRegions = new HashSet<int>();
+        var frontierRegions = new HashSet<int>();
+
+        if (routeInitialRegions.TryGetFirstValue(routeIndex, out int firstRegion, out var iterator))
         {
-            if (!route.ValueRO.IsDirty)
-                continue;
+            do { frontierRegions.Add(firstRegion); }
+            while (routeInitialRegions.TryGetNextValue(out firstRegion, ref iterator));
+        }
 
-            int targetRegion = navGraph.NodeRegionIds[route.ValueRO.TargetNodeGlobal];
-
-            var insideRegions = new NativeHashSet<int>(64, Allocator.Temp);
-            var frontierRegions = new NativeHashSet<int>(64, Allocator.Temp);
-
-            if (routeInitialRegions.TryGetFirstValue(route.ValueRO.RouteIndex, out int firstRegion, out var iterator))
-            {
-                do
-                {
-                    frontierRegions.Add(firstRegion);
-                }
-                while (routeInitialRegions.TryGetNextValue(out firstRegion, ref iterator));
-            }
-
-            if (frontierRegions.Count == 0)
-                frontierRegions.Add(navGraph.NodeRegionIds[route.ValueRO.InitialNodeGlobal]);
-
-            for (int i = 0; i < windowLevels; i++)
-            {
-                var nextFrontier = new NativeHashSet<int>(64, Allocator.Temp);
-
-                foreach (int rid in frontierRegions)
-                {
-                    if (insideRegions.Contains(rid))
-                        continue;
-
-                    if (rid == targetRegion)
-                    {
-                        insideRegions.Add(rid);
-                        continue;
-                    }
-
-                    int2 portalOffset = navGraph.RegionPortalsOffsets[rid];
-
-                    for (int p = 0; p < portalOffset.y; p++)
-                    {
-                        int portalNode = navGraph.RegionPortalsBuffer[portalOffset.x + p];
-                        int2 neighborOffset = navGraph.NodeNeighborsOffsets[portalNode];
-
-                        for (int n = 0; n < neighborOffset.y; n++)
-                        {
-                            int neighbor = navGraph.NeighborsBuffer[neighborOffset.x + n];
-                            int neighborRegion = navGraph.NodeRegionIds[neighbor];
-
-                            if (neighborRegion != rid)
-                                nextFrontier.Add(neighborRegion);
-                        }
-                    }
-
-                    insideRegions.Add(rid);
-                }
-
-                frontierRegions.Dispose();
-                frontierRegions = nextFrontier;
-            }
-
-            NativeHashSet<int> allRequiredRegions = new(insideRegions.Count, Allocator.Temp);
-            foreach (int rid in insideRegions)
-                allRequiredRegions.Add(rid);
+        // FASE 2: Expansión de la ventana por niveles mediante flujo de portales válidos
+        for (int i = 0; i < bridge.NumRegionLevelsWindow; i++)
+        {
+            var nextFrontier = new HashSet<int>();
 
             foreach (int rid in frontierRegions)
-                allRequiredRegions.Add(rid);
-
-            // -------------------------------------------------------------
-            // FASE 3: Crear las regiones necesarias para la ruta.
-            // -------------------------------------------------------------
-
-            foreach (int rid in allRequiredRegions)
             {
-                int2 key = new(route.ValueRO.RouteIndex, rid);
+                if (insideRegions.Contains(rid)) continue;
+                if (rid == targetRegion) { insideRegions.Add(rid); continue; }
 
-                Entity newRegionRoute = ecb.CreateEntity();
+                int2 portalOffset = navGraph.RegionPortalsOffsets[rid];
 
-                ecb.AddComponent(newRegionRoute, new RegionRouteConfig
+                for (int p = 0; p < portalOffset.y; p++)
+                {
+                    int portalId = navGraph.RegionPortalsBuffer[portalOffset.x + p];
+                    int2 portalNodes = navGraph.PortalNodes[portalId];
+
+                    int portalNode = navGraph.NodeRegionIds[portalNodes.x] == rid ? portalNodes.x : portalNodes.y;
+                    int neighborPortalNode = navGraph.NodeRegionIds[portalNodes.x] == rid ? portalNodes.y : portalNodes.x;
+                    int neighborRegion = navGraph.NodeRegionIds[neighborPortalNode];
+
+                    bridge.GlobalPortalDistances.TryGetValue(portalId, out float currentPortalDist);
+
+                    if (!IsExitPortal(portalId, currentPortalDist, neighborRegion, navGraph, bridge))
+                        continue;
+
+                    int2 nodeNeighbors = navGraph.NodeNeighborsOffsets[portalNode];
+                    for (int n = 0; n < nodeNeighbors.y; n++)
+                    {
+                        int neighborGlobal = navGraph.NeighborsBuffer[nodeNeighbors.x + n];
+                        int neiRegion = navGraph.NodeRegionIds[neighborGlobal];
+
+                        if (neiRegion != rid && !insideRegions.Contains(neiRegion))
+                        {
+                            nextFrontier.Add(neiRegion);
+                        }
+                    }
+                }
+                insideRegions.Add(rid);
+            }
+            frontierRegions = nextFrontier;
+        }
+
+        UnityEngine.Debug.Log($"[RouteExpansionSystem] Route {routeIndex} - InsideRegions: {string.Join(",", insideRegions)} - FrontierRegions: {string.Join(",", frontierRegions)}");
+        UnityEngine.Debug.Log($"[RouteExpansionSystem] Route {routeIndex} - TargetRegion: {targetRegion}");
+
+        // FASE 3: Instanciación estructural de las regiones requeridas
+        var allRequiredRegions = new HashSet<int>(insideRegions);
+        allRequiredRegions.UnionWith(frontierRegions);
+
+        foreach (int rid in allRequiredRegions)
+        {
+            int2 key = new(routeIndex, rid);
+            bool isInside = insideRegions.Contains(rid);
+
+            if (!lookup.TryGetValue(key, out Entity regEntity))
+            {
+                // Si la región NO existe, se crea de cero y se dimensiona su buffer (vacio/uninitialized)
+                regEntity = ecb.CreateEntity();
+                ecb.AddComponent(regEntity, new RegionRouteConfig
                 {
                     RegionId = rid,
-                    RouteIndex = route.ValueRO.RouteIndex
+                    RouteIndex = routeIndex,
+                    IsInsideWindow = isInside
                 });
 
-                var buffer = ecb.AddBuffer<IntegrationFieldBuffer>(newRegionRoute);
-
+                var buffer = ecb.AddBuffer<IntegrationFieldBuffer>(regEntity);
                 int regionSize = navGraph.RegionSizes[rid];
                 buffer.ResizeUninitialized(regionSize);
 
-                for (int i = 0; i < regionSize; i++)
-                {
-                    buffer.Add(new IntegrationFieldBuffer
-                    {
-                        Value = float.MaxValue
-                    });
-                }
-
 #if UNITY_EDITOR
-                ecb.SetName(newRegionRoute, $"RegionRouteBuffer_R{route.ValueRO.RouteIndex}_Reg{rid}");
+                ecb.SetName(regEntity, $"RegionRouteBuffer_R{routeIndex}_Reg{rid}");
 #endif
+                // Se añade preventivamente al lookup local del frame
+                lookup.TryAdd(key, regEntity);
             }
-
-            insideRegions.Dispose();
-            frontierRegions.Dispose();
-            allRequiredRegions.Dispose();
+            else
+            {
+                // Si ya existe de frames anteriores, actualizamos de forma segura su flag dinámico mediante Lookup directo
+                if (routeConfigLookup.HasComponent(regEntity))
+                {
+                    var config = routeConfigLookup[regEntity];
+                    config.IsInsideWindow = isInside;
+                    routeConfigLookup[regEntity] = config;
+                }
+            }
         }
+    }
 
-        routeInitialRegions.Dispose();
-        existingRoutes.Dispose();
+    /// <summary>
+    /// Comprueba si un portal es de salida comparando sus costes con la interconexión de la región vecina.
+    /// </summary>
+    private bool IsExitPortal(int portalId, float currentPortalDist, int neighborRegion, NavGraphData navGraph, FlowFieldBridge bridge)
+    {
+        if (currentPortalDist == float.MaxValue) return true;
 
-        ecb.Playback(EntityManager);
-        ecb.Dispose();
+        int2 portalOffsetN = navGraph.RegionPortalsOffsets[neighborRegion];
 
-        // Reconstruimos el lookup con las entidades reales
+        for (int pn = 0; pn < portalOffsetN.y; pn++)
+        {
+            int neighborPortalId = navGraph.RegionPortalsBuffer[portalOffsetN.x + pn];
+            if (neighborPortalId == portalId) continue;
+
+            if (navGraph.PortalDistances.TryGetValue(new int2(portalId, neighborPortalId), out float distBetweenPortals))
+            {
+                if (bridge.GlobalPortalDistances.TryGetValue(neighborPortalId, out float neighborPortalDist))
+                {
+                    if (neighborPortalDist + distBetweenPortals <= currentPortalDist)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Reconstruye completamente el ActiveRegionsLookup basándose en las entidades reales y consolidadas de los chunks.
+    /// </summary>
+    private void RebuildActiveRegionsLookup(NativeParallelHashMap<int2, Entity> lookup)
+    {
         lookup.Clear();
-
         foreach (var (config, entity) in SystemAPI.Query<RefRO<RegionRouteConfig>>().WithEntityAccess())
         {
-            lookup.TryAdd(
-                new int2(config.ValueRO.RouteIndex, config.ValueRO.RegionId),
-                entity);
+            lookup.TryAdd(new int2(config.ValueRO.RouteIndex, config.ValueRO.RegionId), entity);
         }
     }
 }

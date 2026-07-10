@@ -1,5 +1,6 @@
 ﻿using DOTSFlowField;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -38,11 +39,13 @@ public class FlowFieldTestController : MonoBehaviour
         }
 
         HierarchicalRouter router = null;
+        PortalGraph portalGraph = null;
 
         if (FlowFieldManager.Instance.TryGetContext(navGraph))
         {
             FlowFieldManager.NavContext context = FlowFieldManager.Instance.GetContext(navGraph);
             router = context.Router;
+            portalGraph = context.PortalGraph;
         }
 
         if (router == null)
@@ -50,7 +53,7 @@ public class FlowFieldTestController : MonoBehaviour
             Debug.LogWarning("[FlowFieldTestController] No se pudo obtener el router jerárquico para el grafo clásico. Asegúrate de inicializarlo correctamente.");
         }
 
-        NavGraphToDOTS(navGraph, router);
+        NavGraphToDOTS(navGraph, portalGraph);
     }
 
     private void Update()
@@ -101,23 +104,23 @@ public class FlowFieldTestController : MonoBehaviour
         }
     }
 
-    public void NavGraphToDOTS(INavGraph graph, HierarchicalRouter router) // Añadido el router para poder extraer los portales
+    public void NavGraphToDOTS(INavGraph graph, PortalGraph portalGraph)
     {
         var em = World.DefaultGameObjectInjectionWorld.EntityManager;
 
-        // 1. Si ya existía un grafo viejo en DOTS, lo buscamos y liberamos su memoria persistente
+        // 1. Limpieza de memoria vieja
         var query = em.CreateEntityQuery(typeof(NavGraphData));
         if (!query.IsEmpty)
         {
             var oldData = query.GetSingleton<NavGraphData>();
-            oldData.Dispose(); // Evitamos Memory Leaks (Asegúrate de añadir los nuevos desatados aquí)
+            oldData.Dispose();
             em.DestroyEntity(query);
         }
 
-        // 2. Reservamos los arrays nativos con el tamaño del grafo de C# clásico
         int nodeCount = graph.NodeCount;
         int regionCount = graph.RegionCount;
 
+        // 2. Inicialización de arrays nativos estándar
         var positions = new NativeArray<float3>(nodeCount, Allocator.Persistent);
         var costs = new NativeArray<float>(nodeCount, Allocator.Persistent);
         var walkables = new NativeArray<bool>(nodeCount, Allocator.Persistent);
@@ -126,11 +129,10 @@ public class FlowFieldTestController : MonoBehaviour
         var localToGlobal = new NativeParallelHashMap<int2, int>(nodeCount, Allocator.Persistent);
         var regionSizes = new NativeArray<int>(regionCount, Allocator.Persistent);
 
-        // Preparación para aplanar los vecinos
         var tempNeighborsList = new List<int>();
-        var offsets = new NativeArray<int2>(nodeCount, Allocator.Persistent);
+        var nodeNeighborsOffsets = new NativeParallelHashMap<int, int2>(nodeCount, Allocator.Persistent);
 
-        // --- NUEVO: Listas temporales para aplanar portales ---
+        // Listas de portales aplanadas por región
         var tempPortalsList = new List<int>();
         var regionPortalsOffsets = new NativeArray<int2>(regionCount, Allocator.Persistent);
 
@@ -148,7 +150,6 @@ public class FlowFieldTestController : MonoBehaviour
             globalToLocal[i] = localId;
             localToGlobal.TryAdd(new int2(localId, rId), i);
 
-            // Aplanar vecinos
             int neighborStart = tempNeighborsList.Count;
             var neighbors = graph.GetNeighbors(i);
             int neighborCount = 0;
@@ -157,48 +158,57 @@ public class FlowFieldTestController : MonoBehaviour
                 tempNeighborsList.Add(neighbor);
                 neighborCount++;
             }
-            offsets[i] = new int2(neighborStart, neighborCount);
+            nodeNeighborsOffsets.TryAdd(i, new int2(neighborStart, neighborCount));
         }
 
-        // Volcar lista de vecinos acumulada a un array nativo final
         var neighborsBuffer = new NativeArray<int>(tempNeighborsList.Count, Allocator.Persistent);
         for (int n = 0; n < tempNeighborsList.Count; n++) neighborsBuffer[n] = tempNeighborsList[n];
 
-        // Volcar tamaños de regiones Y --- NUEVO: Extraer portales por cada región ---
+        // 4. Volcado de portales ordenados por región (Estructura de la ventana)
         for (int r = 0; r < regionCount; r++)
         {
             regionSizes[r] = graph.GetRegionSize(r);
 
-            // --- NUEVO: Lógica de aplanado de portales por región ---
             int portalStart = tempPortalsList.Count;
-
-            // Obtenemos los portales de la región desde tu arquitectura clásica
-            List<PortalNode> portalsInRegion = router.GetPortalsInRegion(r);
+            List<PortalNode> portalsInRegion = portalGraph.GetPortalsInRegion(r);
             int portalCountInRegion = 0;
 
             foreach (var portal in portalsInRegion)
             {
-                // Identificamos cuál de los dos extremos del portal cae dentro de la región actual 'r'
-                int portalGlobalNodeId = (graph.GetRegionId(portal.NodeA) == r) ? portal.NodeA : portal.NodeB;
-
-                // Evitamos añadir el mismo nodo de portal duplicado en la misma región
-                if (!tempPortalsList.Contains(portalGlobalNodeId))
-                {
-                    tempPortalsList.Add(portalGlobalNodeId);
-                    portalCountInRegion++;
-                }
+                tempPortalsList.Add(portal.Id); // Guardamos la ID del portal
+                portalCountInRegion++;
             }
-             
-            // x = índice de inicio en el buffer plano, y = cantidad de portales que tiene la región
+
             regionPortalsOffsets[r] = new int2(portalStart, portalCountInRegion);
         }
 
-        // --- NUEVO: Volcar la lista temporal de portales a su array nativo persistente ---
         var regionPortalsBuffer = new NativeArray<int>(tempPortalsList.Count, Allocator.Persistent);
         for (int p = 0; p < tempPortalsList.Count; p++) regionPortalsBuffer[p] = tempPortalsList[p];
 
+        // 5. SOLUCIÓN CRÍTICA: PortalNodes indexado mediante su Portal ID Único
+        // En lugar de usar la longitud del buffer de regiones, usamos el conteo total de portales del grafo clásico
+        int totalPortalsCount = portalGraph.CountPortals(); // Reemplaza esto por tu propiedad clásica para saber cuántos portales hay en total
+        var portalNodes = new NativeArray<int2>(totalPortalsCount, Allocator.Persistent);
 
-        // 4. Guardamos todo el contenedor en una entidad Singleton de DOTS
+        // Rellenamos basándonos en la ID única que tu objeto clásico tenga asignada
+        for (int id = 0; id < totalPortalsCount; id++)
+        {
+            var portal = portalGraph.GetPortal(id);
+            if (portal != null)
+            {
+                portalNodes[id] = new int2(portal.NodeA, portal.NodeB);
+            }
+        }
+
+        // 6. Rellenar las aristas del grafo abstracto de portales
+        IEnumerable<(int fromPortalId, int toPortalId, float cost)> edges = portalGraph.GetAllEdges();
+        var portalDistances = new NativeParallelHashMap<int2, float>(edges.Count(), Allocator.Persistent);
+        foreach (var edge in edges)
+        {
+            portalDistances.TryAdd(new int2(edge.fromPortalId, edge.toPortalId), edge.cost);
+        }
+
+        // 7. Guardar contenedor en el Singleton
         Entity graphEntity = em.CreateEntity();
         em.AddComponentData(graphEntity, new NavGraphData
         {
@@ -211,10 +221,12 @@ public class FlowFieldTestController : MonoBehaviour
             GlobalToLocalMap = globalToLocal,
             LocalToGlobalMap = localToGlobal,
             NeighborsBuffer = neighborsBuffer,
-            NodeNeighborsOffsets = offsets,
+            NodeNeighborsOffsets = nodeNeighborsOffsets,
             RegionSizes = regionSizes,
             RegionPortalsOffsets = regionPortalsOffsets,
-            RegionPortalsBuffer = regionPortalsBuffer
+            RegionPortalsBuffer = regionPortalsBuffer,
+            PortalNodes = portalNodes, // Ahora sí mapea perfectamente ID -> Nodos
+            PortalDistances = portalDistances
         });
 
 #if UNITY_EDITOR
@@ -264,8 +276,7 @@ public class FlowFieldTestController : MonoBehaviour
         // Actualizar GlobalPortalDistances con los portales y sus distancias desde el nodo de destino
         foreach (var portal in route.DistanceMaps)
         {
-            bridge.GlobalPortalDistances.TryAdd(portal.Key, portal.Key);
+            bridge.GlobalPortalDistances.Add(portal.Key, portal.Value);
         }
-
     }
 }

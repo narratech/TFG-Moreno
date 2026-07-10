@@ -140,6 +140,24 @@ public class PortalGraph
     {
         return _regionToPortals.TryGetValue(regionId, out var portals) ? portals : new List<PortalNode>();
     }
+
+    // Devuelve todas las aristas del grafo de portales
+    public IEnumerable<(int fromPortalId, int toPortalId, float cost)> GetAllEdges()
+    {
+        foreach (var kvp in _adjacency)
+        {
+            int fromPortalId = kvp.Key;
+            foreach (var edge in kvp.Value)
+            {
+                yield return (fromPortalId, edge.TargetPortalId, edge.Cost);
+            }
+        }
+    }
+
+    public int CountPortals()
+    {
+        return _portals.Count;
+    }
 }
 
 public class PortalNode

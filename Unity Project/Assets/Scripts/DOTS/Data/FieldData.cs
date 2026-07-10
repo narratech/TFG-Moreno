@@ -22,8 +22,6 @@ namespace DOTSFlowField
     public struct RouteComponent : IComponentData
     {
         public int RouteIndex;
-        public int TargetNodeGlobal;
-        public int InitialNodeGlobal;
         public bool IsDirty;
     }
 

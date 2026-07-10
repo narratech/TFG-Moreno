@@ -191,9 +191,4 @@ public class HierarchicalRouter
         }
         return entryPortals;
     }
-
-    public List<PortalNode> GetPortalsInRegion(int regionId)
-    {
-        return _portalGraph.GetPortalsInRegion(regionId);
-    }
 }
