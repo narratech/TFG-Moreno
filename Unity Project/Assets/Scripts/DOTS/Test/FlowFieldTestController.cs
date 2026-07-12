@@ -32,6 +32,8 @@ public class FlowFieldTestController : MonoBehaviour
 
         navGraph = provider.Graph; // Obtener el grafo clásico desde tu proveedor
 
+        bridge.PhasesMap = new NativeParallelHashMap<int, int>(navGraph.RegionCount, Allocator.Persistent);
+
         if (navGraph == null)
         {
             Debug.LogError("[FlowFieldTestController] No se pudo obtener el grafo clásico desde el proveedor.");
@@ -83,7 +85,6 @@ public class FlowFieldTestController : MonoBehaviour
                         }
                     }
                     Debug.Log($"[FlowFieldTestController] Nodo más cercano al punto de clic: {closestNode}, Posición: {navGraph.GetNodePosition(closestNode)}");
-                    Debug.Log($"[FlowFieldTestController] Rutas Totatles: {FlowFieldBridge.Instance.ActiveRegionsLookup.Count()}.");
                 }
                 else
                 {
@@ -101,6 +102,7 @@ public class FlowFieldTestController : MonoBehaviour
         {
             if (bridge.ActiveRegionsLookup.IsCreated) bridge.ActiveRegionsLookup.Dispose();
             if (bridge.GlobalPortalDistances.IsCreated) bridge.GlobalPortalDistances.Dispose();
+            if (bridge.PhasesMap.IsCreated) bridge.PhasesMap.Dispose();
         }
     }
 
@@ -266,6 +268,7 @@ public class FlowFieldTestController : MonoBehaviour
         }
 
         var route = context.FlowFieldCache[routeId];
+        var router = context.Router;
 
         Debug.Log($"[FlowFieldTestController] Actualizando GlobalPortalDistances para la ruta con ID {routeId}. Portales encontrados: {route.DistanceMaps.Count}.");
 
@@ -277,6 +280,16 @@ public class FlowFieldTestController : MonoBehaviour
         foreach (var portal in route.DistanceMaps)
         {
             bridge.GlobalPortalDistances.Add(portal.Key, portal.Value);
+        }
+
+        // Fases
+        int targetRegion = navGraph.GetRegionId(routeId);
+        Dictionary<int, int> phases = router.CalculateRegionPhases(targetRegion, route.DistanceMaps);
+
+        bridge.PhasesMap.Clear();
+        foreach (var item in phases) 
+        {
+            bridge.PhasesMap.Add(item.Key, item.Value);
         }
     }
 }

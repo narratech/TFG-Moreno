@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class HierarchicalRouter
@@ -58,6 +59,113 @@ public class HierarchicalRouter
             }
         }
         return distanceMap;
+    }
+
+    /// <summary>
+    /// Toma el mapa de distancias abstractas ya consolidado y calcula la fase MÁXIMA de cada región
+    /// hacia el destino, siguiendo estrictamente el gradiente descendente de distancias métricas.
+    /// </summary>
+    public Dictionary<int, int> CalculateRegionPhases(int targetRegion, Dictionary<int, float> distanceMap)
+    {
+        Dictionary<int, int> phases = new Dictionary<int, int>();
+
+        // 1. Caso Base: El sumidero final siempre es la Fase 0
+        phases[targetRegion] = 0;
+
+        if (distanceMap == null || distanceMap.Count == 0)
+            return phases;
+
+        // Precalculamos la distancia mínima de cada región al destino para no repetir bucles
+        Dictionary<int, float> regionDistances = new Dictionary<int, float>();
+        regionDistances[targetRegion] = 0f;
+
+        // 2. Extraer y filtrar todas las regiones que son físicamente alcanzables en esta ruta
+        var reachableRegions = _portalGraph.GetAllPortals()
+            .Where(p => distanceMap.ContainsKey(p.Id))
+            .SelectMany(p => new[] { p.RegionA, p.RegionB })
+            .Distinct()
+            .Where(r => r != targetRegion)
+            .ToList();
+
+        // Rellenamos las distancias de las regiones usando los portales resueltos
+        foreach (var r in reachableRegions)
+        {
+            regionDistances[r] = GetMinDistanceToRegion(r, distanceMap);
+        }
+
+        // Inicializamos las regiones alcanzables con una fase base (Fase 1)
+        foreach (var r in reachableRegions)
+        {
+            phases[r] = 1;
+        }
+
+        // 3. Ordenamos las regiones por distancia métrica de MENOR a MAYOR.
+        // Al procesarlas en este orden (desde el Target hacia afuera), garantizamos que 
+        // las regiones más cercanas se asienten primero y empujen la fase hacia el exterior limpiamente.
+        var sortedRegions = reachableRegions.OrderBy(r => regionDistances[r]).ToList();
+
+        // 4. Propagación por gradiente de distancia
+        bool changed = true;
+        int maxIterations = sortedRegions.Count;
+
+        for (int iter = 0; iter < maxIterations && changed; iter++)
+        {
+            changed = false;
+
+            foreach (var portal in _portalGraph.GetAllPortals())
+            {
+                if (!distanceMap.ContainsKey(portal.Id)) continue;
+                if (portal.RegionA == targetRegion && portal.RegionB == targetRegion) continue;
+
+                float distA = regionDistances.ContainsKey(portal.RegionA) ? regionDistances[portal.RegionA] : 0f;
+                float distB = regionDistances.ContainsKey(portal.RegionB) ? regionDistances[portal.RegionB] : 0f;
+
+                int phaseA = phases.ContainsKey(portal.RegionA) ? phases[portal.RegionA] : 0;
+                int phaseB = phases.ContainsKey(portal.RegionB) ? phases[portal.RegionB] : 0;
+
+                // --- REGLA CRÍTICA DE GRADIENTE ---
+                // Solo permitimos que la fase se propague si vamos en la dirección CORRECTA del flujo.
+                // Si la Región A está MÁS LEJOS del destino que la Región B (distA > distB), 
+                // significa que el camino viene de B hacia A. Por tanto, A debe ser, como mínimo, la fase de B + 1.
+
+                if (portal.RegionA != targetRegion && distA > distB)
+                {
+                    if (phaseB + 1 > phaseA)
+                    {
+                        phases[portal.RegionA] = phaseB + 1;
+                        changed = true;
+                    }
+                }
+
+                // Lo mismo en sentido contrario (Si B está más lejos que A, el camino va de A hacia B)
+                if (portal.RegionB != targetRegion && distB > distA)
+                {
+                    if (phaseA + 1 > phaseB)
+                    {
+                        phases[portal.RegionB] = phaseA + 1;
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        return phases;
+    }
+
+    /// <summary>
+    /// Función auxiliar que encuentra la distancia mínima a la que se encuentra un portal de dicha región.
+    /// </summary>
+    private float GetMinDistanceToRegion(int regionId, Dictionary<int, float> distanceMap)
+    {
+        float minDist = float.MaxValue;
+        foreach (var portal in _portalGraph.GetAllPortals())
+        {
+            if ((portal.RegionA == regionId || portal.RegionB == regionId) && distanceMap.TryGetValue(portal.Id, out float dist))
+            {
+                if (dist < minDist) minDist = dist;
+            }
+        }
+        return minDist;
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 ﻿using DOTSFlowField;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -16,6 +17,8 @@ public partial class RouteSystem : SystemBase
 
     protected override void OnUpdate()
     {
+        this.Dependency.Complete();
+
         var navGraph = SystemAPI.GetSingleton<NavGraphData>();
         var bridge = FlowFieldBridge.Instance;
 
@@ -124,9 +127,6 @@ public partial class RouteSystem : SystemBase
     {
         int targetRegion = navGraph.NodeRegionIds[routeIndex];
 
-        UnityEngine.Debug.Log($"[RouteExpansionSystem] Route {routeIndex} - Recalculating window regions.");
-        UnityEngine.Debug.Log($"[RouteExpansionSystem] Route {routeIndex} - TargetRegion: {targetRegion} - TargetNode: {routeIndex}");
-
         var insideRegions = new HashSet<int>();
         var frontierRegions = new HashSet<int>();
 
@@ -179,9 +179,6 @@ public partial class RouteSystem : SystemBase
             frontierRegions = nextFrontier;
         }
 
-        UnityEngine.Debug.Log($"[RouteExpansionSystem] Route {routeIndex} - InsideRegions: {string.Join(",", insideRegions)} - FrontierRegions: {string.Join(",", frontierRegions)}");
-        UnityEngine.Debug.Log($"[RouteExpansionSystem] Route {routeIndex} - TargetRegion: {targetRegion}");
-
         // FASE 3: Instanciación estructural de las regiones requeridas
         var allRequiredRegions = new HashSet<int>(insideRegions);
         allRequiredRegions.UnionWith(frontierRegions);
@@ -199,7 +196,8 @@ public partial class RouteSystem : SystemBase
                 {
                     RegionId = rid,
                     RouteIndex = routeIndex,
-                    IsInsideWindow = isInside
+                    IsInsideWindow = isInside,
+                    ExecutionPhase = bridge.PhasesMap[rid]
                 });
 
                 var buffer = ecb.AddBuffer<IntegrationFieldBuffer>(regEntity);

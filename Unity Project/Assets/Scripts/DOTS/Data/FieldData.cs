@@ -15,6 +15,9 @@ namespace DOTSFlowField
         // Diccionario nativo persistente: int2(RouteIndex, RegionId) -> Entity (Contenedora del Buffer)
         public NativeParallelHashMap<int2, Entity> ActiveRegionsLookup;
 
+        // Diccionario de fases: regionId -> phase
+        public NativeParallelHashMap<int, int> PhasesMap;
+
         // Mapa global de distancias a portales generado por tu sistema clásico
         public NativeParallelHashMap<int, float> GlobalPortalDistances;
     }
@@ -30,6 +33,8 @@ namespace DOTSFlowField
         public int RegionId;
         public int RouteIndex;
         public bool IsInsideWindow; // true = insideRegion, false = frontierRegion (sumidero)
+        public int ExecutionPhase; // 0 = Contiene el Target, 1 = Vecinos directos, etc.
+        public bool IsDirty;
     }
 
     public struct IntegrationFieldBuffer : IBufferElementData

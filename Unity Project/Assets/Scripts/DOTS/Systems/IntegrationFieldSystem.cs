@@ -1,231 +1,174 @@
-﻿//using Unity.Collections;
-//using Unity.Entities;
-//using Unity.Mathematics;
-//using BurstCompile = Unity.Burst.BurstCompileAttribute;
+﻿using DOTSFlowField;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Jobs;
+using Unity.Mathematics;
 
-//namespace DOTSFlowField
-//{
-//    [UpdateInGroup(typeof(SimulationSystemGroup))]
-//    [UpdateAfter(typeof(RouteSystem))]
-//    public partial struct IntegrationFieldSystem : ISystem
-//    {
-//        public void OnCreate(ref SystemState state) => state.RequireForUpdate<NavGraphData>();
+[UpdateInGroup(typeof(SimulationSystemGroup))]
+[UpdateAfter(typeof(RouteSystem))]
+public partial struct IntegrationFieldSystem : ISystem
+{
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<NavGraphData>();
+    }
 
-//        public void OnUpdate(ref SystemState state)
-//        {
-//            var bridge = FlowFieldBridge.Instance;
-//            if (bridge == null || !bridge.ActiveRegionsLookup.IsCreated) return;
+    public void OnUpdate(ref SystemState state)
+    {
+        var bridge = FlowFieldBridge.Instance;
+        if (bridge == null) return;
 
-//            var navGraph = SystemAPI.GetSingleton<NavGraphData>();
+        var navGraph = SystemAPI.GetSingleton<NavGraphData>();
+        int maxFases = bridge.NumRegionLevelsWindow;
 
-//            var job = new ParallelEikonalInundationJob
-//            {
-//                NavGraph = navGraph,
-//                ActiveRegionsLookup = bridge.ActiveRegionsLookup,
-//                IntegrationFieldsLookup = SystemAPI.GetBufferLookup<IntegrationFieldBuffer>(false),
-//                RegionRouteConfigLookup = SystemAPI.GetComponentLookup<RegionRouteConfig>(true)
-//            };
+        // Conseguimos los Lookups necesarios para resolver las fronteras inter-región
+        var integrationBufferLookup = state.GetBufferLookup<IntegrationFieldBuffer>(true); // ReadOnly
+        var routeConfigLookup = state.GetComponentLookup<RegionRouteConfig>(true); // ReadOnly
 
-//            state.Dependency = job.Schedule(state.Dependency);
-//        }
-//    }
+        JobHandle dependencyChain = state.Dependency;
 
-//    public struct NeighborDataBurst
-//    {
-//        public float3 Pos;
-//        public float T;
-//        public float Cost;
-//    }
+        // Ejecución en ráfaga por fases
+        for (int fase = 0; fase <= maxFases; fase++)
+        {
+            var eikonalJob = new RegionEikonalIntegrationJob
+            {
+                TargetPhase = fase,
+                NavGraph = navGraph,
+                ActiveRegionsLookup = bridge.ActiveRegionsLookup,
+                AllIntegrationBuffers = integrationBufferLookup,
+                AllRouteConfigs = routeConfigLookup
+            };
 
-//    [BurstCompile]
-//    public partial struct ParallelEikonalInundationJob : IJobEntity
-//    {
-//        [ReadOnly] public NavGraphData NavGraph;
-//        [ReadOnly] public NativeParallelHashMap<int2, Entity> ActiveRegionsLookup;
+            dependencyChain = eikonalJob.ScheduleParallel(dependencyChain);
+        }
 
-//        public BufferLookup<IntegrationFieldBuffer> IntegrationFieldsLookup;
-//        [ReadOnly] public ComponentLookup<RegionRouteConfig> RegionRouteConfigLookup;
+        state.Dependency = dependencyChain;
+    }
+}
 
-//        public void Execute(ref RouteComponent route)
-//        {
-//            if (!route.IsDirty) return;
+[BurstCompile]
+public partial struct RegionEikonalIntegrationJob : IJobEntity
+{
+    public int TargetPhase;
+    [ReadOnly] public NavGraphData NavGraph;
 
-//            var allowedRegions = new NativeHashSet<int>(16, Allocator.Temp);
-//            var pq = new NativeList<int>(1024, Allocator.Temp);
+    // Mapeo global de (RouteIndex, RegionId) -> Entity para buscar vecinos
+    [ReadOnly] public NativeParallelHashMap<int2, Entity> ActiveRegionsLookup;
 
-//            for (int r = 0; r < NavGraph.RegionCount; r++)
-//            {
-//                int2 key = new int2(route.RouteIndex, r);
-//                if (ActiveRegionsLookup.TryGetValue(key, out Entity regEntity))
-//                {
-//                    allowedRegions.Add(r);
+    // Lookups para inspeccionar el mundo exterior de forma segura
+    [ReadOnly] public BufferLookup<IntegrationFieldBuffer> AllIntegrationBuffers;
+    [ReadOnly] public ComponentLookup<RegionRouteConfig> AllRouteConfigs;
 
-//                    var buffer = IntegrationFieldsLookup[regEntity];
-//                    for (int i = 0; i < buffer.Length; i++)
-//                    {
-//                        if (buffer[i].Value < float.MaxValue)
-//                        {
-//                            int2 localKey = new int2(i, r);
-//                            if (NavGraph.LocalToGlobalMap.TryGetValue(localKey, out int gNode))
-//                            {
-//                                PushHeap(ref pq, gNode, ref route);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
+    void Execute(ref DynamicBuffer<IntegrationFieldBuffer> localBuffer, ref RegionRouteConfig config)
+    {
+        // Solo trabajamos si toca esta fase y está marcado como sucio
+        if (config.ExecutionPhase != TargetPhase || !config.IsDirty)
+            return;
 
-//            while (pq.Length > 0)
-//            {
-//                int currGlobal = PopHeap(ref pq, ref route);
+        int localRegionId = config.RegionId;
+        int routeIdx = config.RouteIndex;
+        int regionSize = NavGraph.RegionSizes[localRegionId];
 
-//                int2 offsetData = NavGraph.NodeNeighborsOffsets[currGlobal];
-//                for (int i = 0; i < offsetData.y; i++)
-//                {
-//                    int neighborGlobal = NavGraph.NeighborsBuffer[offsetData.x + i];
-//                    int nRegion = NavGraph.NodeRegionIds[neighborGlobal];
+        var queue = new NativeQueue<int>(Allocator.Temp);
 
-//                    if (!allowedRegions.Contains(nRegion) || !NavGraph.IsWalkableFlags[neighborGlobal]) continue;
+        // -----------------------------------------------------------------
+        // FASE 1: Sembrado Eikonal e Inter-Región
+        // -----------------------------------------------------------------
+        for (int localIdx = 0; localIdx < regionSize; localIdx++)
+        {
+            int globalNode = NavGraph.LocalToGlobalMap[new int2(localIdx, localRegionId)];
 
-//                    var acceptedNeighbors = new NativeList<NeighborDataBurst>(8, Allocator.Temp);
-//                    int2 nOffsetData = NavGraph.NodeNeighborsOffsets[neighborGlobal];
+            // Si ya tiene coste inicial inyectado de antemano (Target o Portales de entrada globales)
+            if (localBuffer[localIdx].Value < float.MaxValue)
+            {
+                queue.Enqueue(localIdx);
+                continue;
+            }
 
-//                    for (int j = 0; j < nOffsetData.y; j++)
-//                    {
-//                        int nOfN = NavGraph.NeighborsBuffer[nOffsetData.x + j];
-//                        int nnRegion = NavGraph.NodeRegionIds[nOfN];
+            // Lógica Eikonal: Revisamos si este nodo tiene vecinos físicos en OTRAS regiones
+            int2 neighborOffset = NavGraph.NodeNeighborsOffsets[globalNode];
+            float bestExternalCost = float.MaxValue;
 
-//                        if (!allowedRegions.Contains(nnRegion) || !NavGraph.IsWalkableFlags[nOfN]) continue;
+            for (int n = 0; n < neighborOffset.y; n++)
+            {
+                int neighborGlobal = NavGraph.NeighborsBuffer[neighborOffset.x + n];
+                int neighborRegionId = NavGraph.NodeRegionIds[neighborGlobal];
 
-//                        int2 nnKey = new int2(route.RouteIndex, nnRegion);
-//                        if (ActiveRegionsLookup.TryGetValue(nnKey, out Entity nnEntity))
-//                        {
-//                            int nnLocal = NavGraph.GlobalToLocalMap[nOfN];
-//                            float val = IntegrationFieldsLookup[nnEntity][nnLocal].Value;
+                // Si el vecino pertenece a otra región...
+                if (neighborRegionId != localRegionId)
+                {
+                    int2 neighborKey = new int2(routeIdx, neighborRegionId);
 
-//                            if (val < float.MaxValue)
-//                            {
-//                                acceptedNeighbors.Add(new NeighborDataBurst { Pos = NavGraph.NodePositions[nOfN], T = val, Cost = NavGraph.NodeCosts[nOfN] });
-//                            }
-//                        }
-//                    }
+                    // Intentamos obtener la entidad de esa región vecina
+                    if (ActiveRegionsLookup.TryGetValue(neighborKey, out Entity neighborEntity))
+                    {
+                        var neighborConfig = AllRouteConfigs[neighborEntity];
 
-//                    if (acceptedNeighbors.Length == 0) { acceptedNeighbors.Dispose(); continue; }
+                        // Eikonal condicional: Solo leemos si el vecino es de una fase INFERIOR o IGUAL (datos estables)
+                        if (neighborConfig.ExecutionPhase <= config.ExecutionPhase)
+                        {
+                            var neighborBuffer = AllIntegrationBuffers[neighborEntity];
+                            int neighborLocalIdx = NavGraph.GlobalToLocalMap[neighborGlobal];
+                            float externalCost = neighborBuffer[neighborLocalIdx].Value;
 
-//                    float nodeCost = NavGraph.NodeCosts[neighborGlobal];
-//                    float3 targetPos = NavGraph.NodePositions[neighborGlobal];
-//                    float newDist = CalculateEikonalCostBurst(targetPos, ref acceptedNeighbors, nodeCost);
-//                    acceptedNeighbors.Dispose();
+                            if (externalCost < float.MaxValue)
+                            {
+                                // Coste de transición eikonal entre regiones
+                                float transitionCost = externalCost + (1.0f * NavGraph.NodeCosts[globalNode]);
+                                if (transitionCost < bestExternalCost)
+                                {
+                                    bestExternalCost = transitionCost;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
-//                    int2 nKey = new int2(route.RouteIndex, nRegion);
-//                    if (ActiveRegionsLookup.TryGetValue(nKey, out Entity nEntity))
-//                    {
-//                        var nBuffer = IntegrationFieldsLookup[nEntity];
-//                        int nLocal = NavGraph.GlobalToLocalMap[neighborGlobal];
+            // Si encontramos una región vecina que ya tiene datos para este nodo frontera, nos acoplamos
+            if (bestExternalCost < float.MaxValue)
+            {
+                localBuffer[localIdx] = new IntegrationFieldBuffer { Value = bestExternalCost };
+                queue.Enqueue(localIdx);
+            }
+        }
 
-//                        if (newDist < nBuffer[nLocal].Value)
-//                        {
-//                            nBuffer[nLocal] = newDist;
-//                            PushHeap(ref pq, neighborGlobal, ref route);
-//                        }
-//                    }
-//                }
-//            }
+        // -----------------------------------------------------------------
+        // FASE 2: Inundación Dijkstra / Eikonal Estándar Interna
+        // -----------------------------------------------------------------
+        while (queue.TryDequeue(out int currentLocalNode))
+        {
+            int currentGlobalNode = NavGraph.LocalToGlobalMap[new int2(currentLocalNode, localRegionId)];
+            float currentCost = localBuffer[currentLocalNode].Value;
 
-//            // 3. Fase 4: Persistencia Filtrada (Limpieza de fronteras que no sean target)
-//            using (var e = allowedRegions.GetEnumerator())
-//            {
-//                int targetRegion = NavGraph.NodeRegionIds[route.TargetNodeGlobal];
-//                while (e.MoveNext())
-//                {
-//                    int rId = e.Current;
-//                    int2 key = new int2(route.RouteIndex, rId);
-//                    if (ActiveRegionsLookup.TryGetValue(key, out Entity regEntity))
-//                    {
-//                        var config = RegionRouteConfigLookup[regEntity];
-//                        if (!config.IsInsideWindow && rId != targetRegion)
-//                        {
-//                            var buffer = IntegrationFieldsLookup[regEntity];
-//                            for (int i = 0; i < buffer.Length; i++) buffer[i] = float.MaxValue;
-//                        }
-//                    }
-//                }
-//            }
+            int2 neighborOffset = NavGraph.NodeNeighborsOffsets[currentGlobalNode];
 
-//            allowedRegions.Dispose();
-//            pq.Dispose();
-//            route.IsDirty = false;
-//        }
+            for (int n = 0; n < neighborOffset.y; n++)
+            {
+                int neighborGlobal = NavGraph.NeighborsBuffer[neighborOffset.x + n];
 
-//        // --- MATEMÁTICA EIKONAL (KIMMEL) Y OPERACIONES HEAP ---
-//        private float CalculateEikonalCostBurst(float3 targetPos, ref NativeList<NeighborDataBurst> neighbors, float localCost)
-//        {
-//            for (int i = 1; i < neighbors.Length; i++)
-//            {
-//                var key = neighbors[i]; int j = i - 1;
-//                while (j >= 0 && neighbors[j].T > key.T) { neighbors[j + 1] = neighbors[j]; j--; }
-//                neighbors[j + 1] = key;
-//            }
-//            if (neighbors.Length >= 3)
-//            {
-//                float t = SolveQuadraticNDBurst(targetPos, ref neighbors, 3, localCost);
-//                if (!float.IsNaN(t) && t > neighbors[0].T && t > neighbors[1].T && t > neighbors[2].T) return t;
-//            }
-//            if (neighbors.Length >= 2)
-//            {
-//                float t = SolveQuadraticNDBurst(targetPos, ref neighbors, 2, localCost);
-//                if (!float.IsNaN(t) && t > neighbors[0].T && t > neighbors[1].T) return t;
-//            }
-//            return neighbors[0].T + (math.distance(targetPos, neighbors[0].Pos) * localCost);
-//        }
+                // Nos limitamos estrictamente al cálculo dentro de los límites de nuestra propia región
+                if (NavGraph.NodeRegionIds[neighborGlobal] == localRegionId)
+                {
+                    if (!NavGraph.IsWalkableFlags[neighborGlobal]) continue;
 
-//        private float SolveQuadraticNDBurst(float3 pC, ref NativeList<NeighborDataBurst> pts, int count, float f)
-//        {
-//            float a = 0, b = 0, c = -f * f;
-//            for (int i = 0; i < count; i++)
-//            {
-//                float3 v = pts[i].Pos - pC; float d = math.max(0.001f, math.length(v));
-//                float dSq = d * d; a += 1f / dSq; b -= 2f * pts[i].T / dSq; c += (pts[i].T * pts[i].T) / dSq;
-//            }
-//            float disc = (b * b) - (4f * a * c);
-//            if (disc < 0) return float.NaN;
-//            return (-b + math.sqrt(disc)) / (2f * a);
-//        }
+                    int neighborLocal = NavGraph.GlobalToLocalMap[neighborGlobal];
+                    float stepCost = 1.0f * NavGraph.NodeCosts[neighborGlobal];
+                    float newCost = currentCost + stepCost;
 
-//        private void PushHeap(ref NativeList<int> heap, int globalNode, ref RouteComponent route)
-//        {
-//            heap.Add(globalNode); int i = heap.Length - 1;
-//            while (i > 0)
-//            {
-//                int p = (i - 1) / 2;
-//                if (GetNodeCost(heap[i], ref route) >= GetNodeCost(heap[p], ref route)) break;
-//                int temp = heap[i]; heap[i] = heap[p]; heap[p] = temp; i = p;
-//            }
-//        }
+                    if (newCost < localBuffer[neighborLocal].Value)
+                    {
+                        localBuffer[neighborLocal] = new IntegrationFieldBuffer { Value = newCost };
+                        queue.Enqueue(neighborLocal);
+                    }
+                }
+            }
+        }
 
-//        private int PopHeap(ref NativeList<int> heap, ref RouteComponent route)
-//        {
-//            int top = heap[0]; heap[0] = heap[heap.Length - 1]; heap.RemoveAt(heap.Length - 1); int i = 0;
-//            while (i * 2 + 1 < heap.Length)
-//            {
-//                int left = i * 2 + 1; int right = left + 1; int target = left;
-//                if (right < heap.Length && GetNodeCost(heap[right], ref route) < GetNodeCost(heap[left], ref route)) target = right;
-//                if (GetNodeCost(heap[i], ref route) <= GetNodeCost(heap[target], ref route)) break;
-//                int temp = heap[i]; heap[i] = heap[target]; heap[target] = temp; i = target;
-//            }
-//            return top;
-//        }
+        queue.Dispose();
 
-//        private float GetNodeCost(int globalNode, ref RouteComponent route)
-//        {
-//            int rId = NavGraph.NodeRegionIds[globalNode];
-//            int2 key = new int2(route.RouteIndex, rId);
-//            if (ActiveRegionsLookup.TryGetValue(key, out Entity entity))
-//            {
-//                int local = NavGraph.GlobalToLocalMap[globalNode];
-//                return IntegrationFieldsLookup[entity][local].Value;
-//            }
-//            return float.MaxValue;
-//        }
-//    }
-//}
+        // Al terminar el cálculo quitamos el Dirty para evitar trabajo en el siguiente frame
+        config.IsDirty = false;
+    }
+}
