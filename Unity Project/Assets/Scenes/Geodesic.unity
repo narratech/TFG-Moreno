@@ -609,6 +609,7 @@ GameObject:
   - component: {fileID: 1264470535}
   - component: {fileID: 1264470534}
   - component: {fileID: 1264470536}
+  - component: {fileID: 1264470537}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -625,7 +626,7 @@ Transform:
   m_GameObject: {fileID: 1264470531}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.7, y: 0.77, z: 36.8}
+  m_LocalPosition: {x: 43.48, y: 12.05, z: 11.15}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -702,7 +703,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FlowAgent
   speed: 5
   targetNode: -1
-  grid: {fileID: 0}
+  grid: {fileID: 1999247484}
+--- !u!114 &1264470537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1264470531}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63a8bbf3df3f80045a46b5bd0df43dc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  centre: {x: 25, y: 0, z: 25}
+  radius: 51
 --- !u!1 &1469837800
 GameObject:
   m_ObjectHideFlags: 0
@@ -1307,8 +1322,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuadSphereProvider
   _radius: 25.2
-  _resolution: 38
+  _resolution: 3
   _regionsPerAxis: 1
+  _drawNodeIndices: 0
+  _drawCoordinates: 1
+  _drawFace: 0
   _obstacleMask:
     serializedVersion: 2
     m_Bits: 64

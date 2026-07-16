@@ -85,7 +85,7 @@ public class QuadSphereNavGraph : INavGraph
         }
     }
 
-    private CubeCoordinate IndexToCoordinate(int index)
+    public CubeCoordinate IndexToCoordinate(int index)
     {
         int faceIndex = index / _nodesPerFace;
         int localIndex = index % _nodesPerFace;

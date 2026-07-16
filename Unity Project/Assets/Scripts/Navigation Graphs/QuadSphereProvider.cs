@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEditor;
 using UnityEngine;
 
 public class QuadSphereProvider : MonoBehaviour
@@ -7,6 +8,10 @@ public class QuadSphereProvider : MonoBehaviour
     [SerializeField] private float _radius = 10f;
     [SerializeField] private int _resolution = 32;
     [SerializeField] private int _regionsPerAxis = 4;
+
+    [SerializeField] private bool _drawNodeIndices = true;
+    [SerializeField] private bool _drawCoordinates = true;
+    [SerializeField] private bool _drawFace = true;
 
     private int _regionSize => _resolution / _regionsPerAxis;
 
@@ -35,41 +40,6 @@ public class QuadSphereProvider : MonoBehaviour
         ScanObstacles();
 
         FlowFieldManager.Instance.RegisterContext(Graph);
-
-        foreach (CubeFace face in Enum.GetValues(typeof(CubeFace)))
-        {
-            for (int y = 0; y < _resolution; y++)
-            {
-                for (int x = 0; x < _resolution; x++)
-                {
-                    CubeCoordinate a = new(face, x, y);
-
-                    if (a.X != 0 &&
-                        a.X != _resolution - 1 &&
-                        a.Y != 0 &&
-                        a.Y != _resolution - 1)
-                    {
-                        continue;
-                    }
-
-                    Check(a, CubeDirection.Left, CubeDirection.Right);
-                    Check(a, CubeDirection.Right, CubeDirection.Left);
-                    Check(a, CubeDirection.Up, CubeDirection.Down);
-                    Check(a, CubeDirection.Down, CubeDirection.Up);
-                }
-            }
-        }
-    }
-
-    void Check(CubeCoordinate a,
-           CubeDirection d1,
-           CubeDirection d2)
-    {
-        CubeCoordinate b = CubeTopology.GetNeighbor(a, d1, _resolution);
-        CubeCoordinate c = CubeTopology.GetNeighbor(b, d2, _resolution);
-
-        if (!a.Equals(c))
-            Debug.LogError($"{a} -> {b} -> {c}");
     }
 
     private void ScanObstacles()
@@ -144,6 +114,8 @@ public class QuadSphereProvider : MonoBehaviour
                 }
             }
         }
+
+        DrawDebugLabels();
     }
 
     private void DrawQuadSphereGrid(int resolution, Color color)
@@ -241,4 +213,48 @@ public class QuadSphereProvider : MonoBehaviour
 
         return best;
     }
+
+#if UNITY_EDITOR
+    private void DrawDebugLabels()
+    {
+        if (Graph == null)
+            return;
+
+        Camera cam = SceneView.lastActiveSceneView?.camera;
+
+        if (cam == null)
+            return;
+
+        Handles.color = Color.white;
+
+        for (int i = 0; i < Graph.NodeCount; i++)
+        {
+            CubeCoordinate coord = Graph.IndexToCoordinate(i);
+
+            Vector3 pos = Graph.GetNodePosition(i);
+            Vector3 normal = (pos - transform.position).normalized;
+
+            // Si la cara mira en sentido contrario a la cámara, no la dibujamos.
+            Vector3 toCamera = (cam.transform.position - pos).normalized;
+
+            if (Vector3.Dot(normal, toCamera) <= 0f)
+                continue;
+
+            pos += normal * 0.05f;
+
+            string text = "";
+
+            if (_drawNodeIndices)
+                text += $"[{i}]";
+
+            if (_drawFace)
+                text += $"\n{coord.Face}";
+
+            if (_drawCoordinates)
+                text += $"\n({coord.X},{coord.Y})";
+
+            Handles.Label(pos, text);
+        }
+    }
+#endif
 }

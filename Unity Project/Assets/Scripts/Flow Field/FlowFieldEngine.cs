@@ -183,18 +183,6 @@ public static class FlowFieldEngine
             // En Fast Marching, expandimos hacia los vecinos para RE-CALCULARLOS
             foreach (int neighborGlobal in graph.GetNeighbors(currGlobal))
             {
-
-                bool found = false;
-
-                foreach (int nOfN in graph.GetNeighbors(neighborGlobal))
-                {
-                    if (nOfN == currGlobal)
-                        found = true;
-                }
-
-                if (!found)
-                    Debug.LogError($"La vecindad no es simétrica: {currGlobal} -> {neighborGlobal}");
-
                 int nRegion = graph.GetRegionId(neighborGlobal);
 
                 if (!regionIds.Contains(nRegion) || !graph.IsWalkable(neighborGlobal))
