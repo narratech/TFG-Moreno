@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public class QuadSphereProvider : MonoBehaviour
 {
@@ -6,6 +7,8 @@ public class QuadSphereProvider : MonoBehaviour
     [SerializeField] private float _radius = 10f;
     [SerializeField] private int _resolution = 32;
     [SerializeField] private int _regionsPerAxis = 4;
+
+    private int _regionSize => _resolution / _regionsPerAxis;
 
     [Header("Obstacles")]
     [SerializeField] private LayerMask _obstacleMask;
@@ -32,6 +35,41 @@ public class QuadSphereProvider : MonoBehaviour
         ScanObstacles();
 
         FlowFieldManager.Instance.RegisterContext(Graph);
+
+        foreach (CubeFace face in Enum.GetValues(typeof(CubeFace)))
+        {
+            for (int y = 0; y < _resolution; y++)
+            {
+                for (int x = 0; x < _resolution; x++)
+                {
+                    CubeCoordinate a = new(face, x, y);
+
+                    if (a.X != 0 &&
+                        a.X != _resolution - 1 &&
+                        a.Y != 0 &&
+                        a.Y != _resolution - 1)
+                    {
+                        continue;
+                    }
+
+                    Check(a, CubeDirection.Left, CubeDirection.Right);
+                    Check(a, CubeDirection.Right, CubeDirection.Left);
+                    Check(a, CubeDirection.Up, CubeDirection.Down);
+                    Check(a, CubeDirection.Down, CubeDirection.Up);
+                }
+            }
+        }
+    }
+
+    void Check(CubeCoordinate a,
+           CubeDirection d1,
+           CubeDirection d2)
+    {
+        CubeCoordinate b = CubeTopology.GetNeighbor(a, d1, _resolution);
+        CubeCoordinate c = CubeTopology.GetNeighbor(b, d2, _resolution);
+
+        if (!a.Equals(c))
+            Debug.LogError($"{a} -> {b} -> {c}");
     }
 
     private void ScanObstacles()
@@ -53,24 +91,154 @@ public class QuadSphereProvider : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.white;
-        Gizmos.DrawWireSphere(
-            transform.position,
-            _radius);
-
-        if (Graph == null)
-            return;
-
-        for (int i = 0; i < Graph.NodeCount; i++)
+        foreach (CubeFace face in Enum.GetValues(typeof(CubeFace)))
         {
-            Gizmos.color =
-                Graph.IsWalkable(i)
-                ? new Color(0f, 1f, 1f, 0.25f)
-                : new Color(1f, 0f, 0f, 0.5f);
+            for (int y = 0; y < _resolution; y++)
+            {
+                for (int x = 0; x < _resolution; x++)
+                {
+                    GetCellCorners(
+                        face,
+                        x,
+                        y,
+                        out Vector3 p00,
+                        out Vector3 p10,
+                        out Vector3 p11,
+                        out Vector3 p01);
 
-            Gizmos.DrawSphere(
-                Graph.GetNodePosition(i),
-                Graph.GetNodeSize(i).x * 0.25f);
+                    // Borde inferior (solo primera fila)
+                    if (y == 0)
+                    {
+                        Gizmos.color = Color.blue;
+                        Gizmos.DrawLine(p00, p10);
+                    }
+
+                    // Borde izquierdo (solo primera columna)
+                    if (x == 0)
+                    {
+                        Gizmos.color = Color.blue;
+                        Gizmos.DrawLine(p00, p01);
+                    }
+
+                    // Borde derecho
+                    bool rightRegionBorder =
+                        (x + 1) % _regionSize == 0 ||
+                        x == _resolution - 1;
+
+                    Gizmos.color = rightRegionBorder
+                        ? Color.blue
+                        : new Color(1f, 1f, 1f, 0.25f);
+
+                    Gizmos.DrawLine(p10, p11);
+
+                    // Borde superior
+                    bool topRegionBorder =
+                        (y + 1) % _regionSize == 0 ||
+                        y == _resolution - 1;
+
+                    Gizmos.color = topRegionBorder
+                        ? Color.blue
+                        : new Color(1f, 1f, 1f, 0.25f);
+
+                    Gizmos.DrawLine(p01, p11);
+                }
+            }
         }
+    }
+
+    private void DrawQuadSphereGrid(int resolution, Color color)
+    {
+        Gizmos.color = color;
+
+        foreach (CubeFace face in Enum.GetValues(typeof(CubeFace)))
+        {
+            for (int y = 0; y < resolution; y++)
+            {
+                for (int x = 0; x < resolution; x++)
+                {
+                    DrawCell(face, x, y);
+                }
+            }
+        }
+    }
+
+    private void DrawCell(CubeFace face, int x, int y)
+    {
+        GetCellCorners(face, x, y,
+            out Vector3 p00,
+            out Vector3 p10,
+            out Vector3 p11,
+            out Vector3 p01);
+
+        Gizmos.DrawLine(p00, p10);
+        Gizmos.DrawLine(p10, p11);
+        Gizmos.DrawLine(p11, p01);
+        Gizmos.DrawLine(p01, p00);
+    }
+
+    private void GetCellCorners(
+    CubeFace face,
+    int x,
+    int y,
+    out Vector3 p00,
+    out Vector3 p10,
+    out Vector3 p11,
+    out Vector3 p01)
+    {
+        float inv = 1f / _resolution;
+
+        p00 = GetCorner(face, x * inv, y * inv);
+        p10 = GetCorner(face, (x + 1) * inv, y * inv);
+        p11 = GetCorner(face, (x + 1) * inv, (y + 1) * inv);
+        p01 = GetCorner(face, x * inv, (y + 1) * inv);
+    }
+
+    private Vector3 GetCorner(
+    CubeFace face,
+    float u,
+    float v)
+    {
+        Vector3 direction =
+            CubeProjection.UVToDirection(
+                face, u, v);
+
+        return CubeProjection.DirectionToWorld(
+            transform.position,
+            _radius,
+            transform.rotation,
+            direction);
+    }
+
+    private void OnValidate()
+    {
+        _regionsPerAxis = GetNearestValidRegionsPerAxis(
+            _resolution,
+            _regionsPerAxis);
+    }
+
+    private static int GetNearestValidRegionsPerAxis(
+    int resolution,
+    int requested)
+    {
+        requested = Mathf.Clamp(requested, 1, resolution);
+
+        int best = 1;
+        int bestDistance = int.MaxValue;
+
+        for (int i = 1; i <= resolution; i++)
+        {
+            if (resolution % i != 0)
+                continue;
+
+            int distance = Mathf.Abs(i - requested);
+
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                best = i;
+            }
+        }
+
+        return best;
     }
 }

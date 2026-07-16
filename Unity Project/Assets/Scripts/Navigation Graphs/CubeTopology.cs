@@ -1,73 +1,98 @@
+public enum CubeEdge
+{
+    Left,
+    Right,
+    Up,
+    Down
+}
+
+public readonly struct FaceTransition
+{
+    public readonly CubeFace Face;
+    public readonly CubeEdge EnterEdge;
+    public readonly bool Flip;
+
+    public FaceTransition(
+        CubeFace face,
+        CubeEdge enterEdge,
+        bool flip = false)
+    {
+        Face = face;
+        EnterEdge = enterEdge;
+        Flip = flip;
+    }
+}
+
 public static class CubeTopology
 {
     private static readonly FaceTransition[,] _transitions =
     {
-        // =========================
-        // Positive X
-        // Left   Right  Up    Down
-        // =========================
+        // ======================================================
+        // PositiveX
+        // Left            Right             Up               Down
+        // ======================================================
         {
-            new FaceTransition(CubeFace.PositiveZ, CubeRotation.None),
-            new FaceTransition(CubeFace.NegativeZ, CubeRotation.None),
-            new FaceTransition(CubeFace.PositiveY, CubeRotation.Clockwise90),
-            new FaceTransition(CubeFace.NegativeY, CubeRotation.Clockwise270)
+            new FaceTransition(CubeFace.PositiveZ, CubeEdge.Right),
+            new FaceTransition(CubeFace.NegativeZ, CubeEdge.Left),
+            new FaceTransition(CubeFace.PositiveY, CubeEdge.Right),
+            new FaceTransition(CubeFace.NegativeY, CubeEdge.Right, true)
         },
 
-        // =========================
-        // Negative X
-        // =========================
+        // ======================================================
+        // NegativeX
+        // ======================================================
         {
-            new FaceTransition(CubeFace.NegativeZ, CubeRotation.None),
-            new FaceTransition(CubeFace.PositiveZ, CubeRotation.None),
-            new FaceTransition(CubeFace.PositiveY, CubeRotation.Clockwise270),
-            new FaceTransition(CubeFace.NegativeY, CubeRotation.Clockwise90)
+            new FaceTransition(CubeFace.NegativeZ, CubeEdge.Right),
+            new FaceTransition(CubeFace.PositiveZ, CubeEdge.Left),
+            new FaceTransition(CubeFace.PositiveY, CubeEdge.Left, true),
+            new FaceTransition(CubeFace.NegativeY, CubeEdge.Left)
         },
 
-        // =========================
-        // Positive Y
-        // =========================
+        // ======================================================
+        // PositiveY
+        // ======================================================
         {
-            new FaceTransition(CubeFace.NegativeX, CubeRotation.Clockwise90),
-            new FaceTransition(CubeFace.PositiveX, CubeRotation.Clockwise270),
-            new FaceTransition(CubeFace.NegativeZ, CubeRotation.Clockwise180),
-            new FaceTransition(CubeFace.PositiveZ, CubeRotation.None)
+            new FaceTransition(CubeFace.NegativeX, CubeEdge.Up),
+            new FaceTransition(CubeFace.PositiveX, CubeEdge.Up),
+            new FaceTransition(CubeFace.NegativeZ, CubeEdge.Up),
+            new FaceTransition(CubeFace.PositiveZ, CubeEdge.Up)
         },
 
-        // =========================
-        // Negative Y
-        // =========================
+        // ======================================================
+        // NegativeY
+        // ======================================================
         {
-            new FaceTransition(CubeFace.NegativeX, CubeRotation.Clockwise270),
-            new FaceTransition(CubeFace.PositiveX, CubeRotation.Clockwise90),
-            new FaceTransition(CubeFace.PositiveZ, CubeRotation.None),
-            new FaceTransition(CubeFace.NegativeZ, CubeRotation.Clockwise180)
+            new FaceTransition(CubeFace.NegativeX, CubeEdge.Down),
+            new FaceTransition(CubeFace.PositiveX, CubeEdge.Down),
+            new FaceTransition(CubeFace.PositiveZ, CubeEdge.Down),
+            new FaceTransition(CubeFace.NegativeZ, CubeEdge.Down)
         },
 
-        // =========================
-        // Positive Z
-        // =========================
+        // ======================================================
+        // PositiveZ
+        // ======================================================
         {
-            new FaceTransition(CubeFace.NegativeX, CubeRotation.None),
-            new FaceTransition(CubeFace.PositiveX, CubeRotation.None),
-            new FaceTransition(CubeFace.PositiveY, CubeRotation.None),
-            new FaceTransition(CubeFace.NegativeY, CubeRotation.None)
+            new FaceTransition(CubeFace.NegativeX, CubeEdge.Right),
+            new FaceTransition(CubeFace.PositiveX, CubeEdge.Left),
+            new FaceTransition(CubeFace.PositiveY, CubeEdge.Down),
+            new FaceTransition(CubeFace.NegativeY, CubeEdge.Up)
         },
 
-        // =========================
-        // Negative Z
-        // =========================
+        // ======================================================
+        // NegativeZ
+        // ======================================================
         {
-            new FaceTransition(CubeFace.PositiveX, CubeRotation.None),
-            new FaceTransition(CubeFace.NegativeX, CubeRotation.None),
-            new FaceTransition(CubeFace.PositiveY, CubeRotation.Clockwise180),
-            new FaceTransition(CubeFace.NegativeY, CubeRotation.Clockwise180)
+            new FaceTransition(CubeFace.PositiveX, CubeEdge.Right),
+            new FaceTransition(CubeFace.NegativeX, CubeEdge.Left),
+            new FaceTransition(CubeFace.PositiveY, CubeEdge.Up),
+            new FaceTransition(CubeFace.NegativeY, CubeEdge.Down)
         }
     };
 
     public static CubeCoordinate GetNeighbor(
-        CubeCoordinate coord,
-        CubeDirection direction,
-        int resolution)
+    CubeCoordinate coord,
+    CubeDirection direction,
+    int resolution)
     {
         int x = coord.X;
         int y = coord.Y;
@@ -92,73 +117,48 @@ public static class CubeTopology
         FaceTransition transition =
             _transitions[(int)coord.Face, (int)direction];
 
-        // Coordenadas sobre el borde
-        switch (direction)
+        // Parámetro sobre la arista
+        int t = direction switch
         {
-            case CubeDirection.Left:
-                x = resolution - 1;
+            CubeDirection.Left => coord.Y,
+            CubeDirection.Right => coord.Y,
+            CubeDirection.Up => coord.X,
+            CubeDirection.Down => coord.X,
+            _ => 0
+        };
+
+        if (transition.Flip)
+            t = resolution - 1 - t;
+
+        int nx = 0;
+        int ny = 0;
+
+        switch (transition.EnterEdge)
+        {
+            case CubeEdge.Left:
+                nx = 0;
+                ny = t;
                 break;
 
-            case CubeDirection.Right:
-                x = 0;
+            case CubeEdge.Right:
+                nx = resolution - 1;
+                ny = t;
                 break;
 
-            case CubeDirection.Up:
-                y = 0;
+            case CubeEdge.Up:
+                nx = t;
+                ny = resolution - 1;
                 break;
 
-            case CubeDirection.Down:
-                y = resolution - 1;
+            case CubeEdge.Down:
+                nx = t;
+                ny = 0;
                 break;
         }
-
-        RotateCoordinate(
-            ref x,
-            ref y,
-            resolution,
-            transition.Rotation);
 
         return new CubeCoordinate(
             transition.Face,
-            x,
-            y);
-    }
-
-    private static void RotateCoordinate(
-        ref int x,
-        ref int y,
-        int resolution,
-        CubeRotation rotation)
-    {
-        int max = resolution - 1;
-
-        switch (rotation)
-        {
-            case CubeRotation.None:
-                return;
-
-            case CubeRotation.Clockwise90:
-                {
-                    int oldX = x;
-                    x = y;
-                    y = max - oldX;
-                    break;
-                }
-
-            case CubeRotation.Clockwise180:
-                {
-                    x = max - x;
-                    y = max - y;
-                    break;
-                }
-
-            case CubeRotation.Clockwise270:
-                {
-                    int oldX = x;
-                    x = max - y;
-                    y = oldX;
-                    break;
-                }
-        }
+            nx,
+            ny);
     }
 }

@@ -6,7 +6,7 @@ public class FlowFieldAgent : MonoBehaviour
     public INavGraph graph;
     public float speed = 5f;
     public int targetNode = -1;
-    public Grid2DProvider grid;
+    public QuadSphereProvider grid;
 
     private void Start()
     {

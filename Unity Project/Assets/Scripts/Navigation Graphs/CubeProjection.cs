@@ -147,7 +147,7 @@ public static class CubeProjection
         return new Vector2(u, v);
     }
 
-    private static Vector3 UVToDirection(
+    public  static Vector3 UVToDirection(
         CubeFace face,
         float u,
         float v)

@@ -51,18 +51,3 @@ public enum CubeRotation
 
     Clockwise270 = 3
 }
-
-public readonly struct FaceTransition
-{
-    public readonly CubeFace Face;
-
-    public readonly CubeRotation Rotation;
-
-    public FaceTransition(
-        CubeFace face,
-        CubeRotation rotation)
-    {
-        Face = face;
-        Rotation = rotation;
-    }
-}

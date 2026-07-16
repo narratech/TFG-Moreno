@@ -183,6 +183,18 @@ public static class FlowFieldEngine
             // En Fast Marching, expandimos hacia los vecinos para RE-CALCULARLOS
             foreach (int neighborGlobal in graph.GetNeighbors(currGlobal))
             {
+
+                bool found = false;
+
+                foreach (int nOfN in graph.GetNeighbors(neighborGlobal))
+                {
+                    if (nOfN == currGlobal)
+                        found = true;
+                }
+
+                if (!found)
+                    Debug.LogError($"La vecindad no es simétrica: {currGlobal} -> {neighborGlobal}");
+
                 int nRegion = graph.GetRegionId(neighborGlobal);
 
                 if (!regionIds.Contains(nRegion) || !graph.IsWalkable(neighborGlobal))
@@ -217,6 +229,11 @@ public static class FlowFieldEngine
                 float nodeCost = graph.GetNodeCost(neighborGlobal);
                 Vector3 targetPos = graph.GetNodePosition(neighborGlobal);
 
+                if (acceptedNeighbors.Count == 0)
+                {
+                    Debug.Log($"Nodo {neighborGlobal} sin vecinos aceptados");
+                    continue;
+                }
                 // Usamos la función que creamos antes
                 float newDist = CalculateEikonalCost(targetPos, acceptedNeighbors, nodeCost);
 

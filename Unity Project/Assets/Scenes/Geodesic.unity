@@ -595,7 +595,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 978a8a4ea426c2a469bee1e72c4b78e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SampleManager2
-  graphProvider: {fileID: 0}
+  graphProvider: {fileID: 1999247484}
   targetNode: -1
 --- !u!1 &1264470531
 GameObject:
@@ -1270,7 +1270,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1999247477}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f6822cf1a31fe464aaea629a9e5dd54b, type: 3}
   m_Name: 
@@ -1306,9 +1306,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbb62787f2451ed47ad096f038e8f3d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuadSphereProvider
-  _radius: 25
-  _resolution: 32
-  _regionsPerAxis: 4
+  _radius: 25.2
+  _resolution: 38
+  _regionsPerAxis: 1
   _obstacleMask:
     serializedVersion: 2
     m_Bits: 64
@@ -1320,7 +1320,7 @@ SceneRoots:
   - {fileID: 1897352271}
   - {fileID: 1252518796}
   - {fileID: 1999247481}
+  - {fileID: 773023309}
   - {fileID: 889665087}
   - {fileID: 1469837801}
   - {fileID: 1503179634}
-  - {fileID: 773023309}
