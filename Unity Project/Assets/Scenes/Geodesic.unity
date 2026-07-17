@@ -717,7 +717,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   centre: {x: 25, y: 0, z: 25}
-  radius: 51
+  radius: 26
 --- !u!1 &1469837800
 GameObject:
   m_ObjectHideFlags: 0
@@ -1297,7 +1297,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1999247477}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a62a886c82af3644791879b151940d7b, type: 3}
   m_Name: 
@@ -1307,8 +1307,10 @@ MonoBehaviour:
   _showDirections: 1
   _arrowLength: 0.4
   _arrowColor: {r: 1, g: 0, b: 0, a: 1}
-  _planeOpacity: 0.5
-  grid: {fileID: 0}
+  _integrationOpacity: 0.5
+  _gridProvider: {fileID: 0}
+  _quadSphereProvider: {fileID: 1999247484}
+  _voxelProvider: {fileID: 0}
 --- !u!114 &1999247484
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1322,10 +1324,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuadSphereProvider
   _radius: 25.2
-  _resolution: 3
-  _regionsPerAxis: 1
+  _resolution: 28
+  _regionsPerAxis: 7
   _drawNodeIndices: 0
-  _drawCoordinates: 1
+  _drawCoordinates: 0
   _drawFace: 0
   _obstacleMask:
     serializedVersion: 2

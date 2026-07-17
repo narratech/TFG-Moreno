@@ -24,6 +24,10 @@ public class QuadSphereNavGraph : INavGraph
     private readonly int _regionSize;
     private readonly int _regionsPerFace;
 
+    public Vector3 Center => _center;
+    public Quaternion Rotation => _rotation;
+    public float Radius => _radius;
+    public int Resolution => _resolution;
     public int NodeCount => _nodesPerFace * 6;
     public int RegionCount => _regionsPerFace * 6;
 
@@ -222,5 +226,47 @@ public class QuadSphereNavGraph : INavGraph
             if (IsWalkable(neighborIndex))
                 yield return neighborIndex;
         }
+    }
+
+    public void GetNodeCorners(
+    int node,
+    out Vector3 a,
+    out Vector3 b,
+    out Vector3 c,
+    out Vector3 d)
+    {
+        CubeCoordinate coord = IndexToCoordinate(node);
+
+        float step = 1f / _resolution;
+
+        float u0 = coord.X * step;
+        float u1 = (coord.X + 1) * step;
+
+        float v0 = coord.Y * step;
+        float v1 = (coord.Y + 1) * step;
+
+        a = CubeProjection.DirectionToWorld(
+            _center,
+            _radius,
+            _rotation,
+            CubeProjection.UVToDirection(coord.Face, u0, v0));
+
+        b = CubeProjection.DirectionToWorld(
+            _center,
+            _radius,
+            _rotation,
+            CubeProjection.UVToDirection(coord.Face, u1, v0));
+
+        c = CubeProjection.DirectionToWorld(
+            _center,
+            _radius,
+            _rotation,
+            CubeProjection.UVToDirection(coord.Face, u1, v1));
+
+        d = CubeProjection.DirectionToWorld(
+            _center,
+            _radius,
+            _rotation,
+            CubeProjection.UVToDirection(coord.Face, u0, v1));
     }
 }

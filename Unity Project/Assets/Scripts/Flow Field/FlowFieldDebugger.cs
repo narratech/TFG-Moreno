@@ -3,177 +3,785 @@ using static FlowFieldManager;
 
 public class FlowFieldDebugger : MonoBehaviour
 {
-    [Header("Configuración Visual")]
+    [Header("General")]
     [SerializeField] private bool _showInGame = false;
-    [SerializeField] private bool _showIntegration = false;
+
+    [Header("Flow Field")]
+    [SerializeField] private bool _showIntegration = true;
     [SerializeField] private bool _showDirections = true;
+
+    [Header("Visual")]
     [SerializeField] private float _arrowLength = 0.4f;
     [SerializeField] private Color _arrowColor = Color.red;
-    [SerializeField][Range(0f, 1f)] private float _planeOpacity = 0.5f;
+    [SerializeField] private float _integrationOpacity = 0.5f;
 
-    public Grid2DProvider grid;
-    
-    private INavGraph graph => grid != null ? grid.Graph : null;
+    [Header("Providers")]
+    [SerializeField] private Grid2DProvider _gridProvider;
+    [SerializeField] private QuadSphereProvider _quadSphereProvider;
+    [SerializeField] private Grid3DProvider _voxelProvider;
+
+    private INavGraph _graph;
+
+    private Grid2DNavGraph _gridGraph;
+    private QuadSphereNavGraph _quadSphereGraph;
+    private Grid3DNavGraph _voxelGraph;
 
     private Material _lineMaterial;
 
     private void Start()
     {
-        if (FlowFieldManager.Instance == null)
-            Debug.LogWarning("FlowFieldManager no encontrado.");
-
+        CacheGraph();
         CreateLineMaterial();
     }
 
-    private void OnRenderObject()
+    private void CacheGraph()
     {
-        if (!_showInGame) return;
-        DrawAllFlows(true);
-    }
-
-    private void OnDrawGizmos()
-    {
-        if (_showInGame && Application.isPlaying) return;
-        DrawAllFlows(false);
-    }
-
-    private void DrawAllFlows(bool isInGame)
-    {
-        if (FlowFieldManager.Instance == null || graph == null) return;
-        int targetNode = FlowFieldManager.Instance.lastTargetNode;
-        if (targetNode == -1) return;
-        FlowFieldRoute route = FlowFieldManager.Instance.GetRoute(graph, targetNode);
-        if (route == null) return;
-        foreach (var kvp in route.FlowFields)
+        if (_gridProvider != null)
         {
-            DrawFlowField(kvp.Value, graph, isInGame);
+            _graph = _gridProvider.Graph;
+            _gridGraph = _graph as Grid2DNavGraph;
+            return;
         }
-    }
 
-    private void DrawFlowField(FlowField data, INavGraph graph, bool isInGame)
-    {
-        if (isInGame)
+        if (_quadSphereProvider != null)
         {
-            _lineMaterial.SetPass(0);
-            GL.PushMatrix();
-            // Dibujamos primero los planos (QUADS)
-            if (_showIntegration)
-            {
-                GL.Begin(GL.QUADS);
-                for (int i = 0; i < data.IntegrationField.Length; i++)
-                {
-                    float cost = data.IntegrationField[i];
-                    if (cost < float.MaxValue)
-                    {
-                        Color c = Color.Lerp(Color.green, Color.blue, cost / 20f);
-                        c.a = _planeOpacity;
-                        int globalNode = graph.GetGlobalNode(i, data.RegionId);
-                        DrawInGamePlane(graph.GetNodePosition(globalNode), graph.GetNodeSize(globalNode).x, c);
-                    }
-                }
-                GL.End();
-            }
-            // Luego las flechas (LINES)
-            if (_showDirections)
-            {
-                GL.Begin(GL.LINES);
-                for (int i = 0; i < data.FlowDirections.Length; i++)
-                {
-                    Vector3 dir = data.FlowDirections[i];
-                    int globalNode = graph.GetGlobalNode(i, data.RegionId);
-                    if (dir != Vector3.zero) DrawArrow(graph.GetNodePosition(globalNode), dir, true);
-                }
-                GL.End();
-            }
-            GL.PopMatrix();
+            _graph = _quadSphereProvider.Graph;
+            _quadSphereGraph = _graph as QuadSphereNavGraph;
+            return;
         }
-        else
-        {
-            // Lógica normal de Gizmos para el Editor
-            for (int i = 0; i < data.IntegrationField.Length; i++)
-            {
-                int globalNode = graph.GetGlobalNode(i, data.RegionId);
-                Vector3 pos = graph.GetNodePosition(globalNode);
-                if (_showIntegration)
-                {
-                    float cost = data.IntegrationField[i];
-                    if (cost < float.MaxValue)
-                    {
-                        Gizmos.color = Color.Lerp(Color.green, Color.blue, cost / 50f);
-                        Gizmos.DrawCube(pos, new Vector3(0.9f, 0.01f, 0.9f));
-                    }
-                }
-                if (_showDirections)
-                {
-                    Vector3 dir = data.FlowDirections[i];
-                    if (dir != Vector3.zero) DrawArrow(pos, dir, false);
-                }
-            }
-        }
-    }
 
-    private void DrawInGamePlane(Vector3 center, float size, Color color)
-    {
-        GL.Color(color);
-        float h = size * 0.5f;
-        // Dibujamos el plano horizontalmente (XZ)
-        GL.Vertex(new Vector3(center.x - h, center.y + 0.01f, center.z - h));
-        GL.Vertex(new Vector3(center.x - h, center.y + 0.01f, center.z + h));
-        GL.Vertex(new Vector3(center.x + h, center.y + 0.01f, center.z + h));
-        GL.Vertex(new Vector3(center.x + h, center.y + 0.01f, center.z - h));
-    }
-
-    private void DrawArrow(Vector3 pos, Vector3 dir, bool isInGame)
-    {
-        Vector3 end = pos + dir * _arrowLength;
-        Quaternion lookRot = Quaternion.LookRotation(dir != Vector3.zero ? dir : Vector3.forward);
-        Vector3 right = lookRot * Quaternion.Euler(0, 150, 0) * Vector3.forward;
-        Vector3 left = lookRot * Quaternion.Euler(0, -150, 0) * Vector3.forward;
-
-        if (isInGame)
+        if (_voxelProvider != null)
         {
-            GL.Color(_arrowColor);
-            GL.Vertex(pos); GL.Vertex(end);
-            GL.Vertex(end); GL.Vertex(end + right * (_arrowLength * 0.3f));
-            GL.Vertex(end); GL.Vertex(end + left * (_arrowLength * 0.3f));
+            _graph = _voxelProvider.Graph;
+            _voxelGraph = _graph as Grid3DNavGraph;
+            return;
         }
-        else
-        {
-            Gizmos.color = _arrowColor;
-            Gizmos.DrawLine(pos, end);
-            Gizmos.DrawLine(end, end + right * (_arrowLength * 0.3f));
-            Gizmos.DrawLine(end, end + left * (_arrowLength * 0.3f));
-        }
+
+        Debug.LogWarning("No Navigation Provider asignado.");
     }
 
     private void CreateLineMaterial()
     {
-        if (_lineMaterial != null) return;
+        if (_lineMaterial != null)
+            return;
 
-        // Intentamos buscar el shader más simple posible
         Shader shader = Shader.Find("Hidden/Internal-CombinedMeshVertices");
 
-        // Si sigue siendo null, buscamos el de Sprites (funciona en Built-in y URP para GL)
         if (shader == null)
-        {
             shader = Shader.Find("Sprites/Default");
-        }
 
-        // Si todo falla (extremo), usamos el shader de error para que al menos no rompa
         if (shader == null)
-        {
             shader = Shader.Find("Unlit/Color");
-        }
 
         _lineMaterial = new Material(shader)
         {
             hideFlags = HideFlags.HideAndDontSave
         };
 
-        // Configuración para que soporte transparencia y colores de vértice
-        _lineMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        _lineMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        _lineMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
-        _lineMaterial.SetInt("_ZWrite", 0);
+        _lineMaterial.SetInt(
+            "_SrcBlend",
+            (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+
+        _lineMaterial.SetInt(
+            "_DstBlend",
+            (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+
+        _lineMaterial.SetInt(
+            "_Cull",
+            (int)UnityEngine.Rendering.CullMode.Off);
+
+        _lineMaterial.SetInt(
+            "_ZWrite",
+            0);
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (_showInGame && Application.isPlaying)
+            return;
+
+        DrawAllFlows(false);
+    }
+
+    private void OnRenderObject()
+    {
+        if (!_showInGame)
+            return;
+
+        DrawAllFlows(true);
+    }
+
+    private void DrawAllFlows(bool inGame)
+    {
+        if (_graph == null)
+            return;
+
+        if (FlowFieldManager.Instance == null)
+            return;
+
+        int targetNode = FlowFieldManager.Instance.lastTargetNode;
+
+        if (targetNode == -1)
+            return;
+
+        FlowFieldRoute route =
+            FlowFieldManager.Instance.GetRoute(_graph, targetNode);
+
+        if (route == null)
+            return;
+
+        if (inGame)
+        {
+            _lineMaterial.SetPass(0);
+            GL.PushMatrix();
+        }
+
+        foreach (FlowField flowField in route.FlowFields.Values)
+        {
+            DrawFlowField(flowField, inGame);
+        }
+
+        if (inGame)
+        {
+            GL.PopMatrix();
+        }
+    }
+
+    private void DrawFlowField(
+    FlowField flowField,
+    bool inGame)
+    {
+        if (_gridGraph != null)
+        {
+            DrawGridFlowField(flowField, inGame);
+            return;
+        }
+
+        if (_quadSphereGraph != null)
+        {
+            DrawQuadSphereFlowField(flowField, inGame);
+            return;
+        }
+
+        if (_voxelGraph != null)
+        {
+            DrawVoxelFlowField(flowField, inGame);
+            return;
+        }
+    }
+
+    private void DrawGridFlowField(
+    FlowField flowField,
+    bool inGame)
+    {
+        if (inGame)
+        {
+            if (_showIntegration)
+            {
+                GL.Begin(GL.QUADS);
+
+                DrawGridIntegration(flowField);
+
+                GL.End();
+            }
+
+            if (_showDirections)
+            {
+                GL.Begin(GL.LINES);
+
+                DrawGridDirections(flowField);
+
+                GL.End();
+            }
+        }
+        else
+        {
+            DrawGridIntegrationGizmos(flowField);
+            DrawGridDirectionsGizmos(flowField);
+        }
+    }
+
+    private void DrawGridIntegration(
+    FlowField flowField)
+    {
+        for (int i = 0; i < flowField.IntegrationField.Length; i++)
+        {
+            float cost = flowField.IntegrationField[i];
+
+            if (cost == float.MaxValue)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            Color color =
+                Color.Lerp(
+                    Color.green,
+                    Color.blue,
+                    cost / 20f);
+
+            color.a = _integrationOpacity;
+
+            DrawGridQuad(
+                global,
+                color);
+        }
+    }
+
+    private void DrawGridDirections(
+    FlowField flowField)
+    {
+        for (int i = 0; i < flowField.FlowDirections.Length; i++)
+        {
+            Vector3 dir =
+                flowField.FlowDirections[i];
+
+            if (dir == Vector3.zero)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            DrawArrowGL(
+                _graph.GetNodePosition(global),
+                dir);
+        }
+    }
+
+    private void DrawGridIntegrationGizmos(
+    FlowField flowField)
+    {
+        if (!_showIntegration)
+            return;
+
+        for (int i = 0; i < flowField.IntegrationField.Length; i++)
+        {
+            float cost = flowField.IntegrationField[i];
+
+            if (cost == float.MaxValue)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            Color color =
+                Color.Lerp(
+                    Color.green,
+                    Color.blue,
+                    cost / 20f);
+
+            DrawGridQuadGizmos(
+                global,
+                color);
+        }
+    }
+
+    private void DrawGridDirectionsGizmos(
+    FlowField flowField)
+    {
+        if (!_showDirections)
+            return;
+
+        for (int i = 0; i < flowField.FlowDirections.Length; i++)
+        {
+            Vector3 dir =
+                flowField.FlowDirections[i];
+
+            if (dir == Vector3.zero)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            DrawArrowGizmos(
+                _graph.GetNodePosition(global),
+                dir);
+        }
+    }
+
+    private void DrawGridQuad(
+    int node,
+    Color color)
+    {
+        Vector3 center = _graph.GetNodePosition(node);
+        float size = _graph.GetNodeSize(node).x * 0.5f;
+
+        GL.Color(color);
+
+        GL.Vertex(center + new Vector3(-size, 0.01f, -size));
+        GL.Vertex(center + new Vector3(-size, 0.01f, size));
+        GL.Vertex(center + new Vector3(size, 0.01f, size));
+        GL.Vertex(center + new Vector3(size, 0.01f, -size));
+    }
+
+    private void DrawGridQuadGizmos(
+    int node,
+    Color color)
+    {
+        Vector3 center = _graph.GetNodePosition(node);
+        float size = _graph.GetNodeSize(node).x;
+
+        Gizmos.color = color;
+
+        Gizmos.DrawCube(
+            center,
+            new Vector3(size, 0.01f, size));
+    }
+
+    private void DrawArrowGL(
+    Vector3 pos,
+    Vector3 dir)
+    {
+        Vector3 end = pos + dir * _arrowLength;
+
+        Quaternion rot =
+            Quaternion.LookRotation(dir);
+
+        Vector3 right =
+            rot * Quaternion.Euler(0, 150, 0) * Vector3.forward;
+
+        Vector3 left =
+            rot * Quaternion.Euler(0, -150, 0) * Vector3.forward;
+
+        GL.Color(_arrowColor);
+
+        GL.Vertex(pos);
+        GL.Vertex(end);
+
+        GL.Vertex(end);
+        GL.Vertex(end + right * (_arrowLength * 0.3f));
+
+        GL.Vertex(end);
+        GL.Vertex(end + left * (_arrowLength * 0.3f));
+    }
+
+    private void DrawArrowGizmos(
+    Vector3 pos,
+    Vector3 dir)
+    {
+        Vector3 end = pos + dir * _arrowLength;
+
+        Quaternion rot =
+            Quaternion.LookRotation(dir);
+
+        Vector3 right =
+            rot * Quaternion.Euler(0, 150, 0) * Vector3.forward;
+
+        Vector3 left =
+            rot * Quaternion.Euler(0, -150, 0) * Vector3.forward;
+
+        Gizmos.color = _arrowColor;
+
+        Gizmos.DrawLine(pos, end);
+
+        Gizmos.DrawLine(
+            end,
+            end + right * (_arrowLength * 0.3f));
+
+        Gizmos.DrawLine(
+            end,
+            end + left * (_arrowLength * 0.3f));
+    }
+
+    private void DrawQuadSphereFlowField(
+    FlowField flowField,
+    bool inGame)
+    {
+        if (inGame)
+        {
+            if (_showIntegration)
+            {
+                GL.Begin(GL.QUADS);
+
+                DrawQuadSphereIntegration(flowField);
+
+                GL.End();
+            }
+
+            if (_showDirections)
+            {
+                GL.Begin(GL.LINES);
+
+                DrawQuadSphereDirections(flowField);
+
+                GL.End();
+            }
+        }
+        else
+        {
+            DrawQuadSphereIntegrationGizmos(flowField);
+            DrawQuadSphereDirectionsGizmos(flowField);
+        }
+    }
+
+    private void DrawQuadSphereIntegration(
+    FlowField flowField)
+    {
+        for (int i = 0; i < flowField.IntegrationField.Length; i++)
+        {
+            float cost = flowField.IntegrationField[i];
+
+            if (cost == float.MaxValue)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            Color color =
+                Color.Lerp(
+                    Color.green,
+                    Color.blue,
+                    cost / 20f);
+
+            color.a = _integrationOpacity;
+
+            DrawSphereQuad(
+                global,
+                color);
+        }
+    }
+    private void DrawQuadSphereDirections(
+    FlowField flowField)
+    {
+        for (int i = 0; i < flowField.FlowDirections.Length; i++)
+        {
+            Vector3 dir =
+                flowField.FlowDirections[i];
+
+            if (dir == Vector3.zero)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            DrawArrowGL(
+                _graph.GetNodePosition(global),
+                dir);
+        }
+    }
+
+    private void DrawQuadSphereIntegrationGizmos(
+    FlowField flowField)
+    {
+        if (!_showIntegration)
+            return;
+
+        for (int i = 0; i < flowField.IntegrationField.Length; i++)
+        {
+            float cost = flowField.IntegrationField[i];
+
+            if (cost == float.MaxValue)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            Color color =
+                Color.Lerp(
+                    Color.green,
+                    Color.blue,
+                    cost / 20f);
+
+            DrawSphereQuadGizmos(
+                global,
+                color);
+        }
+    }
+
+    private void DrawQuadSphereDirectionsGizmos(
+    FlowField flowField)
+    {
+        if (!_showDirections)
+            return;
+
+        for (int i = 0; i < flowField.FlowDirections.Length; i++)
+        {
+            Vector3 dir =
+                flowField.FlowDirections[i];
+
+            if (dir == Vector3.zero)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            DrawArrowGizmos(
+                _graph.GetNodePosition(global),
+                dir);
+        }
+    }
+
+    private void DrawSphereQuad(
+    int node,
+    Color color)
+    {
+        CubeCoordinate coord =
+            _quadSphereGraph.IndexToCoordinate(node);
+
+        float step = 1f / _quadSphereGraph.Resolution;
+
+        float u0 = coord.X * step;
+        float u1 = (coord.X + 1) * step;
+
+        float v0 = coord.Y * step;
+        float v1 = (coord.Y + 1) * step;
+
+        Vector3 a = CubeProjection.DirectionToWorld(
+            _quadSphereGraph.Center,
+            _quadSphereGraph.Radius,
+            _quadSphereGraph.Rotation,
+            CubeProjection.UVToDirection(coord.Face, u0, v0));
+
+        Vector3 b = CubeProjection.DirectionToWorld(
+            _quadSphereGraph.Center,
+            _quadSphereGraph.Radius,
+            _quadSphereGraph.Rotation,
+            CubeProjection.UVToDirection(coord.Face, u1, v0));
+
+        Vector3 c = CubeProjection.DirectionToWorld(
+            _quadSphereGraph.Center,
+            _quadSphereGraph.Radius,
+            _quadSphereGraph.Rotation,
+            CubeProjection.UVToDirection(coord.Face, u1, v1));
+
+        Vector3 d = CubeProjection.DirectionToWorld(
+            _quadSphereGraph.Center,
+            _quadSphereGraph.Radius,
+            _quadSphereGraph.Rotation,
+            CubeProjection.UVToDirection(coord.Face, u0, v1));
+
+        GL.Color(color);
+
+        GL.Vertex(a);
+        GL.Vertex(b);
+        GL.Vertex(c);
+        GL.Vertex(d);
+    }
+
+    private void DrawSphereQuadGizmos(
+    int node,
+    Color color)
+    {
+        CubeCoordinate coord =
+            _quadSphereGraph.IndexToCoordinate(node);
+
+        float step = 1f / _quadSphereGraph.Resolution;
+
+        float u0 = coord.X * step;
+        float u1 = (coord.X + 1) * step;
+
+        float v0 = coord.Y * step;
+        float v1 = (coord.Y + 1) * step;
+
+        Vector3 a = CubeProjection.DirectionToWorld(
+            _quadSphereGraph.Center,
+            _quadSphereGraph.Radius,
+            _quadSphereGraph.Rotation,
+            CubeProjection.UVToDirection(coord.Face, u0, v0));
+
+        Vector3 b = CubeProjection.DirectionToWorld(
+            _quadSphereGraph.Center,
+            _quadSphereGraph.Radius,
+            _quadSphereGraph.Rotation,
+            CubeProjection.UVToDirection(coord.Face, u1, v0));
+
+        Vector3 c = CubeProjection.DirectionToWorld(
+            _quadSphereGraph.Center,
+            _quadSphereGraph.Radius,
+            _quadSphereGraph.Rotation,
+            CubeProjection.UVToDirection(coord.Face, u1, v1));
+
+        Vector3 d = CubeProjection.DirectionToWorld(
+            _quadSphereGraph.Center,
+            _quadSphereGraph.Radius,
+            _quadSphereGraph.Rotation,
+            CubeProjection.UVToDirection(coord.Face, u0, v1));
+
+        Gizmos.color = color;
+
+        Gizmos.DrawLine(a, b);
+        Gizmos.DrawLine(b, c);
+        Gizmos.DrawLine(c, d);
+        Gizmos.DrawLine(d, a);
+    }
+
+    private void DrawVoxelFlowField(
+    FlowField flowField,
+    bool inGame)
+    {
+        if (inGame)
+        {
+            if (_showIntegration)
+            {
+                GL.Begin(GL.QUADS);
+
+                DrawVoxelIntegration(flowField);
+
+                GL.End();
+            }
+
+            if (_showDirections)
+            {
+                GL.Begin(GL.LINES);
+
+                DrawVoxelDirections(flowField);
+
+                GL.End();
+            }
+        }
+        else
+        {
+            DrawVoxelIntegrationGizmos(flowField);
+            DrawVoxelDirectionsGizmos(flowField);
+        }
+    }
+
+    private void DrawVoxelIntegration(
+    FlowField flowField)
+    {
+        for (int i = 0; i < flowField.IntegrationField.Length; i++)
+        {
+            float cost = flowField.IntegrationField[i];
+
+            if (cost == float.MaxValue)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            Color color =
+                Color.Lerp(
+                    Color.green,
+                    Color.blue,
+                    cost / 20f);
+
+            color.a = _integrationOpacity;
+
+            DrawVoxelCube(global, color);
+        }
+    }
+
+    private void DrawVoxelDirections(
+        FlowField flowField)
+    {
+        for (int i = 0; i < flowField.FlowDirections.Length; i++)
+        {
+            Vector3 dir = flowField.FlowDirections[i];
+
+            if (dir == Vector3.zero)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            DrawArrowGL(
+                _graph.GetNodePosition(global),
+                dir);
+        }
+    }
+
+    private void DrawVoxelIntegrationGizmos(
+        FlowField flowField)
+    {
+        if (!_showIntegration)
+            return;
+
+        for (int i = 0; i < flowField.IntegrationField.Length; i++)
+        {
+            float cost = flowField.IntegrationField[i];
+
+            if (cost == float.MaxValue)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            Color color =
+                Color.Lerp(
+                    Color.green,
+                    Color.blue,
+                    cost / 20f);
+
+            DrawVoxelCubeGizmos(global, color);
+        }
+    }
+
+    private void DrawVoxelDirectionsGizmos(
+        FlowField flowField)
+    {
+        if (!_showDirections)
+            return;
+
+        for (int i = 0; i < flowField.FlowDirections.Length; i++)
+        {
+            Vector3 dir = flowField.FlowDirections[i];
+
+            if (dir == Vector3.zero)
+                continue;
+
+            int global =
+                _graph.GetGlobalNode(i, flowField.RegionId);
+
+            DrawArrowGizmos(
+                _graph.GetNodePosition(global),
+                dir);
+        }
+    }
+
+    private void DrawVoxelCube(
+    int node,
+    Color color)
+    {
+        Vector3 c = _graph.GetNodePosition(node);
+        Vector3 h = _graph.GetNodeSize(node) * 0.5f;
+
+        GL.Color(color);
+
+        // +X
+        GL.Vertex(c + new Vector3(h.x, -h.y, -h.z));
+        GL.Vertex(c + new Vector3(h.x, -h.y, h.z));
+        GL.Vertex(c + new Vector3(h.x, h.y, h.z));
+        GL.Vertex(c + new Vector3(h.x, h.y, -h.z));
+
+        // -X
+        GL.Vertex(c + new Vector3(-h.x, -h.y, h.z));
+        GL.Vertex(c + new Vector3(-h.x, -h.y, -h.z));
+        GL.Vertex(c + new Vector3(-h.x, h.y, -h.z));
+        GL.Vertex(c + new Vector3(-h.x, h.y, h.z));
+
+        // +Y
+        GL.Vertex(c + new Vector3(-h.x, h.y, -h.z));
+        GL.Vertex(c + new Vector3(h.x, h.y, -h.z));
+        GL.Vertex(c + new Vector3(h.x, h.y, h.z));
+        GL.Vertex(c + new Vector3(-h.x, h.y, h.z));
+
+        // -Y
+        GL.Vertex(c + new Vector3(-h.x, -h.y, h.z));
+        GL.Vertex(c + new Vector3(h.x, -h.y, h.z));
+        GL.Vertex(c + new Vector3(h.x, -h.y, -h.z));
+        GL.Vertex(c + new Vector3(-h.x, -h.y, -h.z));
+
+        // +Z
+        GL.Vertex(c + new Vector3(-h.x, -h.y, h.z));
+        GL.Vertex(c + new Vector3(-h.x, h.y, h.z));
+        GL.Vertex(c + new Vector3(h.x, h.y, h.z));
+        GL.Vertex(c + new Vector3(h.x, -h.y, h.z));
+
+        // -Z
+        GL.Vertex(c + new Vector3(h.x, -h.y, -h.z));
+        GL.Vertex(c + new Vector3(h.x, h.y, -h.z));
+        GL.Vertex(c + new Vector3(-h.x, h.y, -h.z));
+        GL.Vertex(c + new Vector3(-h.x, -h.y, -h.z));
+    }
+
+    private void DrawVoxelCubeGizmos(
+        int node,
+        Color color)
+    {
+        Vector3 center = _graph.GetNodePosition(node);
+        Vector3 size = _graph.GetNodeSize(node);
+
+        Gizmos.color = color;
+        Gizmos.DrawCube(center, size);
     }
 }

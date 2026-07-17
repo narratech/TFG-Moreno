@@ -52,9 +52,9 @@ public static class CubeTopology
         // PositiveY
         // ======================================================
         {
-            new FaceTransition(CubeFace.NegativeX, CubeEdge.Up),
+            new FaceTransition(CubeFace.NegativeX, CubeEdge.Up, true),
             new FaceTransition(CubeFace.PositiveX, CubeEdge.Up),
-            new FaceTransition(CubeFace.NegativeZ, CubeEdge.Up),
+            new FaceTransition(CubeFace.NegativeZ, CubeEdge.Up, true),
             new FaceTransition(CubeFace.PositiveZ, CubeEdge.Up)
         },
 
@@ -63,9 +63,9 @@ public static class CubeTopology
         // ======================================================
         {
             new FaceTransition(CubeFace.NegativeX, CubeEdge.Down),
-            new FaceTransition(CubeFace.PositiveX, CubeEdge.Down),
+            new FaceTransition(CubeFace.PositiveX, CubeEdge.Down, true),
             new FaceTransition(CubeFace.PositiveZ, CubeEdge.Down),
-            new FaceTransition(CubeFace.NegativeZ, CubeEdge.Down)
+            new FaceTransition(CubeFace.NegativeZ, CubeEdge.Down, true)
         },
 
         // ======================================================
@@ -84,8 +84,8 @@ public static class CubeTopology
         {
             new FaceTransition(CubeFace.PositiveX, CubeEdge.Right),
             new FaceTransition(CubeFace.NegativeX, CubeEdge.Left),
-            new FaceTransition(CubeFace.PositiveY, CubeEdge.Up),
-            new FaceTransition(CubeFace.NegativeY, CubeEdge.Down)
+            new FaceTransition(CubeFace.PositiveY, CubeEdge.Up, true),
+            new FaceTransition(CubeFace.NegativeY, CubeEdge.Down, true)
         }
     };
 

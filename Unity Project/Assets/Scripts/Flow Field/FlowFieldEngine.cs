@@ -268,7 +268,6 @@ public static class FlowFieldEngine
         // o resolvemos el sistema lineal: (M^T * M) u = 1
 
         int n = pts.Count;
-        Matrix4x4 m = new Matrix4x4(); // Usamos matriz para guardar vectores dirección
         Vector3[] v = new Vector3[n];
         float[] t = new float[n];
 
