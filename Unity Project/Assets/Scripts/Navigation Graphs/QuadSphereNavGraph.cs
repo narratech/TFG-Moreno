@@ -99,7 +99,7 @@ public class QuadSphereNavGraph : INavGraph
         return new CubeCoordinate((CubeFace)faceIndex, x, y);
     }
 
-    private int CoordinateToIndex(CubeCoordinate coord)
+    public int CoordinateToIndex(CubeCoordinate coord)
     {
         return ((int)coord.Face * _nodesPerFace) + (coord.Y * _resolution) + coord.X;
     }

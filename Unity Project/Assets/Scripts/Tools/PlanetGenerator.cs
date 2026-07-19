@@ -133,7 +133,7 @@ public class PlanetGenerator : MonoBehaviour
             noise = (noise + 1f) * 0.5f;
 
             // Eliminamos todo lo que esté por debajo del umbral
-            if (noise <= mountainThreshold)
+            if (noise <= mountainThreshold) 
                 return radius;
 
             // Reescalamos el resto para que vuelva a ocupar [0,1]

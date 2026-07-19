@@ -9,6 +9,7 @@ public class QuadSphereProvider : MonoBehaviour
     [SerializeField] private int _resolution = 32;
     [SerializeField] private int _regionsPerAxis = 4;
 
+    [SerializeField] private bool _drawWalkability = true;
     [SerializeField] private bool _drawNodeIndices = true;
     [SerializeField] private bool _drawCoordinates = true;
     [SerializeField] private bool _drawFace = true;
@@ -17,6 +18,8 @@ public class QuadSphereProvider : MonoBehaviour
 
     [Header("Obstacles")]
     [SerializeField] private LayerMask _obstacleMask;
+    [Range(0, 1)]
+    [SerializeField] private float _scanFactor = 1.0f;
 
     public QuadSphereNavGraph Graph { get; private set; }
 
@@ -39,6 +42,7 @@ public class QuadSphereProvider : MonoBehaviour
 
         ScanObstacles();
 
+
         FlowFieldManager.Instance.RegisterContext(Graph);
     }
 
@@ -48,7 +52,7 @@ public class QuadSphereProvider : MonoBehaviour
         {
             Vector3 position = Graph.GetNodePosition(i);
 
-            float nodeRadius = Graph.GetNodeSize(i).x * 0.45f;
+            float nodeRadius = Graph.GetNodeSize(i).x * 0.5f * _scanFactor;
 
             bool blocked = Physics.CheckSphere(
                 position,
@@ -56,6 +60,13 @@ public class QuadSphereProvider : MonoBehaviour
                 _obstacleMask);
 
             Graph.SetWalkable(i, !blocked);
+
+            Vector3 normal = position - transform.position;
+            Vector3 pos = position + normal.normalized * 100;
+
+            if (Physics.Raycast(pos, -normal, 100, _obstacleMask)) {
+                Graph.SetWalkable(i, false);
+            }
         }
     }
 
@@ -111,44 +122,43 @@ public class QuadSphereProvider : MonoBehaviour
                         : new Color(1f, 1f, 1f, 0.25f);
 
                     Gizmos.DrawLine(p01, p11);
+
+                    if (Graph != null && _drawWalkability)
+                    {
+                        int index = Graph.CoordinateToIndex(new CubeCoordinate(face, x, y));
+
+                        Color color = Graph.IsWalkable(index)
+                            ? new Color(0f, 1f, 0f, 0.15f)
+                            : new Color(1f, 0f, 0f, 0.35f);
+
+                        DrawQuad(p00, p10, p11, p01, color);
+                    }
                 }
             }
         }
 
         DrawDebugLabels();
     }
+    #if UNITY_EDITOR
 
-    private void DrawQuadSphereGrid(int resolution, Color color)
+    private void DrawQuad(
+        Vector3 p00,
+        Vector3 p10,
+        Vector3 p11,
+        Vector3 p01,
+        Color color)
     {
-        Gizmos.color = color;
-
-        foreach (CubeFace face in Enum.GetValues(typeof(CubeFace)))
-        {
-            for (int y = 0; y < resolution; y++)
-            {
-                for (int x = 0; x < resolution; x++)
-                {
-                    DrawCell(face, x, y);
-                }
-            }
-        }
+        Handles.color = color;
+        Handles.DrawAAConvexPolygon(
+            p00,
+            p10,
+            p11,
+            p01);
     }
+    #endif
 
-    private void DrawCell(CubeFace face, int x, int y)
-    {
-        GetCellCorners(face, x, y,
-            out Vector3 p00,
-            out Vector3 p10,
-            out Vector3 p11,
-            out Vector3 p01);
 
-        Gizmos.DrawLine(p00, p10);
-        Gizmos.DrawLine(p10, p11);
-        Gizmos.DrawLine(p11, p01);
-        Gizmos.DrawLine(p01, p00);
-    }
-
-    private void GetCellCorners(
+private void GetCellCorners(
     CubeFace face,
     int x,
     int y,
