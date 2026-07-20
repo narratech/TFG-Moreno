@@ -263,4 +263,56 @@ public class Grid3DNavGraph : INavGraph
 
         return (xMax - xMin) * (yMax - yMin) * (zMax - zMin);
     }
+
+    public int GetInterpolationNodes( Vector3 worldPosition, Span<int> nodes)
+    {
+        Vector3 local = worldPosition - _origin;
+
+        float gx = local.x / _cellSize;
+        float gy = local.y / _cellSize;
+        float gz = local.z / _cellSize;
+
+        int x0 = Mathf.FloorToInt(gx);
+        int y0 = Mathf.FloorToInt(gy);
+        int z0 = Mathf.FloorToInt(gz);
+
+        int x1 = x0 + 1;
+        int y1 = y0 + 1;
+        int z1 = z0 + 1;
+
+        int count = 0;
+
+        AddNode(x0, y0, z0, nodes, ref count);
+        AddNode(x1, y0, z0, nodes, ref count);
+
+        AddNode(x0, y1, z0, nodes, ref count);
+        AddNode(x1, y1, z0, nodes, ref count);
+
+        AddNode(x0, y0, z1, nodes, ref count);
+        AddNode(x1, y0, z1, nodes, ref count);
+
+        AddNode(x0, y1, z1, nodes, ref count);
+        AddNode(x1, y1, z1, nodes, ref count);
+
+        return count;
+    }
+
+    private void AddNode(
+    int x,
+    int y,
+    int z,
+    Span<int> nodes,
+    ref int count)
+    {
+        if (x < 0 || x >= _width)
+            return;
+
+        if (y < 0 || y >= _height)
+            return;
+
+        if (z < 0 || z >= _depth)
+            return;
+
+        nodes[count++] = CoordToIndex(x, y, z);
+    }
 }

@@ -1,3 +1,5 @@
+using Unity.VisualScripting;
+using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -18,6 +20,7 @@ public class SampleManager2 : MonoBehaviour
             return;
         }
         Instance = this;
+
     }
 
 

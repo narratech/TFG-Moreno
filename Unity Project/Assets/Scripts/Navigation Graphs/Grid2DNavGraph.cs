@@ -221,4 +221,47 @@ public class Grid2DNavGraph : INavGraph
         int yMax = Mathf.Min(yMin + _regH, _height);
         return (xMax - xMin) * (yMax - yMin);
     }
+
+    public int GetInterpolationNodes( Vector3 worldPosition, Span<int> nodes)
+    {
+        Vector3 local = worldPosition - _origin;
+
+        float gx = local.x / _cellSize;
+        float gy = local.z / _cellSize;
+
+        int x0 = Mathf.FloorToInt(gx);
+        int y0 = Mathf.FloorToInt(gy);
+
+        int x1 = x0 + 1;
+        int y1 = y0 + 1;
+
+        int count = 0;
+
+        AddNode(x0, y0, nodes, ref count);
+        AddNode(x1, y0, nodes, ref count);
+        AddNode(x0, y1, nodes, ref count);
+        AddNode(x1, y1, nodes, ref count);
+
+        return count;
+    }
+
+    private void AddNode(
+    int x,
+    int y,
+    Span<int> nodes,
+    ref int count)
+    {
+        if (x < 0 || x >= _width)
+            return;
+
+        if (y < 0 || y >= _height)
+            return;
+
+        int index = y * _width + x;
+
+        if (!IsWalkable(index))
+            return;
+
+        nodes[count++] = index;
+    }
 }

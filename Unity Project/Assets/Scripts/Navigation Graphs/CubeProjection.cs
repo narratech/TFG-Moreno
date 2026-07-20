@@ -62,7 +62,7 @@ public static class CubeProjection
 
         CubeFace face = GetFace(direction);
 
-        Vector2 uv = FaceToUV(face, direction);
+        Vector2 uv = DirectionToUV(face, direction);
 
         int x = Mathf.Clamp(
             Mathf.FloorToInt(uv.x * resolution),
@@ -98,7 +98,7 @@ public static class CubeProjection
 
     #region Internals
 
-    private static Vector2 FaceToUV(
+    public static Vector2 DirectionToUV(
         CubeFace face,
         Vector3 d)
     {

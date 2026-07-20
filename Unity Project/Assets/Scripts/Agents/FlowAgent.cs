@@ -1,68 +1,90 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class FlowFieldAgent : MonoBehaviour
 {
-    public INavGraph graph;
-    public float speed = 5f;
-    public int targetNode = -1;
-    public QuadSphereProvider grid;
+    [SerializeField] private MonoBehaviour provider;
+    [SerializeField] private float speed = 5f;
+
+    private INavGraph graph;
+    private readonly int[] interpolationNodes = new int[8];
 
     private void Start()
     {
-        if (grid != null)
+        switch (provider)
         {
-            graph = grid.Graph;
+            case Grid2DProvider g:
+                graph = g.Graph;
+                break;
+
+            case Grid3DProvider g:
+                graph = g.Graph;
+                break;
+
+            case QuadSphereProvider g:
+                graph = g.Graph;
+                break;
         }
     }
 
-    void Update()
+    private void Update()
     {
-        targetNode = SampleManager2.Instance.targetNode;
-
         if (graph == null)
-        {
-            Debug.LogWarning("Graph not assigned to FlowFieldAgent. Please assign a graph for the agent to navigate.");
             return;
-        }
 
-        int myGlobalNode = graph.GetClosestNode(transform.position);
+        int targetNode = SampleManager2.Instance.targetNode;
+        if (targetNode < 0)
+            return;
 
-        int myRegion = graph.GetRegionId(myGlobalNode);
+        int myNode = graph.GetClosestNode(transform.position);
+        int myRegion = graph.GetRegionId(myNode);
 
-        FlowField field = null;
-        if (targetNode >= 0)
+        FlowField field = FlowFieldManager.Instance.GetFlowField(graph, myRegion, targetNode);
+
+        if (field == null)
+            field = FlowFieldEngine.GenerateFlowPath(graph, targetNode, myNode);
+
+        if (field == null)
+            return;
+
+        int count = graph.GetInterpolationNodes( transform.position, interpolationNodes);
+
+        Vector3 dir = Vector3.zero;
+
+        for (int i = 0; i < count; i++)
         {
-            field = FlowFieldManager.Instance.GetFlowField(graph, myRegion, targetNode);
-            if (field == null)
-            {
-                field = FlowFieldEngine.GenerateFlowPath(graph, targetNode, myGlobalNode);
-            }
+            int node = interpolationNodes[i];
+
+            Debug.DrawLine(
+                transform.position,
+                graph.GetNodePosition(node),
+                Color.yellow);
+
+            int region = graph.GetRegionId(node);
+
+            FlowField nodeField =
+                FlowFieldManager.Instance.GetFlowField(
+                    graph,
+                    region,
+                    targetNode);
+
+            if (nodeField == null)
+                continue;
+
+            int local = graph.GetLocalNode(node);
+
+            dir += nodeField.FlowDirections[local];
         }
 
-        if (field != null)
-        {
-            int localIdx = graph.GetLocalNode(myGlobalNode);
+        if (dir == Vector3.zero)
+            return;
 
-            Vector3 moveDir = field.FlowDirections[localIdx];
-            if (moveDir != Vector3.zero)
-            {
-                transform.position += moveDir * speed * Time.deltaTime;
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir), 0.1f);
-            }
-        }
+        dir.Normalize();
 
-        if (field == null && targetNode >= 0)
-        {
-            Debug.LogError($"Agente en nodo global {myGlobalNode} no tiene un campo de flujo disponible para el destino {targetNode}");
-        }
-    }
+        transform.position += dir * speed * Time.deltaTime;
 
-    public void SetDestination(int globalNode)
-    {
-        // Aquí podrías agregar lógica adicional si quieres que el agente haga algo específico al cambiar de destino
-        Debug.Log($"Destino del agente establecido a nodo global {globalNode}");
-        targetNode = globalNode;
-
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            Quaternion.LookRotation(dir),
+            10f * Time.deltaTime);
     }
 }

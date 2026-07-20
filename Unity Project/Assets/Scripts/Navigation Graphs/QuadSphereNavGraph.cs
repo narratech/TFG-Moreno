@@ -269,4 +269,50 @@ public class QuadSphereNavGraph : INavGraph
             _rotation,
             CubeProjection.UVToDirection(coord.Face, u0, v1));
     }
+
+    public int GetInterpolationNodes(
+    Vector3 worldPosition,
+    Span<int> nodes)
+    {
+        Vector3 dir = CubeProjection.WorldToDirection(
+            _center,
+            _rotation,
+            worldPosition);
+
+        CubeFace face = CubeProjection.GetFace(dir);
+
+        Vector2 faceUV = CubeProjection.DirectionToUV(face, dir);
+
+        float gx = faceUV.x * _resolution - 0.5f;
+        float gy = faceUV.y * _resolution - 0.5f;
+
+        int x = Mathf.FloorToInt(gx);
+        int y = Mathf.FloorToInt(gy);
+
+        CubeCoordinate a = CubeTopology.WrapCoordinate(
+            new CubeCoordinate(face, x, y),
+            _resolution);
+
+        CubeCoordinate b = CubeTopology.GetNeighbor(
+            a,
+            CubeDirection.Right,
+            _resolution);
+
+        CubeCoordinate c = CubeTopology.GetNeighbor(
+            a,
+            CubeDirection.Up,
+            _resolution);
+
+        CubeCoordinate d = CubeTopology.GetNeighbor(
+            c,
+            CubeDirection.Right,
+            _resolution);
+
+        nodes[0] = CoordinateToIndex(a);
+        nodes[1] = CoordinateToIndex(b);
+        nodes[2] = CoordinateToIndex(c);
+        nodes[3] = CoordinateToIndex(d);
+
+        return 4;
+    }
 }

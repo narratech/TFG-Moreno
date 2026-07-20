@@ -6,14 +6,16 @@ public class FlowFieldDebugger : MonoBehaviour
     [Header("General")]
     [SerializeField] private bool _showInGame = false;
 
-    [Header("Flow Field")]
+    [Header("Integration Field")]
     [SerializeField] private bool _showIntegration = true;
-    [SerializeField] private bool _showDirections = true;
+    [Range(0, 1)][SerializeField] private float _integrationOpacity = 0.5f;
+    [SerializeField] private Gradient _integrationGradient;
+    [SerializeField] private float _integrationColorFactor = 100.0f;
 
-    [Header("Visual")]
+    [Header("Flow Field")]
+    [SerializeField] private bool _showDirections = true;
     [SerializeField] private float _arrowLength = 0.4f;
     [SerializeField] private Color _arrowColor = Color.red;
-    [SerializeField] private float _integrationOpacity = 0.5f;
 
     [Header("Providers")]
     [SerializeField] private Grid2DProvider _gridProvider;
@@ -109,6 +111,12 @@ public class FlowFieldDebugger : MonoBehaviour
             return;
 
         DrawAllFlows(true);
+    }
+
+    private Color GenerateIntegrationColor(float cost)
+    {
+        float t = Mathf.Clamp01(cost / _integrationColorFactor);
+        return _integrationGradient.Evaluate(t);
     }
 
     private void DrawAllFlows(bool inGame)
@@ -214,11 +222,7 @@ public class FlowFieldDebugger : MonoBehaviour
             int global =
                 _graph.GetGlobalNode(i, flowField.RegionId);
 
-            Color color =
-                Color.Lerp(
-                    Color.green,
-                    Color.blue,
-                    cost / 20f);
+            Color color = GenerateIntegrationColor(cost);
 
             color.a = _integrationOpacity;
 
@@ -264,11 +268,7 @@ public class FlowFieldDebugger : MonoBehaviour
             int global =
                 _graph.GetGlobalNode(i, flowField.RegionId);
 
-            Color color =
-                Color.Lerp(
-                    Color.green,
-                    Color.blue,
-                    cost / 20f);
+            Color color = GenerateIntegrationColor(cost);
 
             DrawGridQuadGizmos(
                 global,
@@ -427,11 +427,7 @@ public class FlowFieldDebugger : MonoBehaviour
             int global =
                 _graph.GetGlobalNode(i, flowField.RegionId);
 
-            Color color =
-                Color.Lerp(
-                    Color.green,
-                    Color.blue,
-                    cost / 20f);
+            Color color = GenerateIntegrationColor(cost);
 
             color.a = _integrationOpacity;
 
@@ -476,11 +472,7 @@ public class FlowFieldDebugger : MonoBehaviour
             int global =
                 _graph.GetGlobalNode(i, flowField.RegionId);
 
-            Color color =
-                Color.Lerp(
-                    Color.green,
-                    Color.blue,
-                    cost / 20f);
+            Color color = GenerateIntegrationColor(cost);
 
             DrawSphereQuadGizmos(
                 global,
@@ -649,11 +641,7 @@ public class FlowFieldDebugger : MonoBehaviour
             int global =
                 _graph.GetGlobalNode(i, flowField.RegionId);
 
-            Color color =
-                Color.Lerp(
-                    Color.green,
-                    Color.blue,
-                    cost / 20f);
+            Color color = GenerateIntegrationColor(cost);
 
             color.a = _integrationOpacity;
 
@@ -696,11 +684,7 @@ public class FlowFieldDebugger : MonoBehaviour
             int global =
                 _graph.GetGlobalNode(i, flowField.RegionId);
 
-            Color color =
-                Color.Lerp(
-                    Color.green,
-                    Color.blue,
-                    cost / 20f);
+            Color color = GenerateIntegrationColor(cost);
 
             DrawVoxelCubeGizmos(global, color);
         }

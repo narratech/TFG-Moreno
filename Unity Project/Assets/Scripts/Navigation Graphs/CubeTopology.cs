@@ -161,4 +161,41 @@ public static class CubeTopology
             nx,
             ny);
     }
+
+    public static CubeCoordinate WrapCoordinate(
+    CubeCoordinate coord,
+    int resolution)
+    {
+        if (coord.X >= 0 &&
+            coord.X < resolution &&
+            coord.Y >= 0 &&
+            coord.Y < resolution)
+        {
+            return coord;
+        }
+
+        if (coord.X < 0)
+            return GetNeighbor(
+                new CubeCoordinate(coord.Face, 0, coord.Y),
+                CubeDirection.Left,
+                resolution);
+
+        if (coord.X >= resolution)
+            return GetNeighbor(
+                new CubeCoordinate(coord.Face, resolution - 1, coord.Y),
+                CubeDirection.Right,
+                resolution);
+
+        if (coord.Y < 0)
+            return GetNeighbor(
+                new CubeCoordinate(coord.Face, coord.X, 0),
+                CubeDirection.Down,
+                resolution);
+
+        // coord.Y >= resolution
+        return GetNeighbor(
+            new CubeCoordinate(coord.Face, coord.X, resolution - 1),
+            CubeDirection.Up,
+            resolution);
+    }
 }

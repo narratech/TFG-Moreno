@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -28,6 +29,11 @@ public interface INavGraph
 
     // --- Relaciones entre Nodos ---
     IEnumerable<int> GetNeighbors(int index);
+
+    /// <summary>
+    /// Rellena una lista con los indices de los nodos que sirven para la interpolación de los Agentes
+    /// </summary>
+    int GetInterpolationNodes(Vector3 worldPosition, Span<int> nodes);
 
     // --- Datos de Coste y Estado ---
     float GetNodeCost(int index);
