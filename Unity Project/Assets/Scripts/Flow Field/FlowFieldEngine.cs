@@ -6,13 +6,23 @@ using static FlowFieldManager;
 
 public static class FlowFieldEngine
 {
-    private static int NUM_REGIONLEVELS = 1; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
+    private static int NUM_REGIONLEVELS = 2; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
 
     public static FlowField GenerateFlowPath(INavGraph graph, int targetNode, int initialNode)
     {
         if (targetNode == -1 || initialNode == -1)
         {
             Debug.LogError("Invalid target or initial node for FlowField calculation.");
+            return null;
+        }
+        if (graph == null)
+        {
+            Debug.LogError("Invalid NavGraph for FlowField calculation.");
+            return null;
+        }
+        if (!graph.IsWalkable(targetNode))
+        {
+            Debug.LogWarning("Target position not walkable. Invalid for FlowField calculation.");
             return null;
         }
         FlowFieldManager manager = FlowFieldManager.Instance;

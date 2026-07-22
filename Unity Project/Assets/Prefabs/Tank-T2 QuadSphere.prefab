@@ -411,8 +411,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 357578434101926732}
-  - component: {fileID: 5207941234345946621}
   - component: {fileID: 212072819616543282}
+  - component: {fileID: 5207941234345946621}
+  - component: {fileID: 512252183425919639}
   m_Layer: 0
   m_Name: Tank-T2 QuadSphere
   m_TagString: Untagged
@@ -438,21 +439,6 @@ Transform:
   - {fileID: 857900073955115835}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5207941234345946621
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2743592488088506512}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7124073cf7c5f8b4ca3641178805837d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
-  speed: 5
-  targetNode: -1
-  grid: {fileID: 0}
 --- !u!114 &212072819616543282
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -467,6 +453,35 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MantinRadious
   centre: {x: 0, y: 0, z: 0}
   radius: 300
+--- !u!114 &5207941234345946621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2743592488088506512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7124073cf7c5f8b4ca3641178805837d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
+  provider: {fileID: 0}
+  speed: 5
+--- !u!114 &512252183425919639
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2743592488088506512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f78ab2feffd557a4b8f5212319ab89be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlowFieldSteering
+  _weight: 1
+  _stepSize: 0.5
+  _desiredOffset: {x: 0, y: 0, z: 0}
 --- !u!1 &3430596969469984346
 GameObject:
   m_ObjectHideFlags: 0

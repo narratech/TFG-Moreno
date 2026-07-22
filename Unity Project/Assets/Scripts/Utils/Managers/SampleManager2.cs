@@ -55,5 +55,13 @@ public class SampleManager2 : MonoBehaviour
 
         FlowFieldManager.Instance.RegisterRoute(graphProvider.Graph, destination);
         targetNode = destination;
+
+        foreach (FlowFieldAgent agent in Object.FindObjectsByType<FlowFieldAgent>(FindObjectsSortMode.None))
+        {
+            if (agent != null)
+            {
+                agent.SetDestination(targetNode);
+            }
+        }
     }
 }

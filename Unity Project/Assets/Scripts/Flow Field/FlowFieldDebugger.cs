@@ -132,8 +132,7 @@ public class FlowFieldDebugger : MonoBehaviour
         if (targetNode == -1)
             return;
 
-        FlowFieldRoute route =
-            FlowFieldManager.Instance.GetRoute(_graph, targetNode);
+        FlowFieldRoute route = FlowFieldManager.Instance.GetRoute(_graph, targetNode);
 
         if (route == null)
             return;

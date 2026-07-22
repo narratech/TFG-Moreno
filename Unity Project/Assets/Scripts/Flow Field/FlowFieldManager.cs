@@ -140,4 +140,22 @@ public class FlowFieldManager
 
         return null;
     }
+
+    public void EliminateRoute(INavGraph nav, int targetNode)
+    {
+        if (!_contexts.TryGetValue(nav, out var ctx))
+        {
+            Debug.LogError($"No se puede eliminar ruta. Contexto '{nav}' no encontrado.");
+            return;
+        }
+
+        if (!ctx.FlowFieldCache.Remove(targetNode))
+        {
+            Debug.LogWarning($"Ruta para TargetNode {targetNode} no encontrada.");
+            return;
+        }
+
+        if (lastTargetNode == targetNode)
+            lastTargetNode = -1;
+    }
 }
