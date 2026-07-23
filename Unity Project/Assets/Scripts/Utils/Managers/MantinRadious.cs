@@ -9,6 +9,6 @@ public class MantinRadious : MonoBehaviour
         Vector3 dir = transform.position - centre;
         Vector3 newDir = dir.normalized * radius;
         transform.position = newDir + centre;
-        //transform.up = newDir.normalized;
+        transform.up = newDir.normalized;
     }
 }

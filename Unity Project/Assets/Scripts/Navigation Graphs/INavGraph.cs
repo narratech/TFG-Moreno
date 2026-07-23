@@ -50,6 +50,8 @@ public interface INavGraph
     /// </summary>
     void SetWalkable(int index, bool walkable);
 
+    int GetNodesInRadius(int centerNode, int radius, Span<int> nodes);
+
     // Evento para notificar cambios estructurales
     event System.Action OnGraphUpdated;
 }

@@ -315,4 +315,43 @@ public class QuadSphereNavGraph : INavGraph
 
         return 4;
     }
+
+    private readonly Queue<(int node, int depth)> _queue = new();
+    private readonly HashSet<int> _visited = new();
+
+    public int GetNodesInRadius(
+        int centerNode,
+        int radius,
+        Span<int> nodes)
+    {
+        _queue.Clear();
+        _visited.Clear();
+
+        _queue.Enqueue((centerNode, 0));
+        _visited.Add(centerNode);
+
+        int count = 0;
+
+        while (_queue.Count > 0)
+        {
+            var current = _queue.Dequeue();
+
+            nodes[count++] = current.node;
+
+            if (current.depth == radius)
+                continue;
+
+            foreach (int neighbor in GetNeighbors(current.node))
+            {
+                if (_visited.Add(neighbor))
+                {
+                    _queue.Enqueue((
+                        neighbor,
+                        current.depth + 1));
+                }
+            }
+        }
+
+        return count;
+    }
 }

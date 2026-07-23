@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
+[DefaultExecutionOrder(-200)]
 public class QuadSphereProvider : MonoBehaviour
 {
     [Header("Configuracion de QuadSphere")]

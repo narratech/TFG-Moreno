@@ -15,13 +15,19 @@ public class FlowFieldSteering : IAgentSteering
 
     public override Vector3 GetDirection(FlowFieldAgent agent)
     {
+        if (agent.TargetNode < 0) 
+            return Vector3.zero;
+
         if ((agent.transform.position - _lastAgentPosition).sqrMagnitude >= _stepSize * _stepSize)
         {
             _lastAgentPosition = agent.transform.position;
             UpdateSamplePosition(agent);
         }
-        Vector3 dir = SampleFlowField(agent, _samplePosition);
-        return dir;
+
+        Vector3 flowDirection = SampleFlowField(agent, _samplePosition);
+        Vector3 desiredVelocity = flowDirection * agent.MaxSpeed;
+
+        return desiredVelocity - agent.Velocity;
     }
 
     private void UpdateSamplePosition(FlowFieldAgent agent)

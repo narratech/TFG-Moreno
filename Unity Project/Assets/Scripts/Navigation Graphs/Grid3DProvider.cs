@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[DefaultExecutionOrder(-200)]
 public class Grid3DProvider : MonoBehaviour
 {
     [Header("Configuración del Grid 3D")]

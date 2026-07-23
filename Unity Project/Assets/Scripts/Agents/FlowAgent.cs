@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class FlowFieldAgent : MonoBehaviour
 {
     [SerializeField] private MonoBehaviour provider;
-    [SerializeField] private float speed = 5f;
+    [SerializeField] public float MaxSpeed = 5f;
+    [SerializeField] public float MaxForce = 20f;
 
     private IAgentSteering[] _steerings;
 
@@ -15,6 +17,12 @@ public class FlowFieldAgent : MonoBehaviour
     public int CurrentNode { get; private set; }
 
     public int CurrentRegion { get; private set; }
+
+    public Vector3 Velocity { get; private set; } = Vector3.zero;
+
+
+    [SerializeField] private float MinForce = 0.1f;
+    [SerializeField] private float MinSpeed = 0.1f;
 
     private void Awake()
     {
@@ -65,46 +73,50 @@ public class FlowFieldAgent : MonoBehaviour
 
     private void Update()
     {
-        if (Graph == null) 
+        if (Graph == null)
             return;
 
         CurrentNode = Graph.GetClosestNode(transform.position);
         CurrentRegion = Graph.GetRegionId(CurrentNode);
 
-        if (TargetNode > 0)
+        Vector3 steering = ComputeSteering();
+        
+        if (steering.magnitude > MinForce)
         {
-            Vector3 direction = ComputeDirection();
-            Move(direction);
+            Velocity += steering * Time.deltaTime;
+        }
+
+        Velocity = Vector3.ClampMagnitude(
+            Velocity,
+            MaxSpeed);
+
+        if (Velocity.magnitude > MinSpeed)
+        {
+            transform.position += Velocity * Time.deltaTime;
+        }
+
+        if (Velocity.sqrMagnitude > 0.001f)
+        {
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                Quaternion.LookRotation(Velocity),
+                10f * Time.deltaTime);
         }
     }
 
-    private Vector3 ComputeDirection()
+    private Vector3 ComputeSteering()
     {
-        Vector3 direction = Vector3.zero;
+        Vector3 force = Vector3.zero;
 
         foreach (IAgentSteering steering in _steerings)
         {
-            if (steering == null || !steering.enabled) continue;
+            if (steering == null || !steering.enabled)
+                continue;
 
-            direction += steering.GetDirection(this) * steering.Weight;
-
+            force += steering.GetDirection(this) * steering.Weight;
         }
-        direction.Normalize();
-        return direction;
-    }
 
-    private void Move(Vector3 direction)
-    {
-        if (direction == Vector3.zero)
-            return;
-
-        transform.position +=
-            direction * speed * Time.deltaTime;
-
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation,
-            Quaternion.LookRotation(direction),
-            10f * Time.deltaTime);
+        return Vector3.ClampMagnitude(force, MaxForce);
     }
 
     public void SetDestination(int targetNode)

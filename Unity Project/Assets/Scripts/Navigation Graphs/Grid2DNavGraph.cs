@@ -264,4 +264,31 @@ public class Grid2DNavGraph : INavGraph
 
         nodes[count++] = index;
     }
+
+    public int GetNodesInRadius(int centerNode, int radius, Span<int> nodes)
+    {
+        int cx = centerNode % _width;
+        int cy = centerNode / _width;
+
+        int count = 0;
+
+        for (int y = cy - radius; y <= cy + radius; y++)
+        {
+            if (y < 0 || y >= _height)
+                continue;
+
+            for (int x = cx - radius; x <= cx + radius; x++)
+            {
+                if (x < 0 || x >= _width)
+                    continue;
+
+                if (Mathf.Abs(x - cx) + Mathf.Abs(y - cy) > radius)
+                    continue;
+
+                nodes[count++] = y * _width + x;
+            }
+        }
+
+        return count;
+    }
 }

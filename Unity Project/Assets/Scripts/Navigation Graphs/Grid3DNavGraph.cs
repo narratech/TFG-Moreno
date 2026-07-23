@@ -315,4 +315,38 @@ public class Grid3DNavGraph : INavGraph
 
         nodes[count++] = CoordToIndex(x, y, z);
     }
+
+    public int GetNodesInRadius(int centerNode, int radius, Span<int> nodes)
+    {
+        IndexToCoord(centerNode, out int cx, out int cy, out int cz);
+
+        int count = 0;
+
+        for (int z = cz - radius; z <= cz + radius; z++)
+        {
+            if (z < 0 || z >= _depth)
+                continue;
+
+            for (int y = cy - radius; y <= cy + radius; y++)
+            {
+                if (y < 0 || y >= _height)
+                    continue;
+
+                for (int x = cx - radius; x <= cx + radius; x++)
+                {
+                    if (x < 0 || x >= _width)
+                        continue;
+
+                    if (Mathf.Abs(x - cx)
+                      + Mathf.Abs(y - cy)
+                      + Mathf.Abs(z - cz) > radius)
+                        continue;
+
+                    nodes[count++] = CoordToIndex(x, y, z);
+                }
+            }
+        }
+
+        return count;
+    }
 }
