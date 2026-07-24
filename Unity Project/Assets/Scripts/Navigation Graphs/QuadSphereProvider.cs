@@ -53,19 +53,19 @@ public class QuadSphereProvider : MonoBehaviour
         {
             Vector3 position = Graph.GetNodePosition(i);
 
-            float nodeRadius = Graph.GetNodeSize(i).x * 0.5f * _scanFactor;
+            //float nodeRadius = Graph.GetNodeSize(i).x * 0.5f * _scanFactor;
 
-            bool blocked = Physics.CheckSphere(
-                position,
-                nodeRadius,
-                _obstacleMask);
+            //bool blocked = Physics.CheckSphere(
+            //    position,
+            //    nodeRadius,
+            //    _obstacleMask);
 
-            Graph.SetWalkable(i, !blocked);
+            //Graph.SetWalkable(i, !blocked);
 
             Vector3 normal = position - transform.position;
-            Vector3 pos = position + normal.normalized * 100;
+            Vector3 pos = position + normal.normalized * 100 * _scanFactor;
 
-            if (Physics.Raycast(pos, -normal, 100, _obstacleMask)) {
+            if (Physics.Raycast(pos, -normal, 100 * _scanFactor, _obstacleMask)) {
                 Graph.SetWalkable(i, false);
             }
         }

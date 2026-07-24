@@ -359,4 +359,28 @@ public class QuadSphereNavGraph : INavGraph
     {
         return (_positions[node] - _center).normalized;
     }
+
+    public void ConstrainPositionAndRotation(
+    ref Vector3 position,
+    ref Vector3 velocity,
+    ref Quaternion rotation)
+    {
+        Vector3 normal =
+            (position - _center).normalized;
+
+        position =
+            _center + normal * _radius;
+
+        velocity =
+            Vector3.ProjectOnPlane(
+                velocity,
+                normal);
+
+        if (velocity.sqrMagnitude > 0.0001f)
+        {
+            rotation = Quaternion.LookRotation(
+                velocity,
+                normal);
+        }
+    }
 }

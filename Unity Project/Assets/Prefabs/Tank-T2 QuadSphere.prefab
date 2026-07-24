@@ -411,7 +411,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 357578434101926732}
-  - component: {fileID: 212072819616543282}
   - component: {fileID: 5207941234345946621}
   - component: {fileID: 512252183425919639}
   - component: {fileID: 1757343662618969882}
@@ -440,20 +439,6 @@ Transform:
   - {fileID: 857900073955115835}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &212072819616543282
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2743592488088506512}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 63a8bbf3df3f80045a46b5bd0df43dc6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MantinRadious
-  centre: {x: 0, y: 0, z: 0}
-  radius: 300
 --- !u!114 &5207941234345946621
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -469,6 +454,9 @@ MonoBehaviour:
   provider: {fileID: 0}
   MaxSpeed: 5
   MaxForce: 20
+  FrictionForce: 0.1
+  MinForce: 0.1
+  MinSpeed: 0.1
 --- !u!114 &512252183425919639
 MonoBehaviour:
   m_ObjectHideFlags: 0

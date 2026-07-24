@@ -354,4 +354,11 @@ public class Grid3DNavGraph : INavGraph
     {
         return Vector3.zero;
     }
+
+    public void ConstrainPositionAndRotation(
+    ref Vector3 position,
+    ref Vector3 velocity,
+    ref Quaternion rotation)
+    {
+    }
 }

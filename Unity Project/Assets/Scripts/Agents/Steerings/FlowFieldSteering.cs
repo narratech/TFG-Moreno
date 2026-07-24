@@ -27,6 +27,9 @@ public class FlowFieldSteering : IAgentSteering
 
         Vector3 flowDirection = SampleFlowField(agent, _samplePosition);
 
+        if (flowDirection.sqrMagnitude < 0.05f)
+            return -agent.Velocity;
+
         Vector3 desiredVelocity = flowDirection * agent.MaxSpeed;
 
         return desiredVelocity - agent.Velocity;
@@ -104,39 +107,78 @@ public class FlowFieldSteering : IAgentSteering
         return validSteps;
     }
 
-    private Vector3 SampleFlowField(
-        FlowFieldAgent agent,
-        Vector3 samplePosition)
+    private Vector3 SampleFlowField(FlowFieldAgent agent, Vector3 samplePosition)
     {
         INavGraph graph = agent.Graph;
 
-        int count = graph.GetInterpolationNodes(samplePosition, _nodes);
+        int count = graph.GetInterpolationNodes(
+            samplePosition,
+            _nodes);
 
         Vector3 direction = Vector3.zero;
+
+        float totalWeight = 0f;
 
         for (int i = 0; i < count; i++)
         {
             int node = _nodes[i];
-            int region = graph.GetRegionId(node);
 
-            FlowField field = FlowFieldManager.Instance.GetFlowField(
-                graph,
-                region,
-                agent.TargetNode);
+            Vector3 nodePosition =
+                graph.GetNodePosition(node);
+
+            float sqrDistance = (samplePosition - nodePosition).sqrMagnitude;
+
+            float weight =
+                1f / (sqrDistance + 0.0001f);
+
+            if (!graph.IsWalkable(node))
+            {
+                Vector3 delta =
+                    samplePosition - nodePosition;
+
+                if (delta.sqrMagnitude > 0.0001f)
+                {
+                    direction +=
+                        delta.normalized * weight;
+
+                    totalWeight += weight;
+                }
+
+                continue;
+            }
+
+            int region =
+                graph.GetRegionId(node);
+
+            FlowField field =
+                FlowFieldManager.Instance.GetFlowField(
+                    graph,
+                    region,
+                    agent.TargetNode);
 
             if (field == null)
-                field = FlowFieldEngine.GenerateFlowPath(
-                    graph,
-                    agent.TargetNode,
-                    node);
+            {
+                field =
+                    FlowFieldEngine.GenerateFlowPath(
+                        graph,
+                        agent.TargetNode,
+                        node);
+            }
 
             if (field == null)
                 continue;
 
-            direction += field.FlowDirections[graph.GetLocalNode(node)];
+            direction +=
+                field.FlowDirections[
+                    graph.GetLocalNode(node)] * weight;
+
+            totalWeight += weight;
         }
 
-        return direction.normalized;
+        if (totalWeight > 0f)
+            direction /= totalWeight;
+
+        return direction;
     }
 
     public void SetDesiredOffset(Vector3 vec)

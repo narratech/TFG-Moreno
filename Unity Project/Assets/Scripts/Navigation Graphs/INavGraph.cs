@@ -14,6 +14,7 @@ public interface INavGraph
     int GetClosestNode(Vector3 worldPosition);
     int GetLocalNode(int globalNode);
     int GetGlobalNode(int localNode, int regionId);
+    void ConstrainPositionAndRotation(ref Vector3 position, ref Vector3 velocity, ref Quaternion rotation);
 
     // --- Gestión de Regiones (Clustering) ---
     /// <summary>

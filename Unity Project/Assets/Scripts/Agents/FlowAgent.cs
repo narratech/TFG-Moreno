@@ -81,28 +81,38 @@ public class FlowFieldAgent : MonoBehaviour
         CurrentRegion = Graph.GetRegionId(CurrentNode);
 
         Vector3 steering = ComputeSteering();
-        
-        if (steering.magnitude > MinForce)
+
+        if (steering.magnitude < MinForce)
         {
-            Velocity += steering * (1 - FrictionForce) * Time.deltaTime;
+            steering = Vector3.zero;
         }
+
+        Vector3 acceleration = steering - Velocity * FrictionForce;
+
+        Velocity += acceleration * Time.deltaTime;
 
         Velocity = Vector3.ClampMagnitude(
             Velocity,
             MaxSpeed);
 
-        if (Velocity.magnitude > MinSpeed)
-        {
-            transform.position += Velocity * Time.deltaTime;
-        }
+        if (Velocity.magnitude < MinSpeed)
+            Velocity = Vector3.zero;
 
-        if (Velocity.sqrMagnitude > 0.001f)
-        {
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                Quaternion.LookRotation(Velocity),
-                10f * Time.deltaTime);
-        }
+        transform.position +=
+            Velocity * Time.deltaTime;
+
+        Vector3 position = transform.position;
+        Quaternion rotation = transform.rotation;
+        Vector3 velocity = Velocity;
+
+        Graph.ConstrainPositionAndRotation(
+            ref position,
+            ref velocity,
+            ref rotation);
+
+        transform.position = position;
+        transform.rotation = rotation;
+        Velocity = velocity;
     }
 
     private Vector3 ComputeSteering()
