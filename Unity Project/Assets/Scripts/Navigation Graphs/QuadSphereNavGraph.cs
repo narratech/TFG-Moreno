@@ -354,4 +354,9 @@ public class QuadSphereNavGraph : INavGraph
 
         return count;
     }
+
+    public Vector3 GetNodeNormal(int node)
+    {
+        return (_positions[node] - _center).normalized;
+    }
 }

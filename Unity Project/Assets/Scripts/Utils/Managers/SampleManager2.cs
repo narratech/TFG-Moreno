@@ -63,5 +63,7 @@ public class SampleManager2 : MonoBehaviour
                 agent.SetDestination(targetNode);
             }
         }
+
+        FormationGenerator.GenerateAndApply(FormationType.Circle, 10f, Object.FindObjectsByType<FlowFieldAgent>(FindObjectsSortMode.None));
     }
 }

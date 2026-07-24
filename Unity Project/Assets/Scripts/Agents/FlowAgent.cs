@@ -7,6 +7,7 @@ public class FlowFieldAgent : MonoBehaviour
     [SerializeField] private MonoBehaviour provider;
     [SerializeField] public float MaxSpeed = 5f;
     [SerializeField] public float MaxForce = 20f;
+    [Range(0,1)][SerializeField] private float FrictionForce = 0.1f;
 
     private IAgentSteering[] _steerings;
 
@@ -83,7 +84,7 @@ public class FlowFieldAgent : MonoBehaviour
         
         if (steering.magnitude > MinForce)
         {
-            Velocity += steering * Time.deltaTime;
+            Velocity += steering * (1 - FrictionForce) * Time.deltaTime;
         }
 
         Velocity = Vector3.ClampMagnitude(
@@ -113,7 +114,11 @@ public class FlowFieldAgent : MonoBehaviour
             if (steering == null || !steering.enabled)
                 continue;
 
-            force += steering.GetDirection(this) * steering.Weight;
+            Vector3 dir = steering.GetDirection(this);
+            if (dir.magnitude > MinForce)
+            {
+                force += dir * steering.Weight;
+            }
         }
 
         return Vector3.ClampMagnitude(force, MaxForce);

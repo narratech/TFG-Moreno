@@ -349,4 +349,9 @@ public class Grid3DNavGraph : INavGraph
 
         return count;
     }
+
+    public Vector3 GetNodeNormal(int node)
+    {
+        return Vector3.zero;
+    }
 }

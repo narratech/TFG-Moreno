@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class FlowFieldSteering : IAgentSteering
@@ -15,7 +16,7 @@ public class FlowFieldSteering : IAgentSteering
 
     public override Vector3 GetDirection(FlowFieldAgent agent)
     {
-        if (agent.TargetNode < 0) 
+        if (agent.TargetNode < 0)
             return Vector3.zero;
 
         if ((agent.transform.position - _lastAgentPosition).sqrMagnitude >= _stepSize * _stepSize)
@@ -25,6 +26,7 @@ public class FlowFieldSteering : IAgentSteering
         }
 
         Vector3 flowDirection = SampleFlowField(agent, _samplePosition);
+
         Vector3 desiredVelocity = flowDirection * agent.MaxSpeed;
 
         return desiredVelocity - agent.Velocity;
@@ -46,25 +48,35 @@ public class FlowFieldSteering : IAgentSteering
 
         forward.Normalize();
 
-        Vector3 offsetDir = _desiredOffset.normalized;
+        Vector3 offset = _desiredOffset;
+
+        Vector3 normal = graph.GetNodeNormal(agent.CurrentNode);
+
+        if (normal != Vector3.zero)
+        {
+            float dot = Vector3.Dot(normal, Vector3.up);
+
+            if (dot < 0.9999f)
+                offset = Quaternion.FromToRotation(Vector3.up, normal) * offset;
+        }
+
+        Vector3 offsetDir = offset.normalized;
 
         int offsetSteps = GetFreeSteps(
             graph,
             position,
             offsetDir,
-            _desiredOffset.magnitude);
+            offset.magnitude);
 
         int forwardSteps = GetFreeSteps(
             graph,
             position,
             forward,
-            _desiredOffset.magnitude);
+            offset.magnitude);
 
         int steps = Mathf.Min(offsetSteps, forwardSteps);
 
-        _samplePosition =
-            position +
-            offsetDir * (steps * _stepSize);
+        _samplePosition = position + offsetDir * (steps * _stepSize);
     }
 
     private int GetFreeSteps(
@@ -79,12 +91,9 @@ public class FlowFieldSteering : IAgentSteering
 
         for (int i = 1; i <= maxSteps; i++)
         {
-            Vector3 p =
-                start +
-                direction * (i * _stepSize);
+            Vector3 p = start + direction * (i * _stepSize);
 
-            int node =
-                graph.GetClosestNode(p);
+            int node = graph.GetClosestNode(p);
 
             if (!graph.IsWalkable(node))
                 break;
@@ -101,36 +110,37 @@ public class FlowFieldSteering : IAgentSteering
     {
         INavGraph graph = agent.Graph;
 
-        int count =
-            graph.GetInterpolationNodes(
-                samplePosition,
-                _nodes);
+        int count = graph.GetInterpolationNodes(samplePosition, _nodes);
 
-        Vector3 dir = Vector3.zero;
+        Vector3 direction = Vector3.zero;
 
         for (int i = 0; i < count; i++)
         {
             int node = _nodes[i];
-
             int region = graph.GetRegionId(node);
 
             FlowField field = FlowFieldManager.Instance.GetFlowField(
-                    graph,
-                    region,
-                    agent.TargetNode);
+                graph,
+                region,
+                agent.TargetNode);
 
             if (field == null)
-            {
-                field = FlowFieldEngine.GenerateFlowPath(graph, agent.TargetNode, node);
-            }
+                field = FlowFieldEngine.GenerateFlowPath(
+                    graph,
+                    agent.TargetNode,
+                    node);
 
             if (field == null)
                 continue;
 
-            dir += field.FlowDirections[
-                graph.GetLocalNode(node)];
+            direction += field.FlowDirections[graph.GetLocalNode(node)];
         }
 
-        return dir.normalized;
+        return direction.normalized;
+    }
+
+    public void SetDesiredOffset(Vector3 vec)
+    {
+        _desiredOffset = vec;
     }
 }
