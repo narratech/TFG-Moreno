@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class FlowFieldAgent : MonoBehaviour
 {
-    [SerializeField] private MonoBehaviour provider;
+    [SerializeField] public MonoBehaviour provider;
     [SerializeField] public float MaxSpeed = 5f;
     [SerializeField] public float MaxForce = 20f;
     [Range(0,1)][SerializeField] private float FrictionForce = 0.1f;
