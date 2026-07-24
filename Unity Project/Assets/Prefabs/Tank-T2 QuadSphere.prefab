@@ -470,6 +470,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldSteering
   _weight: 1
+  settings: {fileID: 11400000, guid: 06897336b6a26654b87cce508bb6a759, type: 2}
   _stepSize: 0.5
   _desiredOffset: {x: 0, y: 0, z: 0}
 --- !u!114 &1757343662618969882
@@ -485,6 +486,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LocalAvoidanceSteering
   _weight: 1
+  settings: {fileID: 11400000, guid: c7a1eb8d0e0e9f14db7b13a90fe7b702, type: 2}
   avoidanceNodeRadius: 2
   actionRadius: 10
   strength: 5

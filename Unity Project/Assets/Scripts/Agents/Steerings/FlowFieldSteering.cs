@@ -3,23 +3,33 @@ using UnityEngine;
 
 public class FlowFieldSteering : IAgentSteering
 {
-    [Header("FlowField")]
-    [SerializeField] private float _stepSize = 0.5f;
+    [Header("Settings")]
+    [SerializeField]
+    private FlowFieldSteeringSettings settings;
 
-    [Header("Formation")]
-    [SerializeField] private Vector3 _desiredOffset;
+    [Header("Manual Settings")]
+    [SerializeField]
+    private float _stepSize = 0.5f;
+
+    [SerializeField]
+    private Vector3 _desiredOffset;
 
     private readonly int[] _nodes = new int[8];
 
     private Vector3 _samplePosition;
     private Vector3 _lastAgentPosition;
 
+    private float StepSize =>
+            settings != null
+            ? settings.StepSize
+            : _stepSize;
+
     public override Vector3 GetDirection(FlowFieldAgent agent)
     {
         if (agent.TargetNode < 0)
             return Vector3.zero;
 
-        if ((agent.transform.position - _lastAgentPosition).sqrMagnitude >= _stepSize * _stepSize)
+        if ((agent.transform.position - _lastAgentPosition).sqrMagnitude >= StepSize * StepSize)
         {
             _lastAgentPosition = agent.transform.position;
             UpdateSamplePosition(agent);
@@ -79,7 +89,7 @@ public class FlowFieldSteering : IAgentSteering
 
         int steps = Mathf.Min(offsetSteps, forwardSteps);
 
-        _samplePosition = position + offsetDir * (steps * _stepSize);
+        _samplePosition = position + offsetDir * (steps * StepSize);
     }
 
     private int GetFreeSteps(
@@ -88,13 +98,13 @@ public class FlowFieldSteering : IAgentSteering
         Vector3 direction,
         float maxDistance)
     {
-        int maxSteps = Mathf.CeilToInt(maxDistance / _stepSize);
+        int maxSteps = Mathf.CeilToInt(maxDistance / StepSize);
 
         int validSteps = 0;
 
         for (int i = 1; i <= maxSteps; i++)
         {
-            Vector3 p = start + direction * (i * _stepSize);
+            Vector3 p = start + direction * (i * StepSize);
 
             int node = graph.GetClosestNode(p);
 

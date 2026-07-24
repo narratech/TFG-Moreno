@@ -3,6 +3,11 @@ using UnityEngine;
 
 public class LocalAvoidanceSteering : IAgentSteering
 {
+    [Header("Settings")]
+    [SerializeField]
+    private LocalAvoidanceSettings settings;
+
+    [Header("Manual Settings")]
     [SerializeField]
     private int avoidanceNodeRadius = 2;
 
@@ -14,8 +19,24 @@ public class LocalAvoidanceSteering : IAgentSteering
 
     private readonly int[] _nodes = new int[64];
 
+    private int AvoidanceNodeRadius =>
+        settings != null
+            ? settings.AvoidanceNodeRadius
+            : avoidanceNodeRadius;
+
+    private float ActionRadius =>
+        settings != null
+            ? settings.ActionRadius
+            : actionRadius;
+
+    private float Strength =>
+        settings != null
+            ? settings.Strength
+            : strength;
+
     public new void Start()
     {
+        Debug.Log(Strength);
         base.Start();
         LocalAvoidanceManager.Instance.Subscribe(Agent);
     }
@@ -26,7 +47,7 @@ public class LocalAvoidanceSteering : IAgentSteering
 
         int count = agent.Graph.GetNodesInRadius(
             agent.CurrentNode,
-            avoidanceNodeRadius,
+            AvoidanceNodeRadius,
             _nodes);
 
         Vector3 force = Vector3.zero;
@@ -61,10 +82,10 @@ public class LocalAvoidanceSteering : IAgentSteering
 
             float distance = delta.magnitude;
 
-            if (distance < 0.001f || distance > actionRadius)
+            if (distance < 0.001f || distance > ActionRadius)
                 continue;
 
-            float t = 1f - distance / actionRadius;
+            float t = 1f - distance / ActionRadius;
             float weight = t * t;
 
             Vector3 separation = delta.normalized * weight * agentCount;
@@ -74,6 +95,6 @@ public class LocalAvoidanceSteering : IAgentSteering
             force += separation;
         }
 
-        return force * strength;
+        return force * Strength;
     }
 }

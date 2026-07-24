@@ -2018,6 +2018,104 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+--- !u!1001 &615676859
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1469837801}
+    m_Modifications:
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 314.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 32.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 66.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1757343662618969882, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: strength
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1757343662618969882, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: actionRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2743592488088506512, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_Name
+      value: Tank-T2 QuadSphere (63)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: grid
+      value: 
+      objectReference: {fileID: 1999247484}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: MaxForce
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: MaxSpeed
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: MinForce
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: MinSpeed
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: provider
+      value: 
+      objectReference: {fileID: 1999247484}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: FrictionForce
+      value: 0.5
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+--- !u!4 &615676860 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+  m_PrefabInstance: {fileID: 615676859}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &630346611 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
@@ -4045,6 +4143,104 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
   m_PrefabInstance: {fileID: 1338792538}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1341101384
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1469837801}
+    m_Modifications:
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 314.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 37
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 60.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1757343662618969882, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: strength
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1757343662618969882, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: actionRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2743592488088506512, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: m_Name
+      value: Tank-T2 QuadSphere (62)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: grid
+      value: 
+      objectReference: {fileID: 1999247484}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: MaxForce
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: MaxSpeed
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: MinForce
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: MinSpeed
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: provider
+      value: 
+      objectReference: {fileID: 1999247484}
+    - target: {fileID: 5207941234345946621, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+      propertyPath: FrictionForce
+      value: 0.5
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+--- !u!4 &1341101385 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
+  m_PrefabInstance: {fileID: 1341101384}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1360770941 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 357578434101926732, guid: 6030556649114fd4ea3dc4d6fbada92f, type: 3}
@@ -4166,6 +4362,8 @@ Transform:
   - {fileID: 727744228}
   - {fileID: 1081350}
   - {fileID: 1398382763}
+  - {fileID: 1341101385}
+  - {fileID: 615676860}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!43 &1480401186
@@ -6308,7 +6506,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1999247477}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f6822cf1a31fe464aaea629a9e5dd54b, type: 3}
   m_Name: 
@@ -6326,14 +6524,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1999247477}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a62a886c82af3644791879b151940d7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldDebugger
   _showInGame: 1
   _showIntegration: 1
-  _integrationOpacity: 0.4
+  _integrationOpacity: 0
   _integrationGradient:
     serializedVersion: 2
     key0: {r: 1, g: 0.95554936, b: 0, a: 1}
@@ -6365,7 +6563,7 @@ MonoBehaviour:
     m_NumColorKeys: 5
     m_NumAlphaKeys: 2
   _integrationColorFactor: 300
-  _showDirections: 1
+  _showDirections: 0
   _arrowLength: 3
   _arrowColor: {r: 1, g: 1, b: 1, a: 1}
   _gridProvider: {fileID: 0}
@@ -6383,10 +6581,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbb62787f2451ed47ad096f038e8f3d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuadSphereProvider
-  _radius: 300
+  _radius: 300.1
   _resolution: 64
   _regionsPerAxis: 4
-  _drawWalkability: 1
+  _drawWalkability: 0
   _drawNodeIndices: 0
   _drawCoordinates: 0
   _drawFace: 0
