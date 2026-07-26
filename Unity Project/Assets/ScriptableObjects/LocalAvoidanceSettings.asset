@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8023923e35dbee64cab603a34efd02b7, type: 3}
   m_Name: LocalAvoidanceSettings
   m_EditorClassIdentifier: Assembly-CSharp::LocalAvoidanceSettings
-  AvoidanceNodeRadius: 0
-  ActionRadius: 0
+  AvoidanceNodeRadius: 2
+  ActionRadius: 10
   Strength: 10

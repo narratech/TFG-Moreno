@@ -130,18 +130,26 @@ public class FlowFieldAgent : MonoBehaviour
             return;
         }
 
-        // CASO 2: Pared / Obstáculo detectado.
-        // Calculamos la normal que SALE del obstáculo HACIA el agente seguro.
+        // CASO 2: Intentar deslizamiento agnóstico
         Vector3 obstaclePos = Graph.GetNodePosition(targetNode);
         Vector3 safeAgentPos = Graph.GetNodePosition(CurrentNode);
+        Vector3 surfaceNormal = Graph.GetNodeNormal(CurrentNode);
 
-        // La normal siempre debe apuntar del centro del obstáculo al agente
-        Vector3 wallNormal = (safeAgentPos - obstaclePos).normalized;
+        // Dirección desde el obstáculo hacia el agente
+        Vector3 toAgent = safeAgentPos - obstaclePos;
+
+        // Si coincide el centro del nodo obstáculo y el actual, usamos la velocidad inversa
+        if (toAgent.sqrMagnitude < 0.0001f)
+            toAgent = -Velocity;
+
+        // Proyectamos la dirección de choque sobre la superficie local (QuadSphere/Plano)
+        // para obtener una normal de pared tangente a la superficie
+        Vector3 wallNormal = Vector3.ProjectOnPlane(toAgent, surfaceNormal).normalized;
 
         if (wallNormal.sqrMagnitude < 0.0001f)
             wallNormal = -Velocity.normalized;
 
-        // Deslizamiento sobre el plano de la pared
+        // Deslizar la velocidad sobre la normal de la pared
         Vector3 slideVelocity = Vector3.ProjectOnPlane(Velocity, wallNormal);
 
         if (slideVelocity.sqrMagnitude > MinSpeed * MinSpeed)
@@ -157,8 +165,9 @@ public class FlowFieldAgent : MonoBehaviour
             }
         }
 
-        // CASO 3: Si no puede deslizar, detiene el movimiento sin incrustarse.
-        Velocity = Vector3.zero;
+        // CASO 3: Si no se puede deslizar, NO reseteamos Velocity a Vector3.zero.
+        // Simplemente no actualizamos transform.position este frame.
+        // Esto permite que el steering mantenga su inercia/fuerza y gire libremente en el siguiente frame.
     }
 
     private Vector3 ComputeSteering()

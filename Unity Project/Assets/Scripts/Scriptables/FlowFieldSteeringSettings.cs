@@ -6,4 +6,5 @@ using UnityEngine;
 public class FlowFieldSteeringSettings : ScriptableObject
 {
     public float StepSize = 0.5f;
+    public float TimeStamp = 0.2f;
 }

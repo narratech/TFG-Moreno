@@ -452,7 +452,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   provider: {fileID: 0}
-  MaxSpeed: 10
+  MaxSpeed: 8
   MaxForce: 20
   FrictionForce: 0.5
   MinForce: 0.1
@@ -472,6 +472,7 @@ MonoBehaviour:
   _weight: 1
   settings: {fileID: 11400000, guid: 06897336b6a26654b87cce508bb6a759, type: 2}
   _stepSize: 0.5
+  _timeStamp: 0.1
   _desiredOffset: {x: 0, y: 0, z: 0}
 --- !u!114 &1757343662618969882
 MonoBehaviour:
