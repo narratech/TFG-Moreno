@@ -12,6 +12,7 @@ public interface INavGraph
     Vector3 GetNodeSize(int index);
     Vector3 GetNodeNormal(int index);
     int GetClosestNode(Vector3 worldPosition);
+    Vector3 GetClosestPointOnNode(int node, Vector3 position);
     int GetLocalNode(int globalNode);
     int GetGlobalNode(int localNode, int regionId);
     void ConstrainPositionAndRotation(ref Vector3 position, ref Vector3 velocity, ref Quaternion rotation);

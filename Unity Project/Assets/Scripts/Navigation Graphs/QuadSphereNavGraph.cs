@@ -365,22 +365,54 @@ public class QuadSphereNavGraph : INavGraph
     ref Vector3 velocity,
     ref Quaternion rotation)
     {
-        Vector3 normal =
-            (position - _center).normalized;
+        Vector3 normal = (position - _center).normalized;
 
-        position =
-            _center + normal * _radius;
+        position = _center + normal * _radius;
 
-        velocity =
-            Vector3.ProjectOnPlane(
-                velocity,
-                normal);
+        int node = GetClosestNode(position);
+
+        if (!IsWalkable(node))
+        {
+            Vector3 projected = GetClosestPointOnNode(node, position);
+
+            Vector3 correction = projected - position;
+
+            if (correction.sqrMagnitude > 0.0001f)
+            {
+                Vector3 wallNormal = correction.normalized;
+
+                velocity = Vector3.ProjectOnPlane(
+                    velocity,
+                    wallNormal);
+            }
+
+            position = projected;
+
+            normal = (position - _center).normalized;
+        }
 
         if (velocity.sqrMagnitude > 0.0001f)
         {
-            rotation = Quaternion.LookRotation(
-                velocity,
-                normal);
+            Vector3 forward = Vector3.ProjectOnPlane( velocity, normal);
+
+            if (forward.sqrMagnitude > 0.0001f)
+            {
+                rotation = Quaternion.LookRotation(
+                    forward.normalized,
+                    normal);
+            }
         }
+    }
+
+    public Vector3 GetClosestPointOnNode(int node, Vector3 position)
+    {
+        Vector3 center = GetNodePosition(node);
+
+        Vector3 normal = center.normalized;
+
+        float distance =
+            Vector3.Dot(position - center, normal);
+
+        return position - normal * distance;
     }
 }

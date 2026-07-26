@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.UI.Image;
 
 public class Grid2DNavGraph : INavGraph
 {
@@ -302,5 +303,35 @@ public class Grid2DNavGraph : INavGraph
     ref Vector3 velocity,
     ref Quaternion rotation)
     {
+        int node = GetClosestNode(position);
+
+        if (!IsWalkable(node))
+        {
+            position = GetClosestPointOnNode(
+                node,
+                position);
+
+            velocity = Vector3.ProjectOnPlane(
+                velocity,
+                position - GetNodePosition(node));
+        }
+    }
+
+    public Vector3 GetClosestPointOnNode(int node, Vector3 position)
+    {
+        int x = node % _width;
+        int z = node / _width;
+
+        float minX = _origin.x + (x - 0.5f) * _cellSize;
+        float maxX = _origin.x + (x + 0.5f) * _cellSize;
+
+        float minZ = _origin.z + (z - 0.5f) * _cellSize;
+        float maxZ = _origin.z + (z + 0.5f) * _cellSize;
+
+        position.x = Mathf.Clamp(position.x, minX, maxX);
+        position.z = Mathf.Clamp(position.z, minZ, maxZ);
+        position.y = _origin.y;
+
+        return position;
     }
 }

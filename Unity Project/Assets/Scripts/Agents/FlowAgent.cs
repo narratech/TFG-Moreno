@@ -1,13 +1,13 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
 public class FlowFieldAgent : MonoBehaviour
 {
-    [SerializeField] private MonoBehaviour provider;
+    [SerializeField] public MonoBehaviour provider;
     [SerializeField] public float MaxSpeed = 5f;
     [SerializeField] public float MaxForce = 20f;
-    [Range(0,1)][SerializeField] private float FrictionForce = 0.1f;
+    [Range(0, 1)][SerializeField] private float FrictionForce = 0.1f;
 
     private IAgentSteering[] _steerings;
 
@@ -21,49 +21,40 @@ public class FlowFieldAgent : MonoBehaviour
 
     public Vector3 Velocity { get; private set; } = Vector3.zero;
 
+    public Vector3 SteeringForce { get; private set; } = Vector3.zero;
 
     [SerializeField] private float MinForce = 0.1f;
     [SerializeField] private float MinSpeed = 0.1f;
 
     private void Awake()
     {
-        switch (provider)
-        {
-            case Grid2DProvider g:
-                Graph = g.Graph;
-                break;
-
-            case Grid3DProvider g:
-                Graph = g.Graph;
-                break;
-
-            case QuadSphereProvider g:
-                Graph = g.Graph;
-                break;
-        }
-
+        AssignGraph();
         _steerings = GetComponents<IAgentSteering>();
     }
 
     private void Start()
     {
-        if (Graph == null) {
-            switch (provider)
-            {
-                case Grid2DProvider g:
-                    Graph = g.Graph;
-                    break;
-
-                case Grid3DProvider g:
-                    Graph = g.Graph;
-                    break;
-
-                case QuadSphereProvider g:
-                    Graph = g.Graph;
-                    break;
-            }
+        if (Graph == null)
+        {
+            AssignGraph();
         }
-        FlowFieldAgentManager.Instance.Subscribe(this);
+        FlowFieldAgentManager.Instance?.Subscribe(this);
+    }
+
+    private void AssignGraph()
+    {
+        switch (provider)
+        {
+            case Grid2DProvider g:
+                Graph = g.Graph;
+                break;
+            case Grid3DProvider g:
+                Graph = g.Graph;
+                break;
+            case QuadSphereProvider g:
+                Graph = g.Graph;
+                break;
+        }
     }
 
     private void OnDestroy()
@@ -77,30 +68,34 @@ public class FlowFieldAgent : MonoBehaviour
         if (Graph == null)
             return;
 
+        // 1. Obtener estado seguro inicial
         CurrentNode = Graph.GetClosestNode(transform.position);
         CurrentRegion = Graph.GetRegionId(CurrentNode);
 
-        Vector3 steering = ComputeSteering();
+        // 2. Calcular steering
+        SteeringForce = ComputeSteering();
 
-        if (steering.magnitude < MinForce)
+        // 3. Aplicar físicas
+        if (SteeringForce.sqrMagnitude > MinForce * MinForce)
         {
-            steering = Vector3.zero;
+            Velocity += SteeringForce * Time.deltaTime;
+            Velocity = Vector3.ClampMagnitude(Velocity, MaxSpeed);
+        }
+        else
+        {
+            Velocity = Vector3.MoveTowards(
+                Velocity,
+                Vector3.zero,
+                MaxSpeed * FrictionForce * Time.deltaTime);
         }
 
-        Vector3 acceleration = steering - Velocity * FrictionForce;
-
-        Velocity += acceleration * Time.deltaTime;
-
-        Velocity = Vector3.ClampMagnitude(
-            Velocity,
-            MaxSpeed);
-
-        if (Velocity.magnitude < MinSpeed)
+        if (Velocity.sqrMagnitude < MinSpeed * MinSpeed)
             Velocity = Vector3.zero;
 
-        transform.position +=
-            Velocity * Time.deltaTime;
+        // 4. Intentar movimiento con deslizamiento corregido
+        TryMove();
 
+        // 5. Ajustar restricciones geométricas (Grafo / Malla)
         Vector3 position = transform.position;
         Quaternion rotation = transform.rotation;
         Vector3 velocity = Velocity;
@@ -110,9 +105,60 @@ public class FlowFieldAgent : MonoBehaviour
             ref velocity,
             ref rotation);
 
-        transform.position = position;
-        transform.rotation = rotation;
+        transform.SetPositionAndRotation(position, rotation);
         Velocity = velocity;
+
+        // 6. Estado final sincronizado
+        CurrentNode = Graph.GetClosestNode(transform.position);
+        CurrentRegion = Graph.GetRegionId(CurrentNode);
+    }
+
+    private void TryMove()
+    {
+        if (Velocity.sqrMagnitude < 0.0001f)
+            return;
+
+        Vector3 currentPosition = transform.position;
+        Vector3 desiredPosition = currentPosition + Velocity * Time.deltaTime;
+
+        int targetNode = Graph.GetClosestNode(desiredPosition);
+
+        // CASO 1: Destino libre y caminable
+        if (Graph.IsWalkable(targetNode))
+        {
+            transform.position = desiredPosition;
+            return;
+        }
+
+        // CASO 2: Pared / Obstáculo detectado.
+        // Calculamos la normal que SALE del obstáculo HACIA el agente seguro.
+        Vector3 obstaclePos = Graph.GetNodePosition(targetNode);
+        Vector3 safeAgentPos = Graph.GetNodePosition(CurrentNode);
+
+        // La normal siempre debe apuntar del centro del obstáculo al agente
+        Vector3 wallNormal = (safeAgentPos - obstaclePos).normalized;
+
+        if (wallNormal.sqrMagnitude < 0.0001f)
+            wallNormal = -Velocity.normalized;
+
+        // Deslizamiento sobre el plano de la pared
+        Vector3 slideVelocity = Vector3.ProjectOnPlane(Velocity, wallNormal);
+
+        if (slideVelocity.sqrMagnitude > MinSpeed * MinSpeed)
+        {
+            Vector3 slidePosition = currentPosition + slideVelocity * Time.deltaTime;
+            int slideNode = Graph.GetClosestNode(slidePosition);
+
+            if (Graph.IsWalkable(slideNode))
+            {
+                Velocity = slideVelocity;
+                transform.position = slidePosition;
+                return;
+            }
+        }
+
+        // CASO 3: Si no puede deslizar, detiene el movimiento sin incrustarse.
+        Velocity = Vector3.zero;
     }
 
     private Vector3 ComputeSteering()
@@ -125,7 +171,7 @@ public class FlowFieldAgent : MonoBehaviour
                 continue;
 
             Vector3 dir = steering.GetDirection(this);
-            if (dir.magnitude > MinForce)
+            if (dir.sqrMagnitude > MinForce * MinForce)
             {
                 force += dir * steering.Weight;
             }
@@ -140,8 +186,6 @@ public class FlowFieldAgent : MonoBehaviour
             return;
 
         TargetNode = targetNode;
-
-        FlowFieldAgentManager.Instance.Subscribe(this);
-
+        FlowFieldAgentManager.Instance?.Subscribe(this);
     }
 }

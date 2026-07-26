@@ -36,7 +36,6 @@ public class LocalAvoidanceSteering : IAgentSteering
 
     public new void Start()
     {
-        Debug.Log(Strength);
         base.Start();
         LocalAvoidanceManager.Instance.Subscribe(Agent);
     }
