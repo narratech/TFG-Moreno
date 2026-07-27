@@ -2,7 +2,7 @@
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class FlowFieldAgent : MonoBehaviour
+public class NavAgent : MonoBehaviour
 {
     [SerializeField] public MonoBehaviour provider;
     [SerializeField] public float MaxSpeed = 5f;
@@ -38,7 +38,7 @@ public class FlowFieldAgent : MonoBehaviour
         {
             AssignGraph();
         }
-        FlowFieldAgentManager.Instance?.Subscribe(this);
+        AgentManager.Instance?.Subscribe(this);
     }
 
     private void AssignGraph()
@@ -59,8 +59,8 @@ public class FlowFieldAgent : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (FlowFieldAgentManager.Instance != null)
-            FlowFieldAgentManager.Instance.Unsubscribe(this);
+        if (AgentManager.Instance != null)
+            AgentManager.Instance.Unsubscribe(this);
     }
 
     private void Update()
@@ -195,6 +195,6 @@ public class FlowFieldAgent : MonoBehaviour
             return;
 
         TargetNode = targetNode;
-        FlowFieldAgentManager.Instance?.Subscribe(this);
+        AgentManager.Instance?.Subscribe(this);
     }
 }

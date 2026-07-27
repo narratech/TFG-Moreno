@@ -12,7 +12,7 @@ public enum FormationType
 
 public static class FormationGenerator
 {
-    public static void GenerateAndApply(FormationType type, float spacing, IReadOnlyList<FlowFieldAgent> agents)
+    public static void GenerateAndApply(FormationType type, float spacing, IReadOnlyList<NavAgent> agents)
     {
         List<Vector3> offsets = Generate(type, agents.Count, spacing);
         ApplyOffsets(agents, offsets);
@@ -31,7 +31,7 @@ public static class FormationGenerator
         };
     }
 
-    public static void ApplyOffsets(IReadOnlyList<FlowFieldAgent> agents, IReadOnlyList<Vector3> offsets)
+    public static void ApplyOffsets(IReadOnlyList<NavAgent> agents, IReadOnlyList<Vector3> offsets)
     {
         int count = Mathf.Min(
             agents.Count,

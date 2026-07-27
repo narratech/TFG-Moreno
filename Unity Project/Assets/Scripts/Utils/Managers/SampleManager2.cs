@@ -56,7 +56,7 @@ public class SampleManager2 : MonoBehaviour
         FlowFieldManager.Instance.RegisterRoute(graphProvider.Graph, destination);
         targetNode = destination;
 
-        foreach (FlowFieldAgent agent in Object.FindObjectsByType<FlowFieldAgent>(FindObjectsSortMode.None))
+        foreach (NavAgent agent in Object.FindObjectsByType<NavAgent>(FindObjectsSortMode.None))
         {
             if (agent != null)
             {
@@ -64,6 +64,6 @@ public class SampleManager2 : MonoBehaviour
             }
         }
 
-        FormationGenerator.GenerateAndApply(FormationType.Circle, 10f, Object.FindObjectsByType<FlowFieldAgent>(FindObjectsSortMode.None));
+        FormationGenerator.GenerateAndApply(FormationType.Circle, 10f, Object.FindObjectsByType<NavAgent>(FindObjectsSortMode.None));
     }
 }

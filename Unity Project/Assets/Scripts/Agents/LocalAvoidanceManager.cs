@@ -16,7 +16,7 @@ public class LocalAvoidanceManager : MonoBehaviour
 {
     public static LocalAvoidanceManager Instance { get; private set; }
 
-    private readonly List<FlowFieldAgent> _agents = new();
+    private readonly List<NavAgent> _agents = new();
 
     private readonly Dictionary<INavGraph, NodeAgentData[]> _graphs = new();
 
@@ -33,7 +33,7 @@ public class LocalAvoidanceManager : MonoBehaviour
         _graphs.Add( graph, new NodeAgentData[graph.NodeCount]);
     }
 
-    public void Subscribe(FlowFieldAgent agent)
+    public void Subscribe(NavAgent agent)
     {
         RegisterGraph(agent.Graph);
 
@@ -41,7 +41,7 @@ public class LocalAvoidanceManager : MonoBehaviour
             _agents.Add(agent);
     }
 
-    public void Unsubscribe(FlowFieldAgent agent)
+    public void Unsubscribe(NavAgent agent)
     {
         _agents.Remove(agent);
     }
@@ -51,7 +51,7 @@ public class LocalAvoidanceManager : MonoBehaviour
         foreach (NodeAgentData[] data in _graphs.Values)
             Array.Clear(data, 0, data.Length);
 
-        foreach (FlowFieldAgent agent in _agents)
+        foreach (NavAgent agent in _agents)
         {
             if (agent.Graph == null)
                 continue;

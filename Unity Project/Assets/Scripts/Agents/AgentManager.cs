@@ -1,16 +1,16 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
-public class FlowFieldAgentManager
+public class AgentManager
 {
     private readonly Dictionary<INavGraph, Dictionary<int, AgentGroup>> _graphs = new();
 
-    private readonly Dictionary<FlowFieldAgent, AgentGroup> _agentGroups = new();
+    private readonly Dictionary<NavAgent, AgentGroup> _agentGroups = new();
 
-    public static FlowFieldAgentManager Instance { get; } = new();
-    private FlowFieldAgentManager() { }
+    public static AgentManager Instance { get; } = new();
+    private AgentManager() { }
 
-    public void Subscribe(FlowFieldAgent agent)
+    public void Subscribe(NavAgent agent)
     {
         Unsubscribe(agent);
 
@@ -37,7 +37,7 @@ public class FlowFieldAgentManager
         _agentGroups.Add(agent, group);
     }
 
-    public void Unsubscribe(FlowFieldAgent agent)
+    public void Unsubscribe(NavAgent agent)
     {
         if (!_agentGroups.TryGetValue(agent, out AgentGroup group))
             return;
@@ -59,7 +59,7 @@ public class FlowFieldAgentManager
     }
 
     public FlowField GetFlowField(
-        FlowFieldAgent agent,
+        NavAgent agent,
         int region)
     {
         if (!_agentGroups.TryGetValue(agent, out AgentGroup group))
@@ -71,7 +71,7 @@ public class FlowFieldAgentManager
             group.TargetNode);
     }
 
-    public IReadOnlyList<FlowFieldAgent> GetAgents(FlowFieldAgent agent)
+    public IReadOnlyList<NavAgent> GetAgents(NavAgent agent)
     {
         if (_agentGroups.TryGetValue(agent, out AgentGroup group))
             return group.Agents;

@@ -5,7 +5,7 @@ public class AgentGroup
 
     public int TargetNode { get; }
 
-    public List<FlowFieldAgent> Agents { get; }
+    public List<NavAgent> Agents { get; }
         = new();
 
     public AgentGroup(

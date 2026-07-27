@@ -40,7 +40,7 @@ public class LocalAvoidanceSteering : IAgentSteering
         LocalAvoidanceManager.Instance.Subscribe(Agent);
     }
 
-    public override Vector3 GetDirection(FlowFieldAgent agent)
+    public override Vector3 GetDirection(NavAgent agent)
     {
         NodeAgentData[] nodeData = LocalAvoidanceManager.Instance.GetNodeData(agent.Graph);
 

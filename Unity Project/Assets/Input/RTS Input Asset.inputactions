@@ -1,9 +1,9 @@
 {
     "version": 1,
-    "name": "InputSystem",
+    "name": "RTS Input Asset",
     "maps": [
         {
-            "name": "Camera",
+            "name": "RTS Game",
             "id": "f7bee308-0169-4b89-9298-9ab237e06904",
             "actions": [
                 {
@@ -55,6 +55,15 @@
                     "name": "Select",
                     "type": "Button",
                     "id": "76816edf-46b4-458c-8159-497960409623",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Command",
+                    "type": "Button",
+                    "id": "813a981d-7f37-40ed-8d85-beaad84e94a4",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -131,7 +140,7 @@
                 {
                     "name": "",
                     "id": "7959b280-e8ca-4b57-8962-f9f3d9429efd",
-                    "path": "<Mouse>/rightButton",
+                    "path": "<Mouse>/middleButton",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -169,6 +178,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Select",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "87568b5b-29e6-4741-a031-5c53fce197b1",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Command",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

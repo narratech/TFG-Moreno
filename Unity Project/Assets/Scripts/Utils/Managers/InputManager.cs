@@ -21,6 +21,16 @@ public class InputManager : MonoBehaviour
 
     public Vector2 MouseScreenPosition { get; private set; }
     public bool IsSelecting { get; private set; }
+    public bool IsCommanding { get; private set; }
+
+    public bool IsMultiSelect => Keyboard.current != null &&
+                                (Keyboard.current.leftShiftKey.isPressed ||
+                                 Keyboard.current.rightShiftKey.isPressed);
+
+    public Vector3 DragStartPosition { get; private set; }
+
+    // Indica si se está manteniendo presionado el botón de selección
+    public bool IsDragging { get; private set; }
 
     // Referencias internas a acciones
     private InputAction moveAction;
@@ -30,6 +40,7 @@ public class InputManager : MonoBehaviour
 
     private InputAction mousePositionAction;
     private InputAction selectAction;
+    private InputAction commandAction;
 
     private void Awake()
     {
@@ -51,7 +62,7 @@ public class InputManager : MonoBehaviour
         }
 
         // Activar el Action Map de cámara
-        var cameraMap = input.FindActionMap("Camera");
+        var cameraMap = input.FindActionMap("RTS Game");
         cameraMap.Enable();
 
         // Obtener referencias a cada acción
@@ -61,6 +72,7 @@ public class InputManager : MonoBehaviour
         rotateAction = cameraMap.FindAction("Rotate");
         mousePositionAction = cameraMap.FindAction("MousePosition");
         selectAction = cameraMap.FindAction("Select");
+        commandAction = cameraMap.FindAction("Command");
     }
 
     private void OnDisable()
@@ -84,5 +96,22 @@ public class InputManager : MonoBehaviour
         if (mousePositionAction != null) MouseScreenPosition = mousePositionAction.ReadValue<Vector2>();
 
         if (selectAction != null) IsSelecting = selectAction.WasPressedThisFrame();
+
+        if (commandAction != null) IsCommanding = commandAction.WasPressedThisFrame();
+
+        if (Mouse.current == null) return;
+
+        // Detectar inicio de click
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            DragStartPosition = Mouse.current.position.ReadValue();
+            IsDragging = true;
+        }
+
+        // Detectar cuando se suelta el click
+        if (Mouse.current.leftButton.wasReleasedThisFrame)
+        {
+            IsDragging = false;
+        }
     }
 }

@@ -34,7 +34,7 @@ public class FlowFieldSteering : IAgentSteering
         _time = Random.Range(0f, TimeStamp);
     }
 
-    public override Vector3 GetDirection(FlowFieldAgent agent)
+    public override Vector3 GetDirection(NavAgent agent)
     {
         if (agent.TargetNode < 0)
             return Vector3.zero;
@@ -95,7 +95,7 @@ public class FlowFieldSteering : IAgentSteering
         return desiredVelocity - agent.Velocity;
     }
 
-    private void UpdateSamplePosition(FlowFieldAgent agent)
+    private void UpdateSamplePosition(NavAgent agent)
     {
         INavGraph graph = agent.Graph;
         Vector3 position = agent.transform.position;
@@ -181,7 +181,7 @@ public class FlowFieldSteering : IAgentSteering
         _samplePosition = position + offsetDir * (_currentSteps * stepSize);
     }
 
-    private Vector3 SampleFlowField(FlowFieldAgent agent, Vector3 samplePosition)
+    private Vector3 SampleFlowField(NavAgent agent, Vector3 samplePosition)
     {
         INavGraph graph = agent.Graph;
         int count = graph.GetInterpolationNodes(samplePosition, _nodes);
@@ -253,7 +253,7 @@ public class FlowFieldSteering : IAgentSteering
         Gizmos.color = _currentSteps > 0 ? Color.green : Color.red;
         Gizmos.DrawWireSphere(_samplePosition, StepSize * 0.5f);
 
-        FlowFieldAgent agent = GetComponent<FlowFieldAgent>();
+        NavAgent agent = GetComponent<NavAgent>();
         if (agent != null && agent.Graph != null)
         {
             Vector3 flow = SampleFlowField(agent, _samplePosition);

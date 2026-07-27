@@ -56,7 +56,7 @@ public class AgentSpawner : MonoBehaviour
                 prefab,
                 world,
                 Quaternion.LookRotation(transform.forward, up),
-                container).GetComponent<FlowFieldAgent>().provider = provider;
+                container).GetComponent<NavAgent>().provider = provider;
         }
     }
 
