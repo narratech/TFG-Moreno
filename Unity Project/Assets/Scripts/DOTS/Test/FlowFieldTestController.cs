@@ -12,7 +12,7 @@ public class FlowFieldTestController : MonoBehaviour
     [Header("Configuración de Ventana")]
     [SerializeField] private int numRegionLevelsWindow = 2;
 
-    public Grid2DProvider provider; // Referencia al proveedor de tu grafo clásico (INavGraph)
+    public NavGraphProvider provider; // Referencia al proveedor de tu grafo clásico (INavGraph)
 
     private INavGraph navGraph;
 

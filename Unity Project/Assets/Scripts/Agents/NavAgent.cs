@@ -1,30 +1,28 @@
 ﻿using System.Collections.Generic;
-using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 
 public class NavAgent : MonoBehaviour
 {
-    [SerializeField] public MonoBehaviour provider;
+    [Header("Provider")]
+    [SerializeField] private NavGraphProvider _provider;
+
+    [Header("Movement Settings")]
     [SerializeField] public float MaxSpeed = 5f;
     [SerializeField] public float MaxForce = 20f;
     [Range(0, 1)][SerializeField] private float FrictionForce = 0.1f;
 
+    [SerializeField] private float MinForce = 0.1f;
+    [SerializeField] private float MinSpeed = 0.1f;
+
     private IAgentSteering[] _steerings;
 
     public INavGraph Graph { get; private set; }
-
     public int TargetNode { get; private set; } = -1;
-
     public int CurrentNode { get; private set; }
-
     public int CurrentRegion { get; private set; }
-
     public Vector3 Velocity { get; private set; } = Vector3.zero;
-
     public Vector3 SteeringForce { get; private set; } = Vector3.zero;
-
-    [SerializeField] private float MinForce = 0.1f;
-    [SerializeField] private float MinSpeed = 0.1f;
 
     private void Awake()
     {
@@ -38,23 +36,16 @@ public class NavAgent : MonoBehaviour
         {
             AssignGraph();
         }
-        AgentManager.Instance?.Subscribe(this);
+
+        if (TargetNode > 0)
+        {
+            AgentManager.Instance?.Subscribe(this);
+        }
     }
 
     private void AssignGraph()
     {
-        switch (provider)
-        {
-            case Grid2DProvider g:
-                Graph = g.Graph;
-                break;
-            case Grid3DProvider g:
-                Graph = g.Graph;
-                break;
-            case QuadSphereProvider g:
-                Graph = g.Graph;
-                break;
-        }
+        Graph = _provider.Graph;
     }
 
     private void OnDestroy()
@@ -143,7 +134,6 @@ public class NavAgent : MonoBehaviour
             toAgent = -Velocity;
 
         // Proyectamos la dirección de choque sobre la superficie local (QuadSphere/Plano)
-        // para obtener una normal de pared tangente a la superficie
         Vector3 wallNormal = Vector3.ProjectOnPlane(toAgent, surfaceNormal).normalized;
 
         if (wallNormal.sqrMagnitude < 0.0001f)
@@ -165,9 +155,7 @@ public class NavAgent : MonoBehaviour
             }
         }
 
-        // CASO 3: Si no se puede deslizar, NO reseteamos Velocity a Vector3.zero.
-        // Simplemente no actualizamos transform.position este frame.
-        // Esto permite que el steering mantenga su inercia/fuerza y gire libremente en el siguiente frame.
+        // CASO 3: Mantener inercia/fuerza sin actualizar posición este frame
     }
 
     private Vector3 ComputeSteering()
@@ -196,5 +184,10 @@ public class NavAgent : MonoBehaviour
 
         TargetNode = targetNode;
         AgentManager.Instance?.Subscribe(this);
+    }
+
+    public void SetProvider(NavGraphProvider provider)
+    {
+        _provider = provider;
     }
 }

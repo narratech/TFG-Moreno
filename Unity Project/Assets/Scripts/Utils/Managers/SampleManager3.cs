@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 public class SampleManager3 : MonoBehaviour
 {
-    public Grid3DProvider graphProvider;
+    public NavGraphProvider graphProvider;
     public Transform targetTransform;
     private Vector3 position = Vector3.zero;
     public int targetNode = -1;

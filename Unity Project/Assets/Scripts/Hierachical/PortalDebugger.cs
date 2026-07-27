@@ -3,10 +3,8 @@ using static FlowFieldManager;
 
 public class PortalDebugger : MonoBehaviour
 {
-    [Header("Providers")]
-    [SerializeField] private Grid2DProvider _gridProvider;
-    [SerializeField] private QuadSphereProvider _quadSphereProvider;
-    [SerializeField] private Grid3DProvider _voxelProvider;
+    [Header("Provider")]
+    [SerializeField] private NavGraphProvider _provider;
 
     [Header("Visual")]
     [SerializeField] private Color _color = Color.magenta;
@@ -29,25 +27,7 @@ public class PortalDebugger : MonoBehaviour
 
     private void CacheGraph()
     {
-        if (_gridProvider != null)
-        {
-            _graph = _gridProvider.Graph;
-            return;
-        }
-
-        if (_quadSphereProvider != null)
-        {
-            _graph = _quadSphereProvider.Graph;
-            return;
-        }
-
-        if (_voxelProvider != null)
-        {
-            _graph = _voxelProvider.Graph;
-            return;
-        }
-
-        _graph = null;
+        _graph = _provider.Graph;
     }
 
     private void OnDrawGizmosSelected()
@@ -55,10 +35,7 @@ public class PortalDebugger : MonoBehaviour
         if (_graph == null)
             CacheGraph();
 
-        if (_graph == null)
-            return;
-
-        if (FlowFieldManager.Instance == null)
+        if (_graph == null || FlowFieldManager.Instance == null)
             return;
 
         if (!FlowFieldManager.Instance.TryGetContext(_graph))

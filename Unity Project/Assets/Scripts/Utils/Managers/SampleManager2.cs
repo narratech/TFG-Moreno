@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 
 public class SampleManager2 : MonoBehaviour
 {
-    public QuadSphereProvider graphProvider;
+    public NavGraphProvider graphProvider;
     public int targetNode = -1;
     private InputManager input;
 

@@ -12,8 +12,8 @@ public class AgentSpawner : MonoBehaviour
     [Header("Container")]
     [SerializeField] private Transform container;
 
-    [Header("Prefab")]
-    [SerializeField] private MonoBehaviour provider;
+    [Header("Provider")]
+    [SerializeField] private NavGraphProvider provider;
 
     [ContextMenu("Spawn")]
     public void Spawn()
@@ -56,7 +56,7 @@ public class AgentSpawner : MonoBehaviour
                 prefab,
                 world,
                 Quaternion.LookRotation(transform.forward, up),
-                container).GetComponent<NavAgent>().provider = provider;
+                container).GetComponent<NavAgent>().SetProvider(provider);
         }
     }
 

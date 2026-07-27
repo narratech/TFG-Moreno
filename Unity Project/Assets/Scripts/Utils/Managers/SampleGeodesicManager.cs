@@ -9,7 +9,7 @@ public class SampleGeodesicManager : MonoBehaviour
     [SerializeField] private RectTransform selectionBox;
 
     [Header("Configuración del Grafo")]
-    public QuadSphereProvider graphProvider;
+    public NavGraphProvider graphProvider;
     public int targetNode = -1;
 
     private InputManager input;
