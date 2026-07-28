@@ -12,6 +12,9 @@ public class SampleManager : MonoBehaviour
     public NavGraphProvider graphProvider;
     public int targetNode = -1;
 
+    [Header("Configuración de Formaciones")]
+    [SerializeField] private FormationType formationType;
+
     private InputManager input;
     private Camera mainCamera;
     private readonly List<Selectable> selectedUnits = new List<Selectable>();
@@ -51,24 +54,41 @@ public class SampleManager : MonoBehaviour
 
     private void HandleSelectionInput()
     {
-        // Evitar seleccionar si el click inicia sobre la UI
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject() && !input.IsDragging)
-            return;
+        if (Mouse.current == null) return;
 
+        // 1. Si el jugador está arrastrando la caja de selección
         if (input.IsDragging)
         {
             UpdateSelectionBoxUI();
+
+            // Si suelta el clic MIENTRAS estaba arrastrando, procesamos la selección
+            // (Sin importar si el ratón terminó encima de un elemento de la UI o no)
+            if (Mouse.current.leftButton.wasReleasedThisFrame)
+            {
+                EndSelection();
+            }
         }
 
-        // Finalizar selección al soltar el click izquierdo
-        if (Mouse.current != null && Mouse.current.leftButton.wasReleasedThisFrame)
+        // 2. Si NO está arrastrando y el ratón está sobre la UI, ignoramos clics nuevos
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
-            if (selectionBox != null)
-                selectionBox.gameObject.SetActive(false);
+            return;
+        }
 
-            SelectUnitsInBox();
+        // 3. Si no hay UI de por medio y se suelta el clic (clic rápido / simple)
+        if (Mouse.current.leftButton.wasReleasedThisFrame)
+        {
+            EndSelection();
         }
     }
+
+private void EndSelection()
+{
+    if (selectionBox != null)
+        selectionBox.gameObject.SetActive(false);
+
+    SelectUnitsInBox();
+}
 
     private void UpdateSelectionBoxUI()
     {
@@ -185,7 +205,7 @@ public class SampleManager : MonoBehaviour
             }
         }
 
-        FormationGenerator.GenerateAndApply(FormationType.Square, 10f, activeAgents);
+        FormationGenerator.GenerateAndApply(formationType, 10f, activeAgents);
     }
 
     // --- GESTIÓN DE SELECCIÓN DE UNIDADES ---
