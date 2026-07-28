@@ -104200,9 +104200,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1999247481}
-  - component: {fileID: 1999247484}
-  - component: {fileID: 1999247483}
   - component: {fileID: 1999247482}
+  - component: {fileID: 1999247483}
+  - component: {fileID: 1999247484}
   m_Layer: 0
   m_Name: FlowField
   m_TagString: Untagged
