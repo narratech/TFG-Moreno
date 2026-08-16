@@ -581,8 +581,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1055241784}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.3245547, y: -0, z: -0, w: 0.9458669}
-  m_LocalPosition: {x: 20.83, y: 13.97, z: -8.71}
+  m_LocalRotation: {x: 0.32455474, y: -0, z: -0, w: 0.94586694}
+  m_LocalPosition: {x: 31.819918, y: 17.383484, z: -11.816422}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1456,10 +1456,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1999247481}
-  - component: {fileID: 1999247478}
+  - component: {fileID: 1999247487}
   - component: {fileID: 1999247482}
   - component: {fileID: 1999247483}
-  - component: {fileID: 1999247485}
   - component: {fileID: 1999247486}
   m_Layer: 0
   m_Name: FlowField
@@ -1468,26 +1467,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1999247478
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1999247477}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bb0b603e5eb92824e96bfd67f65db754, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GridGraphProvider
-  _width: 100
-  _height: 100
-  _regionWidth: 10
-  _regionHeight: 10
-  _cellSize: 1
-  _obstacleMask:
-    serializedVersion: 2
-    m_Bits: 64
 --- !u!4 &1999247481
 Transform:
   m_ObjectHideFlags: 0
@@ -1510,31 +1489,16 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1999247477}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f6822cf1a31fe464aaea629a9e5dd54b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PortalDebuger
+  _provider: {fileID: 1999247487}
+  _color: {r: 1, g: 0, b: 1, a: 1}
+  _sphereRadius: 0.5
+  _drawConnections: 1
 --- !u!114 &1999247483
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1999247477}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a62a886c82af3644791879b151940d7b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FlowFieldDebugger
-  _showInGame: 1
-  _showIntegration: 1
-  _showDirections: 1
-  _arrowLength: 0.4
-  _arrowColor: {r: 1, g: 0, b: 0, a: 1}
-  _planeOpacity: 0.5
-  grid: {fileID: 1999247478}
---- !u!114 &1999247485
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1543,12 +1507,47 @@ MonoBehaviour:
   m_GameObject: {fileID: 1999247477}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3bd60e01e083a7d489bfa06a2cc83904, type: 3}
+  m_Script: {fileID: 11500000, guid: a62a886c82af3644791879b151940d7b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FlowFieldBridge
-  <NumRegionLevelsWindow>k__BackingField: 3
-  <CurrentTargetNodeGlobal>k__BackingField: 0
-  _isMapInitialized: 0
+  m_EditorClassIdentifier: Assembly-CSharp::FlowFieldDebugger
+  _showInGame: 1
+  _showIntegration: 1
+  _integrationOpacity: 0.5
+  _integrationGradient:
+    serializedVersion: 2
+    key0: {r: 1, g: 1, b: 1, a: 1}
+    key1: {r: 1, g: 1, b: 1, a: 1}
+    key2: {r: 0, g: 0, b: 0, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 65535
+    ctime2: 0
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 2
+    m_NumAlphaKeys: 2
+  _integrationColorFactor: 100
+  _showDirections: 1
+  _arrowLength: 0.4
+  _arrowColor: {r: 1, g: 0, b: 0, a: 1}
+  _provider: {fileID: 0}
 --- !u!114 &1999247486
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1562,9 +1561,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldTestController
   numRegionLevelsWindow: 2
-  debugStartAgent: {fileID: 0}
-  debugTargetDestination: {fileID: 0}
-  provider: {fileID: 1999247478}
+  provider: {fileID: 1999247487}
+--- !u!114 &1999247487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1999247477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62f7a34f2bca2d74ab1d8c1352e84a8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GridProvider
+  _obstacleMask:
+    serializedVersion: 2
+    m_Bits: 64
+  _width: 50
+  _height: 50
+  _regionWidth: 10
+  _regionHeight: 10
+  _cellSize: 2
+  _drawWalkability: 1
+  _drawNodeIndices: 0
+  _drawCoordinates: 0
+  _scanFactor: 1
 --- !u!1 &2137910658
 GameObject:
   m_ObjectHideFlags: 0
