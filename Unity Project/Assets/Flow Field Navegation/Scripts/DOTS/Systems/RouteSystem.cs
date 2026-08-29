@@ -1,13 +1,9 @@
 ﻿using DOTSFlowField;
-using System.Diagnostics;
-using System.Linq;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
 [UpdateInGroup(typeof(SimulationSystemGroup))]
-// [UpdateBefore(typeof(MovementSystem))]
 public partial class RouteSystem : SystemBase
 {
     private NativeParallelHashSet<FlowFieldKey> _requests;
@@ -31,63 +27,65 @@ public partial class RouteSystem : SystemBase
 
     protected override void OnUpdate()
     {
-        // Actualiza los agentes usando SystemAPI.Query en vez de Entities.ForEach
+        ApplyPendingRoutes();
+        DetectMissingFlowFields();
+        ProcessRequests();
+    }
+
+    private void ApplyPendingRoutes()
+    {
         foreach (var agentRef in SystemAPI.Query<RefRW<AgentComponent>>())
         {
             ref AgentComponent agent = ref agentRef.ValueRW;
 
+            // No hay nueva ruta pendiente.
             if (agent.NextRouteId < 0)
                 continue;
 
+            // Ya estamos en esa ruta.
             if (agent.RouteId == agent.NextRouteId)
             {
-                agent.NextRouteId = -1;
+                agent.NextRouteId = -1; 
                 continue;
             }
 
+            // Aplicar nueva ruta.
             agent.RouteId = agent.NextRouteId;
+
+            // Consumir la petición.
             agent.NextRouteId = -1;
-
-            UnityEngine.Debug.Log($"Agent updated RouteId to {agent.RouteId}");
         }
+    }
 
+    private void DetectMissingFlowFields()
+    {
         var storage = FlowFieldStorage.Instance;
 
-        var availableFields = storage.FieldMap;
-        var navGraphs = storage.NavGraphs;
-
-        // Peticiones del frame actual.
         _requests.Clear();
 
-        var requests = _requests.AsParallelWriter();
-
-        new DetectMissingFlowFieldsJob
+        Dependency = new DetectMissingFlowFieldsJob
         {
-            AvailableFields = availableFields,
-            NavGraphs = navGraphs,
-            Requests = requests
-        }.Run();
+            AvailableFields = storage.FieldMap,
+            NavGraphs = storage.NavGraphs,
+            Requests = _requests.AsParallelWriter()
+        }.ScheduleParallel(Dependency);
 
-        // Las peticiones se procesan desde C# normal.
         Dependency.Complete();
 
-        UnityEngine.Debug.Log($"Total requests: {_requests.Count()}");
+        ProcessRequests();
+    }
 
+    private void ProcessRequests()
+    {
         foreach (var key in _requests)
         {
-            RequestFlowField(key);
+            FlowFieldManager.Instance.RequestFlowField(
+                key.GraphId,
+                key.RouteId,
+                key.RegionId);
         }
     }
 
-    private void RequestFlowField(FlowFieldKey key)
-    {
-        FlowFieldManager.Instance.RequestFlowField(
-            key.GraphId,
-            key.RouteId,
-            key.RegionId);
-    }
-
-    //[BurstCompile]
     private partial struct DetectMissingFlowFieldsJob : IJobEntity
     {
         [ReadOnly]
@@ -98,50 +96,48 @@ public partial class RouteSystem : SystemBase
         [ReadOnly]
         public NativeList<NavGraphData> NavGraphs;
 
-        public NativeParallelHashSet<FlowFieldKey>.ParallelWriter Requests;
+        public NativeParallelHashSet<
+            FlowFieldKey>.ParallelWriter Requests;
 
         private void Execute(
             in AgentComponent agent,
             in LocalTransform transform)
         {
-            UnityEngine.Debug.Log(
-                $"EXECUTE -> GraphId: {agent.GraphId}, RouteId: {agent.RouteId}");
-
+            // Sin ruta no hay nada que solicitar.
             if (agent.RouteId < 0)
                 return;
 
-            UnityEngine.Debug.Log("RouteId válido");
-
+            // Obtener el grafo del agente.
             NavGraphData graph = NavGraphs[agent.GraphId];
 
+            // Nodo actual del agente.
             int nodeId = NavGraphAPI.GetClosestNode(
                 graph,
                 transform.Position);
 
+            if (nodeId < 0)
+                return;
+
+            // Región actual.
             int regionId = NavGraphAPI.GetRegionId(
                 graph,
                 nodeId);
 
-            UnityEngine.Debug.Log(
-                $"Node: {nodeId}, Region: {regionId}");
+            if (regionId < 0)
+                return;
 
+            // Identificador único del FlowField.
             var key = new FlowFieldKey(
                 agent.GraphId,
                 agent.RouteId,
                 regionId);
 
-            bool exists = AvailableFields.ContainsKey(key);
+            // Ya existe.
+            if (AvailableFields.ContainsKey(key))
+                return;
 
-            UnityEngine.Debug.Log(
-                $"FlowField exists: {exists}");
-
-            if (!exists)
-            {
-                bool added = Requests.Add(key);
-
-                UnityEngine.Debug.Log(
-                    $"Request added: {added}");
-            }
+            // No existe → solicitarlo.
+            Requests.Add(key);
         }
     }
 }

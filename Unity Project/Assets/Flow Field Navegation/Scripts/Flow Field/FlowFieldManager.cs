@@ -180,9 +180,9 @@ public class FlowFieldManager
     }
 
     public void RequestFlowField(
-    int graphId,
-    int routeId,
-    int regionId)
+        int graphId,
+        int routeId,
+        int regionId)
     {
         INavGraph graph = GetNavGraphById(graphId);
 
@@ -221,6 +221,6 @@ public class FlowFieldManager
 
         route.FlowFields[regionId] = field;
 
-        Debug.Log($"FlowField solicitado: Graph={graphId}, Route={routeId}, Region={regionId}");
+        lastTargetNode = targetNode;
     }
-}
+} 

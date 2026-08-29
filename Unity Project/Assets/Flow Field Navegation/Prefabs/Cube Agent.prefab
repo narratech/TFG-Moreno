@@ -103,5 +103,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dcd1b4b81cb96a247a5557a47c6e59ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AgentAuthoring
-  speed: 1
-  steeringForce: 8
+  speed: 10
