@@ -1,4 +1,6 @@
+using DOTSFlowField;
 using System.Collections.Generic;
+using Unity.Entities;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -168,7 +170,7 @@ private void EndSelection()
 
     private void HandleCommand()
     {
-        if (selectedUnits.Count == 0) return;
+        //if (selectedUnits.Count == 0) return; // <---------------------------------IMPORTANTE DESCOMENTAR
 
         Ray ray = mainCamera.ScreenPointToRay(input.MouseScreenPosition);
 
@@ -206,6 +208,28 @@ private void EndSelection()
         }
 
         FormationGenerator.GenerateAndApply(formationType, 10f, activeAgents);
+
+        ProcessAgents(targetNode);
+    }
+
+    public void ProcessAgents(int destinationNode)
+    {
+        Debug.Log($"Processing agents to destination node: {destinationNode}");
+
+        EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+
+        EntityQuery query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<AgentComponent>());
+
+        using var entities = query.ToEntityArray(Unity.Collections.Allocator.Temp);
+
+        Debug.Log($"Found {entities.Length} agents to process.");
+        foreach (var entity in entities)
+        {
+            AgentComponent agent = entityManager.GetComponentData<AgentComponent>(entity);
+
+            agent.NextRouteId = destinationNode;
+            entityManager.SetComponentData(entity, agent);
+        }
     }
 
     // --- GESTIÓN DE SELECCIÓN DE UNIDADES ---

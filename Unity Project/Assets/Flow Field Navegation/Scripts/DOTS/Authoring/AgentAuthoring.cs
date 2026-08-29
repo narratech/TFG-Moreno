@@ -16,6 +16,7 @@ public class AgentAuthoring : MonoBehaviour
             {
                 Speed = authoring.speed,
                 Velocity = float3.zero,
+                NextRouteId = -1,
                 RouteId = -1
             });
         }

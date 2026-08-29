@@ -185,7 +185,7 @@ public class NavAgent : MonoBehaviour
         TargetNode = targetNode;
         AgentManager.Instance?.Subscribe(this);
     }
-
+     
     public void SetProvider(NavGraphProvider provider)
     {
         _provider = provider;

@@ -28,10 +28,11 @@ public class QuadSphereNavGraph : INavGraph
     public Quaternion Rotation => _rotation;
     public float Radius => _radius;
     public int Resolution => _resolution;
+    public int RegionsPerAxis => _regionsPerAxis;
     public int NodeCount => _nodesPerFace * 6;
     public int RegionCount => _regionsPerFace * 6;
 
-    public event System.Action OnGraphUpdated;
+    public int GraphId { get; set; }
 
     public QuadSphereNavGraph(
         Vector3 center,
@@ -135,7 +136,6 @@ public class QuadSphereNavGraph : INavGraph
     public void SetWalkable(int index, bool walkable)
     {
         _walkable[index] = walkable;
-        OnGraphUpdated?.Invoke();
     }
 
     public float GetDistanceBetweenNeighbors(int from, int to)

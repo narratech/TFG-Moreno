@@ -8,11 +8,11 @@ public static class FlowFieldEngine
 {
     private static int NUM_REGIONLEVELS = 2; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
 
-    public static FlowField GenerateFlowPath(INavGraph graph, int targetNode, int initialNode)
+    public static FlowField GenerateFlowPath(INavGraph graph, int targetNode, int initialRegion)
     {
-        if (targetNode == -1 || initialNode == -1)
+        if (targetNode == -1 || initialRegion == -1)
         {
-            Debug.LogError("Invalid target or initial node for FlowField calculation.");
+            Debug.LogError("Invalid target or initial region for FlowField calculation.");
             return null;
         }
         if (graph == null)
@@ -26,7 +26,7 @@ public static class FlowFieldEngine
             return null;
         }
         FlowFieldManager manager = FlowFieldManager.Instance;
-        int initialRegion = graph.GetRegionId(initialNode);
+
         int targetRegion = graph.GetRegionId(targetNode);
 
         if (!manager.TryGetRoute(graph, targetNode))
@@ -123,6 +123,7 @@ public static class FlowFieldEngine
         foreach (int rid in insideRegions)
         {
             route.FlowFields[rid] = regionDataMap[rid];
+            FlowFieldStorage.Instance.Register(new FlowFieldKey(graph.GraphId, targetNode, rid), regionDataMap[rid]);
         }
 
         return route.FlowFields[initialRegion];

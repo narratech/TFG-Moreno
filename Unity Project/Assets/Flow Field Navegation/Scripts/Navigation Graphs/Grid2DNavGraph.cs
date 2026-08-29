@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.UI.Image;
 
 public class Grid2DNavGraph : INavGraph
 {
@@ -11,22 +10,27 @@ public class Grid2DNavGraph : INavGraph
     private readonly float _cellSize;
     private readonly Vector3 _origin;
 
+    public int Width => _width;
+    public int Height => _height;
+    public float CellSize => _cellSize;
+    public Vector3 Origin => _origin;
+    public int NodeCount => _width * _height;
+
     // --- DATOS DE REGIONES ---
     private readonly int _regW;
     private readonly int _regH;
     private readonly int _regionsPerRow;
     private readonly int _regionsPerCol;
     private readonly int _nodesPerRegion;
+    public int RegionWidth => _regW;
+    public int RegionHeight => _regH;
+    public int RegionCount => _regionsPerRow * _regionsPerCol;
 
     // --- DATOS DEL COST FIELD ---
     private readonly float[] _staticCosts;
     private readonly float[] _dynamicCosts;
     private readonly bool[] _walkability;
-
-    public int NodeCount => _width * _height;
-    public int RegionCount => _regionsPerRow * _regionsPerCol;
-
-    public event System.Action OnGraphUpdated;
+    public int GraphId { get; set; }
 
     public Grid2DNavGraph(
         int width, 
@@ -161,18 +165,9 @@ public class Grid2DNavGraph : INavGraph
         }
     }
 
-    // --- MÉTODOS DINÁMICOS ---
-
-    public void UpdateDynamicCost(int index, float extraCost)
-    {
-        _dynamicCosts[index] = extraCost;
-        OnGraphUpdated?.Invoke(); // Notifica que el mundo cambió
-    }
-
     public void SetWalkable(int index, bool walkable)
     {
         _walkability[index] = walkable;
-        OnGraphUpdated?.Invoke();
     }
 
     // --- IMPLEMENTACIÓN DE REGIONES ---

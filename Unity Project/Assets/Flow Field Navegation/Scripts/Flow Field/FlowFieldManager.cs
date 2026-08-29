@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// Gestor centralizado para manejar múltiples contextos de navegación y sus respectivos campos de flujo.
@@ -42,21 +42,39 @@ public class FlowFieldManager
 
     private Dictionary<INavGraph, NavContext> _contexts = new Dictionary<INavGraph, NavContext>();
 
+    private Dictionary<int, INavGraph> _graphIds = new Dictionary<int, INavGraph>();
     private FlowFieldManager() { }
+
+    public INavGraph GetNavGraphById(int graphId)
+    {
+        if (_graphIds.TryGetValue(graphId, out var navGraph))
+            return navGraph;
+        Debug.LogError($"NavGraph con ID {graphId} no encontrado.");
+        return null;
+    }
 
     public void RegisterContext(INavGraph nav)
     {
         if (nav == null)
         {
-            Debug.LogError($"No se puede registrar un contexto con NavGraph nulo.");
+            Debug.LogError("No se puede registrar un contexto con NavGraph nulo.");
             return;
         }
 
         if (_contexts.ContainsKey(nav))
         {
-            Debug.LogWarning($"Contexto ya registrado. Ignorando.");
+            Debug.LogWarning("Contexto ya registrado. Ignorando.");
             return;
         }
+
+        // Asignar ID único
+        nav.GraphId = _contexts.Count;
+
+        // Construir representación nativa para DOTS
+        NavGraphData graphData = NavGraphFactory.CreateNavGraphData(nav);
+
+        // Registrar el grafo en el almacenamiento DOTS
+        FlowFieldStorage.Instance.RegisterNavGraphData(graphData);
 
         PortalGraph pg = new PortalGraph();
         PortalGraphBaker.Bake(nav, pg);
@@ -66,6 +84,8 @@ public class FlowFieldManager
             PortalGraph = pg,
             Router = new HierarchicalRouter(pg, nav)
         };
+
+        _graphIds.Add(nav.GraphId, nav);
     }
 
     public NavContext GetContext(INavGraph nav)
@@ -157,5 +177,50 @@ public class FlowFieldManager
 
         if (lastTargetNode == targetNode)
             lastTargetNode = -1;
+    }
+
+    public void RequestFlowField(
+    int graphId,
+    int routeId,
+    int regionId)
+    {
+        INavGraph graph = GetNavGraphById(graphId);
+
+        if (graph == null)
+            return;
+
+        // routeId = targetNode en tu arquitectura actual
+        int targetNode = routeId;
+
+        FlowField field = GetFlowField(graph, regionId, targetNode);
+
+        // Ya existe.
+        if (field != null)
+            return;
+
+        field = FlowFieldEngine.GenerateFlowPath(graph, targetNode, regionId);
+
+        if (field == null)
+        {
+            Debug.LogWarning(
+                $"No se pudo generar FlowField: " +
+                $"Graph={graphId}, " +
+                $"Route={routeId}, " +
+                $"Region={regionId}");
+
+            return;
+        }
+
+        if (!_contexts.TryGetValue(graph, out var ctx))
+            return;
+
+        if (!ctx.FlowFieldCache.TryGetValue(
+                targetNode,
+                out var route))
+            return;
+
+        route.FlowFields[regionId] = field;
+
+        Debug.Log($"FlowField solicitado: Graph={graphId}, Route={routeId}, Region={regionId}");
     }
 }

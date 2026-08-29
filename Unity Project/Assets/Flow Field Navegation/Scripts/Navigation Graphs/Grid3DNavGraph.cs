@@ -12,6 +12,13 @@ public class Grid3DNavGraph : INavGraph
     private readonly float _cellSize;
     private readonly Vector3 _origin;
 
+    public int Width => _width;
+    public int Height => _height;
+    public int Depth => _depth;
+    public float CellSize => _cellSize;
+    public Vector3 Origin => _origin;
+    public int NodeCount => _width * _height * _depth;
+
     // --- REGIONES ---
     private readonly int _regW;
     private readonly int _regH;
@@ -21,17 +28,16 @@ public class Grid3DNavGraph : INavGraph
     private readonly int _regionsPerCol;
     private readonly int _regionsPerDepth;
 
+    public int RegionWidth => _regW;
+    public int RegionHeight => _regH;
+    public int RegionDepth => _regD;
+    public int RegionCount => _regionsPerRow * _regionsPerCol * _regionsPerDepth;
+
     // --- DATOS ---
     private readonly float[] _staticCosts;
-    private readonly float[] _dynamicCosts;
     private readonly bool[] _walkability;
 
-    public int NodeCount => _width * _height * _depth;
-
-    public int RegionCount =>
-        _regionsPerRow * _regionsPerCol * _regionsPerDepth;
-
-    public event Action OnGraphUpdated;
+    public int GraphId { get; set; }
 
     // --- CONSTRUCTOR ---
     public Grid3DNavGraph(
@@ -61,7 +67,6 @@ public class Grid3DNavGraph : INavGraph
         int count = NodeCount;
 
         _staticCosts = new float[count];
-        _dynamicCosts = new float[count];
         _walkability = new bool[count];
 
         Array.Fill(_walkability, true);
@@ -87,7 +92,7 @@ public class Grid3DNavGraph : INavGraph
 
     public float GetNodeCost(int index)
     {
-        return _staticCosts[index] + _dynamicCosts[index];
+        return _staticCosts[index];
     }
 
     public bool IsWalkable(int index) => _walkability[index];
@@ -185,18 +190,9 @@ public class Grid3DNavGraph : INavGraph
         return _cellSize;
     }
 
-    // --- MÉTODOS DINÁMICOS ---
-
-    public void UpdateDynamicCost(int index, float extraCost)
-    {
-        _dynamicCosts[index] = extraCost;
-        OnGraphUpdated?.Invoke();
-    }
-
     public void SetWalkable(int index, bool walkable)
     {
         _walkability[index] = walkable;
-        OnGraphUpdated?.Invoke();
     }
 
     // --- REGIONES ---

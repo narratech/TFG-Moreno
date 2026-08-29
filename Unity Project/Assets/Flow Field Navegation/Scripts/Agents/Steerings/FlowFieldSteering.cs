@@ -222,7 +222,7 @@ public class FlowFieldSteering : IAgentSteering
 
             if (field == null)
             {
-                field = FlowFieldEngine.GenerateFlowPath(graph, targetNode, node);
+                field = FlowFieldEngine.GenerateFlowPath(graph, targetNode, region);
             }
 
             if (field == null)
