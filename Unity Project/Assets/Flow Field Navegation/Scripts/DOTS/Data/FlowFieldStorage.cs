@@ -26,7 +26,7 @@ public class FlowFieldStorage : IDisposable
     public NativeList<float> StaticCosts;
     public NativeList<bool> Walkability;
 
-    public NativeParallelHashMap< FlowFieldKey, NativeFlowFieldInfo>.ReadOnly FieldMap =>
+    public NativeParallelHashMap<FlowFieldKey, NativeFlowFieldInfo>.ReadOnly FieldMap =>
         _fieldMap.AsReadOnly();
 
     public NativeList<float3> Directions =>
@@ -63,8 +63,8 @@ public class FlowFieldStorage : IDisposable
     /// NativeFlowFieldInfo guarda el rango correspondiente.
     /// </summary>
     public void Register(
-    FlowFieldKey key,
-    FlowField flowField)
+        FlowFieldKey key,
+        FlowField flowField)
     {
         if (flowField == null)
             throw new ArgumentNullException(nameof(flowField));

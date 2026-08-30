@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Unity.Burst;
+﻿using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 
@@ -9,7 +8,7 @@ public static class NavGraphAPI
     // --- CONSULTAS Y TRANSFORMACIÓN DE ESPACIO ---
 
     [BurstCompile]
-    public static int GetClosestNode(in NavGraphData graph, float3 worldPos)
+    public static int GetClosestNode(in NavGraphData graph, in float3 worldPos)
     {
         switch (graph.Type)
         {
@@ -110,7 +109,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    public static float3 GetClosestPointOnNode(in NavGraphData graph, int node, float3 position)
+    public static float3 GetClosestPointOnNode(in NavGraphData graph, int node, in float3 position)
     {
         switch (graph.Type)
         {
@@ -163,7 +162,7 @@ public static class NavGraphAPI
     [BurstCompile]
     public static void ConstrainPositionAndRotation(
         in NavGraphData graph,
-        NativeArray<bool> walkability,
+        in NativeArray<bool> walkability,
         ref float3 position,
         ref float3 velocity,
         ref quaternion rotation)
@@ -204,16 +203,13 @@ public static class NavGraphAPI
             if (!IsWalkable(graph, walkability, node))
             {
                 float3 projected = GetClosestPointOnNode(graph, node, position);
-                if (graph.Type == NavGraphType.Grid3D)
+                float3 normal = math.normalize(position - projected);
+
+                if (math.lengthsq(normal) > 0.0001f)
                 {
-                    float3 normal = math.normalize(position - projected);
-                    if (math.lengthsq(normal) > 0.0001f)
-                        velocity = velocity - normal * math.dot(velocity, normal);
+                    velocity = velocity - normal * math.dot(velocity, normal);
                 }
-                else
-                {
-                    velocity = velocity - (position - GetNodePosition(graph, node)) * math.dot(velocity, position - GetNodePosition(graph, node));
-                }
+
                 position = projected;
             }
         }
@@ -224,7 +220,7 @@ public static class NavGraphAPI
     [BurstCompile]
     public static void GetNeighbors(
         in NavGraphData graph,
-        NativeArray<bool> walkability,
+        in NativeArray<bool> walkability,
         int index,
         ref FixedList64Bytes<int> neighbors)
     {
@@ -324,8 +320,8 @@ public static class NavGraphAPI
     [BurstCompile]
     public static void GetInterpolationNodes(
         in NavGraphData graph,
-        NativeArray<bool> walkability,
-        float3 worldPosition,
+        in NativeArray<bool> walkability,
+        in float3 worldPosition,
         ref FixedList64Bytes<int> nodes)
     {
         nodes.Clear();
@@ -440,14 +436,11 @@ public static class NavGraphAPI
                 }
             case NavGraphType.QuadSphere:
                 {
-                    // BFS sin alocaciones dinámicas managed
                     NativeQueue<(int node, int depth)> queue = new NativeQueue<(int, int)>(Allocator.Temp);
                     NativeParallelHashSet<int> visited = new NativeParallelHashSet<int>(64, Allocator.Temp);
 
                     queue.Enqueue((centerNode, 0));
                     visited.Add(centerNode);
-
-                    FixedList64Bytes<int> localNeighbors = default;
 
                     while (queue.Count > 0)
                     {
@@ -456,7 +449,6 @@ public static class NavGraphAPI
 
                         if (current.depth < radius)
                         {
-                            // En esta variante simplificada sin NativeArray de walkability para radio
                             int nodesPerFace = graph.Width * graph.Width;
                             CubeFace face = (CubeFace)(current.node / nodesPerFace);
                             int localIndex = current.node % nodesPerFace;
@@ -485,7 +477,7 @@ public static class NavGraphAPI
     [BurstCompile]
     public static bool IsWalkable(
         in NavGraphData graph,
-        NativeArray<bool> walkability,
+        in NativeArray<bool> walkability,
         int index)
     {
         return walkability[graph.NodeOffset + index];
@@ -494,7 +486,7 @@ public static class NavGraphAPI
     [BurstCompile]
     public static void SetWalkable(
         in NavGraphData graph,
-        NativeArray<bool> walkability,
+        ref NativeArray<bool> walkability,
         int index,
         bool isWalkable)
     {
@@ -504,8 +496,8 @@ public static class NavGraphAPI
     [BurstCompile]
     public static float GetNodeCost(
         in NavGraphData graph,
-        NativeArray<float> staticCosts,
-        NativeArray<float> dynamicCosts,
+        in NativeArray<float> staticCosts,
+        in NativeArray<float> dynamicCosts,
         int index)
     {
         int offsetIndex = graph.NodeOffset + index;
@@ -742,7 +734,7 @@ public static class NavGraphAPI
     // --- AUXILIARES INTERNOS DE BURST ---
 
     [BurstCompile]
-    private static void AddNodeIfValid2D(in NavGraphData graph, NativeArray<bool> walkability, int x, int y, ref FixedList64Bytes<int> nodes)
+    private static void AddNodeIfValid2D(in NavGraphData graph, in NativeArray<bool> walkability, int x, int y, ref FixedList64Bytes<int> nodes)
     {
         if (x >= 0 && x < graph.Width && y >= 0 && y < graph.Height)
         {
@@ -752,7 +744,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    private static void AddNodeIfValid3D(in NavGraphData graph, NativeArray<bool> walkability, int x, int y, int z, ref FixedList64Bytes<int> nodes)
+    private static void AddNodeIfValid3D(in NavGraphData graph, in NativeArray<bool> walkability, int x, int y, int z, ref FixedList64Bytes<int> nodes)
     {
         if (x >= 0 && x < graph.Width && y >= 0 && y < graph.Height && z >= 0 && z < graph.Depth)
         {
@@ -801,7 +793,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    private static float3 CubeCoordinateToDirection(CubeCoordinate coord, int resolution)
+    private static float3 CubeCoordinateToDirection(in CubeCoordinate coord, int resolution)
     {
         float u = (coord.X + 0.5f) / resolution * 2f - 1f;
         float v = (coord.Y + 0.5f) / resolution * 2f - 1f;
@@ -821,7 +813,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    private static CubeCoordinate GetQuadSphereNeighbor(CubeCoordinate coord, CubeDirection direction, int resolution)
+    private static CubeCoordinate GetQuadSphereNeighbor(in CubeCoordinate coord, CubeDirection direction, int resolution)
     {
         int x = coord.X;
         int y = coord.Y;
@@ -863,7 +855,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    private static CubeCoordinate WrapCubeCoordinate(CubeCoordinate coord, int resolution)
+    private static CubeCoordinate WrapCubeCoordinate(in CubeCoordinate coord, int resolution)
     {
         if (coord.X >= 0 && coord.X < resolution && coord.Y >= 0 && coord.Y < resolution)
             return coord;
@@ -881,7 +873,6 @@ public static class NavGraphAPI
     [BurstCompile]
     private static FaceTransition GetTransition(CubeFace face, CubeDirection direction)
     {
-        // Matriz de transiciones inline compatible con Burst (reemplazando arrays estáticos managed)
         int f = (int)face;
         int d = (int)direction;
 

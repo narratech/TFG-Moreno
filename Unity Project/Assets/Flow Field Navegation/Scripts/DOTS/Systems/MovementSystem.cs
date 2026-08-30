@@ -11,9 +11,9 @@ using Unity.VisualScripting;
 public partial struct MovementSystem : ISystem
 {
     public void OnCreate(ref SystemState state) { }
-    public void OnDestroy(ref SystemState state) { }
-
-    [BurstCompile]
+    public void OnDestroy(ref SystemState state) {
+        FlowFieldStorage.DisposeInstance();
+    }
     public void OnUpdate(ref SystemState state)
     {
         var storage = FlowFieldStorage.Instance;
@@ -23,9 +23,9 @@ public partial struct MovementSystem : ISystem
         {
             DeltaTime = SystemAPI.Time.DeltaTime,
             FieldMap = storage.FieldMap,
-            Directions = storage.Directions,
-            NavGraphs = storage.NavGraphs,
-            Walkability = storage.Walkability
+            Directions = storage.Directions.AsArray(),
+            NavGraphs = storage.NavGraphs.AsArray(),
+            Walkability = storage.Walkability.AsArray()
         };
 
         // Asignación paralela eficiente a través de los Workers de Unity
