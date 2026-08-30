@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using Unity.VisualScripting;
 
 [UpdateInGroup(typeof(SimulationSystemGroup))]
 [UpdateAfter(typeof(RouteSystem))]
@@ -17,122 +18,193 @@ public partial struct MovementSystem : ISystem
     {
         var storage = FlowFieldStorage.Instance;
 
-        var fieldMap = storage.FieldMap;
-        var directions = storage.Directions;
-        var navGraphs = storage.NavGraphs;
-        var walkability = storage.Walkability;
-
-        float deltaTime = SystemAPI.Time.DeltaTime;
-
-        foreach (var (agent, transform) in
-                 SystemAPI.Query<
-                     RefRW<AgentComponent>,
-                     RefRW<LocalTransform>>())
+        // Crear e invocar el Job Paralelo
+        var movementJob = new ProcessMovementJob
         {
-            int graphId = agent.ValueRO.GraphId;
-            int routeId = agent.ValueRO.RouteId;
+            DeltaTime = SystemAPI.Time.DeltaTime,
+            FieldMap = storage.FieldMap,
+            Directions = storage.Directions,
+            NavGraphs = storage.NavGraphs,
+            Walkability = storage.Walkability
+        };
 
-            if (routeId < 0 || graphId < 0 || graphId >= navGraphs.Length)
-                continue;
+        // Asignación paralela eficiente a través de los Workers de Unity
+        state.Dependency = movementJob.ScheduleParallel(state.Dependency);
+    }
+}
 
-            NavGraphData graph = navGraphs[graphId];
-            float3 currentPos = transform.ValueRO.Position;
+[BurstCompile]
+public partial struct ProcessMovementJob : IJobEntity
+{
+    public float DeltaTime;
 
-            // --------------------------------------------------
-            // 1. Condición: Pasa el tiempo O recorre StepSize
-            // --------------------------------------------------
-            agent.ValueRW.Timer += deltaTime;
-            float stepSize = agent.ValueRO.StepSize > 0f ? agent.ValueRO.StepSize : 1f;
+    [ReadOnly] public NativeParallelHashMap<FlowFieldKey, NativeFlowFieldInfo>.ReadOnly FieldMap;
+    [ReadOnly] public NativeArray<float3> Directions;
+    [ReadOnly] public NativeArray<NavGraphData> NavGraphs;
+    [ReadOnly] public NativeArray<bool> Walkability;
 
-            if (agent.ValueRO.Timer >= agent.ValueRO.TimeStamp ||
-                math.distancesq(currentPos, agent.ValueRO.LastPosition) >= (stepSize * stepSize))
+    // Ejecución paralela por cada entidad que contenga AgentComponent y LocalTransform
+    public void Execute(ref AgentComponent agent, ref LocalTransform transform)
+    {
+        int graphId = agent.GraphId;
+        int routeId = agent.RouteId;
+
+        if (routeId < 0 || graphId < 0 || graphId >= NavGraphs.Length)
+            return;
+
+        NavGraphData graph = NavGraphs[graphId];
+        float3 currentPos = transform.Position;
+
+        // --------------------------------------------------
+        // 1. Condición: Pasa el tiempo O recorre StepSize
+        // --------------------------------------------------
+        agent.Timer += DeltaTime;
+        float stepSize = agent.StepSize > 0f ? agent.StepSize : 1f;
+
+        if (agent.Timer >= agent.TimeStamp ||
+            math.distancesq(currentPos, agent.LastPosition) >= (stepSize * stepSize))
+        {
+            UpdateStepSize(ref agent, graph, currentPos, FieldMap, Directions, Walkability);
+            agent.LastPosition = currentPos;
+            agent.Timer = 0f;
+        }
+
+        // --------------------------------------------------
+        // 2. Posición de muestreo real
+        // --------------------------------------------------
+        float3 desiredOffset = CalculateDesiredOffset(graph, currentPos, agent.FormationOffset);
+        bool hasFormationOffset = math.lengthsq(desiredOffset) > 0.0001f;
+        float3 samplePosition = currentPos;
+
+        if (hasFormationOffset && agent.CurrentSteps > 0)
+        {
+            float3 offsetDir = math.normalize(desiredOffset);
+            samplePosition = currentPos + offsetDir * (agent.CurrentSteps * stepSize);
+        }
+
+        // --------------------------------------------------
+        // 3. Dirección del FlowField en SamplePosition
+        // --------------------------------------------------
+        float3 flowVector = SampleDirectionAtPosition(
+            graph,
+            graphId,
+            routeId,
+            samplePosition,
+            FieldMap,
+            Directions,
+            Walkability);
+
+        // --------------------------------------------------
+        // 4. Arrival Steering + Parada Seca
+        // --------------------------------------------------
+        float maxSpeed = agent.Speed;
+        float maxForce = maxSpeed * 10.0f;
+        float3 currentVelocity = agent.Velocity;
+
+        float minSpeed = 0.15f;
+        float arrivalOffset = 0.3f;
+        float distToTarget = math.distance(currentPos, samplePosition);
+
+        float flowLenSq = math.lengthsq(flowVector);
+        bool isFlowZero = flowLenSq <= 0.0025f;
+
+        bool isAtTarget = hasFormationOffset && (agent.CurrentSteps == 0 && distToTarget <= arrivalOffset);
+
+        float3 desiredVelocity = float3.zero;
+
+        if (!isFlowZero && !isAtTarget)
+        {
+            float flowLen = math.sqrt(flowLenSq);
+            float3 desiredDirection = flowVector / flowLen;
+
+            float slowingRadius = 1.2f;
+            float deceleration = math.clamp(flowLen / slowingRadius, 0.0f, 1.0f);
+
+            desiredVelocity = desiredDirection * (maxSpeed * deceleration);
+
+            float3 arrivalForce = desiredVelocity - currentVelocity;
+
+            float forceLenSq = math.lengthsq(arrivalForce);
+            if (forceLenSq > maxForce * maxForce)
             {
-                UpdateStepSize(ref agent.ValueRW, graph, currentPos, fieldMap, directions, walkability);
-                agent.ValueRW.LastPosition = currentPos;
-                agent.ValueRW.Timer = 0f;
+                arrivalForce = (arrivalForce / math.sqrt(forceLenSq)) * maxForce;
             }
 
-            // --------------------------------------------------
-            // 2. Posición de muestreo real
-            // --------------------------------------------------
-            float3 desiredOffset = CalculateDesiredOffset(graph, currentPos, agent.ValueRO.FormationOffset);
-            float3 samplePosition = currentPos;
+            currentVelocity += arrivalForce * DeltaTime;
+        }
+        else
+        {
+            currentVelocity = math.lerp(currentVelocity, float3.zero, 30.0f * DeltaTime);
+        }
 
-            if (agent.ValueRO.CurrentSteps > 0 && math.lengthsq(desiredOffset) > 0.0001f)
-            {
-                float3 offsetDir = math.normalize(desiredOffset);
-                samplePosition = currentPos + offsetDir * (agent.ValueRO.CurrentSteps * stepSize);
-            }
+        // Cierre de minSpeed
+        if (isFlowZero || isAtTarget || math.lengthsq(currentVelocity) < (minSpeed * minSpeed))
+        {
+            currentVelocity = float3.zero;
+        }
 
-            // --------------------------------------------------
-            // 3. Dirección del FlowField en SamplePosition
-            // --------------------------------------------------
-            float3 flowDirection = SampleDirectionAtPosition(
-                graph,
-                graphId,
-                routeId,
-                samplePosition,
-                fieldMap,
-                directions);
+        float3 newPosition = currentPos + currentVelocity * DeltaTime;
 
-            if (math.lengthsq(flowDirection) < 0.0001f)
-                continue;
+        // --------------------------------------------------
+        // 5. Rotación Suave
+        // --------------------------------------------------
+        quaternion newRotation = transform.Rotation;
+        float speedSq = math.lengthsq(currentVelocity);
 
-            flowDirection = math.normalize(flowDirection);
-
-            // --------------------------------------------------
-            // 4. Integrar Movimiento y Orientación
-            // --------------------------------------------------
-            float speed = agent.ValueRO.Speed;
-            float3 velocity = flowDirection * speed;
-
-            float3 newPosition = currentPos + velocity * deltaTime;
-            quaternion newRotation = transform.ValueRO.Rotation;
+        if (speedSq >= (minSpeed * minSpeed) && math.lengthsq(desiredVelocity) > 0.01f)
+        {
+            float3 moveDir = currentVelocity / math.sqrt(speedSq);
+            quaternion targetRotation;
 
             if (graph.Type == NavGraphType.QuadSphere)
             {
                 float3 normal = math.normalize(newPosition - graph.Origin);
-                float3 forward = flowDirection - normal * math.dot(flowDirection, normal);
+                float3 forward = moveDir - normal * math.dot(moveDir, normal);
 
                 if (math.lengthsq(forward) > 0.0001f)
                 {
-                    newRotation = quaternion.LookRotationSafe(math.normalize(forward), normal);
+                    targetRotation = quaternion.LookRotationSafe(math.normalize(forward), normal);
+                }
+                else
+                {
+                    targetRotation = transform.Rotation;
                 }
             }
             else
             {
-                newRotation = quaternion.LookRotationSafe(flowDirection, math.up());
+                targetRotation = quaternion.LookRotationSafe(moveDir, math.up());
             }
 
-            // --------------------------------------------------
-            // 5. Restricciones del Grafo
-            // --------------------------------------------------
-            NavGraphAPI.ConstrainPositionAndRotation(
-                graph,
-                walkability,
-                ref newPosition,
-                ref velocity,
-                ref newRotation);
-
-            transform.ValueRW.Position = newPosition;
-            transform.ValueRW.Rotation = newRotation;
+            float rotationLerpSpeed = 12.0f;
+            newRotation = math.slerp(transform.Rotation, targetRotation, rotationLerpSpeed * DeltaTime);
         }
+
+        // --------------------------------------------------
+        // 6. Restricciones del Grafo
+        // --------------------------------------------------
+        NavGraphAPI.ConstrainPositionAndRotation(
+            graph,
+            Walkability,
+            ref newPosition,
+            ref currentVelocity,
+            ref newRotation);
+
+        agent.Velocity = currentVelocity;
+        transform.Position = newPosition;
+        transform.Rotation = newRotation;
     }
 
     private static void UpdateStepSize(
-    ref AgentComponent agent,
-    in NavGraphData graph,
-    float3 currentPos,
-    in NativeParallelHashMap<FlowFieldKey, NativeFlowFieldInfo>.ReadOnly fieldMap,
-    in NativeArray<float3> directions,
-    in NativeArray<bool> walkability)
+        ref AgentComponent agent,
+        in NavGraphData graph,
+        float3 currentPos,
+        in NativeParallelHashMap<FlowFieldKey, NativeFlowFieldInfo>.ReadOnly fieldMap,
+        in NativeArray<float3> directions,
+        in NativeArray<bool> walkability)
     {
         float3 desiredOffset = CalculateDesiredOffset(graph, currentPos, agent.FormationOffset);
         float offsetLen = math.length(desiredOffset);
         float stepSize = agent.StepSize > 0f ? agent.StepSize : 1f;
-
-
-        UnityEngine.Debug.Log(offsetLen);
 
         if (offsetLen < 0.001f)
         {
@@ -140,7 +212,6 @@ public partial struct MovementSystem : ISystem
             return;
         }
 
-        // Cantidad máxima de pasos absoluta según el DesiredOffset
         int absoluteMaxSteps = (int)math.ceil(offsetLen / stepSize);
 
         if (absoluteMaxSteps <= 0)
@@ -151,10 +222,6 @@ public partial struct MovementSystem : ISystem
 
         float3 offsetDir = desiredOffset / offsetLen;
 
-        // --------------------------------------------------
-        // FASE 1: Explorar transitabilidad (Probar hasta CurrentSteps + 1 o el máximo absoluto)
-        // --------------------------------------------------
-        // Intentamos incrementar 1 paso respecto al actual, sin exceder absoluteMaxSteps
         int targetCheckStep = math.min(agent.CurrentSteps + 1, absoluteMaxSteps);
         int maxWalkableStep = 0;
 
@@ -169,33 +236,28 @@ public partial struct MovementSystem : ISystem
             }
             else
             {
-                // Encontramos pared -> rompemos la exploración
                 break;
             }
         }
 
-        // Si ni el paso 1 es transitable, offset = 0
         if (maxWalkableStep == 0)
         {
             agent.CurrentSteps = 0;
             return;
         }
 
-        // --------------------------------------------------
-        // FASE 2: Validar el flujo de retroceso desde maxWalkableStep hasta 1
-        // --------------------------------------------------
         for (int step = maxWalkableStep; step >= 1; step--)
         {
             float3 samplePos = currentPos + offsetDir * (step * stepSize);
 
-            // 1. Obtener dirección del flujo en la posición hipotética
             float3 sampleFlow = SampleDirectionAtPosition(
                 graph,
                 agent.GraphId,
                 agent.RouteId,
                 samplePos,
                 fieldMap,
-                directions);
+                directions,
+                walkability);
 
             if (math.lengthsq(sampleFlow) < 0.0001f)
             {
@@ -206,7 +268,6 @@ public partial struct MovementSystem : ISystem
             float3 flowDir = math.normalize(sampleFlow);
             bool pathBlocked = false;
 
-            // 2. Proyectar la misma cantidad de pasos desde la posición actual del agente
             for (int flowStep = 1; flowStep <= step; flowStep++)
             {
                 float3 agentProjectionPos = currentPos + flowDir * (flowStep * stepSize);
@@ -219,7 +280,6 @@ public partial struct MovementSystem : ISystem
                 }
             }
 
-            // Si la trayectoria proyectada está libre de muros, aceptamos este paso
             if (!pathBlocked)
             {
                 agent.CurrentSteps = step;
@@ -227,7 +287,6 @@ public partial struct MovementSystem : ISystem
             }
         }
 
-        // Si todas las comprobaciones de flujo fallaron, volvemos a 0
         agent.CurrentSteps = 0;
     }
 
@@ -273,23 +332,60 @@ public partial struct MovementSystem : ISystem
         int routeId,
         float3 position,
         in NativeParallelHashMap<FlowFieldKey, NativeFlowFieldInfo>.ReadOnly fieldMap,
-        in NativeArray<float3> directions)
+        in NativeArray<float3> directions,
+        in NativeArray<bool> walkability)
     {
-        int node = NavGraphAPI.GetClosestNode(graph, position);
-        if (node < 0)
+        FixedList64Bytes<int> nodes = new FixedList64Bytes<int>();
+        NavGraphAPI.GetInterpolationNodes(graph, walkability, position, ref nodes);
+
+        if (nodes.Length == 0)
             return float3.zero;
 
-        int regionId = NavGraphAPI.GetRegionId(graph, node);
-        var key = new FlowFieldKey(graphId, routeId, regionId);
+        float3 accumulatedDirection = float3.zero;
+        float totalWeight = 0f;
 
-        if (!fieldMap.TryGetValue(key, out NativeFlowFieldInfo field))
+        for (int i = 0; i < nodes.Length; i++)
+        {
+            int node = nodes[i];
+            if (node < 0)
+                continue;
+
+            float3 nodePos = NavGraphAPI.GetNodePosition(graph, node);
+            float distSq = math.distancesq(position, nodePos);
+
+            float weight = 1.0f / math.max(distSq, 0.0001f);
+
+            if (!NavGraphAPI.IsWalkable(graph, walkability, node))
+            {
+                float3 repulsionVector = math.normalize(position - nodePos);
+                accumulatedDirection += repulsionVector * weight * 2.0f;
+                totalWeight += weight;
+                continue;
+            }
+
+            int regionId = NavGraphAPI.GetRegionId(graph, node);
+            var key = new FlowFieldKey(graphId, routeId, regionId);
+
+            if (!fieldMap.TryGetValue(key, out NativeFlowFieldInfo field))
+                continue;
+
+            int localNode = NavGraphAPI.GetLocalNode(graph, node);
+            if (localNode < 0 || localNode >= field.Length)
+                continue;
+
+            int directionIndex = field.StartIndex + localNode;
+            float3 flowDir = directions[directionIndex];
+
+            if (math.lengthsq(flowDir) > 0.0001f)
+            {
+                accumulatedDirection += flowDir * weight;
+                totalWeight += weight;
+            }
+        }
+
+        if (totalWeight < 0.0001f)
             return float3.zero;
 
-        int localNode = NavGraphAPI.GetLocalNode(graph, node);
-        if (localNode < 0 || localNode >= field.Length)
-            return float3.zero;
-
-        int directionIndex = field.StartIndex + localNode;
-        return directions[directionIndex];
+        return accumulatedDirection / totalWeight;
     }
 }

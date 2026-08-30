@@ -12,6 +12,13 @@ public class AgentAuthoring : MonoBehaviour
     public float stepSize = 1.0f;
     public float timeStamp = 0.1f;
 
+    [Header("Smoothing & Steering Settings")]
+    [Tooltip("Velocidad de lerp para la transición suave de pasos.")]
+    public float offsetSmoothingSpeed = 5.0f;
+    [Tooltip("Peso de la fuerza de arrastre/corrección hacia la posición objetivo (0 a 1).")]
+    [Range(0f, 1f)]
+    public float formationForceWeight = 0.3f;
+
     public class AgentBaker : Baker<AgentAuthoring>
     {
         public override void Bake(AgentAuthoring authoring)
@@ -30,8 +37,11 @@ public class AgentAuthoring : MonoBehaviour
                 FormationOffset = authoring.formationOffset,
                 StepSize = authoring.stepSize,
                 TimeStamp = authoring.timeStamp,
+                OffsetSmoothingSpeed = authoring.offsetSmoothingSpeed,
+                FormationForceWeight = authoring.formationForceWeight,
 
                 CurrentSteps = 0,
+                TargetSteps = 0,
                 Timer = 0f,
                 LastPosition = float3.zero
             });
@@ -52,9 +62,12 @@ public struct AgentComponent : IComponentData
     public float3 FormationOffset;
     public float StepSize;
     public float TimeStamp;
+    public float OffsetSmoothingSpeed;
+    public float FormationForceWeight;
 
     // Estado interno
     public int CurrentSteps;
+    public int TargetSteps;
     public float Timer;
     public float3 LastPosition;
 }

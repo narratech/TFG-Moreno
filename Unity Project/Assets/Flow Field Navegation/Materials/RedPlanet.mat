@@ -173,7 +173,7 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 0
-    - _Montain_Height: 15
+    - _Montain_Height: 10
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _Planet_Radious: 300

@@ -14,8 +14,8 @@ public class SampleManager : MonoBehaviour
     public int targetNode = -1;
 
     [Header("Configuración de Formaciones")]
-    [Header("Configuración de Formaciones")]
     [SerializeField] private FormationType formationType;
+    [SerializeField] private float formationSpacing = 10f;
 
     private InputManager input;
     private Camera mainCamera;
@@ -207,7 +207,7 @@ private void EndSelection()
             }
         }
 
-        FormationGenerator.GenerateAndApply(formationType, 10f, activeAgents);
+        FormationGenerator.GenerateAndApply(formationType, formationSpacing, activeAgents);
 
         ProcessAgents(targetNode);
     }
@@ -228,7 +228,7 @@ private void EndSelection()
             entityManager.SetComponentData(entity, agent);
         }
 
-        FormationGenerator.GenerateAndApply(formationType, 10f, query, entityManager);
+        FormationGenerator.GenerateAndApply(formationType, formationSpacing, query, entityManager);
     }
 
     // --- GESTIÓN DE SELECCIÓN DE UNIDADES ---
