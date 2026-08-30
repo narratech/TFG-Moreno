@@ -9,19 +9,28 @@ public enum FormationType
     Triangle,
     Circle,
     Cube,
-    Line
+    Line,
+    Texture
 }
 
 public static class FormationGenerator
 {
-    public static void GenerateAndApply(FormationType type, float spacing, IReadOnlyList<NavAgent> agents)
+    public static void GenerateAndApply(
+        FormationType type, 
+        float spacing, 
+        IReadOnlyList<NavAgent> agents, 
+        Texture2D shapeTexture = null)
     {
-        List<Vector3> offsets = Generate(type, agents.Count, spacing);
+        List<Vector3> offsets = Generate(type, agents.Count, spacing, shapeTexture);
         ApplyOffsets(agents, offsets);
     }
 
-    public static List<Vector3> Generate(FormationType type, int count, float spacing)
+    public static List<Vector3> Generate(FormationType type, int count, float spacing, Texture2D shapeTexture = null)
     {
+        if (type == FormationType.Texture && shapeTexture == null)
+            throw new System.ArgumentNullException(nameof(shapeTexture), 
+                "A texture must be provided for the Texture formation type.");
+
         return type switch
         {
             FormationType.Square => GenerateSquare(count, spacing),
@@ -29,6 +38,7 @@ public static class FormationGenerator
             FormationType.Circle => GenerateCircle(count, spacing),
             FormationType.Cube => GenerateCube(count, spacing),
             FormationType.Line => GenerateLine(count, spacing),
+            FormationType.Texture => GenerateTexture(count, spacing, shapeTexture),
             _ => new List<Vector3>()
         };
     }
@@ -51,10 +61,19 @@ public static class FormationGenerator
     /// <summary>
     /// Genera y aplica los offsets directamente desde una EntityQuery usando EntityManager.
     /// </summary>
-    public static void GenerateAndApply(FormationType type, float spacing, EntityQuery query, EntityManager entityManager)
+    public static void GenerateAndApply(
+        FormationType type, 
+        float spacing, 
+        EntityQuery query, 
+        EntityManager entityManager, 
+        Texture2D shapeTexture = null)
     {
+        if (type == FormationType.Texture && shapeTexture == null)
+            throw new System.ArgumentNullException(nameof(shapeTexture),
+                "A texture must be provided for the Texture formation type.");
+
         using var entities = query.ToEntityArray(Unity.Collections.Allocator.Temp);
-        List<Vector3> offsets = Generate(type, entities.Length, spacing);
+        List<Vector3> offsets = Generate(type, entities.Length, spacing, shapeTexture);
 
         int count = Mathf.Min(entities.Length, offsets.Count);
 
@@ -65,6 +84,11 @@ public static class FormationGenerator
             agent.FormationOffset = (float3)offsets[i];
             entityManager.SetComponentData(entity, agent);
         }
+    }
+
+    public static List<Vector3> GenerateTexture(int count, float spacing, Texture2D shapeTexture)
+    {
+        return FormationShapeSampler.GenerateSample(count, shapeTexture) as List<Vector3>;
     }
 
     public static List<Vector3> GenerateSquare(int count, float spacing)

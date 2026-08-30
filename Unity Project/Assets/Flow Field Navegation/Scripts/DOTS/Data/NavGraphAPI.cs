@@ -39,7 +39,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    public static float3 GetNodePosition(in NavGraphData graph, int index)
+    public static float3 GetNodePosition(in NavGraphData graph, in int index)
     {
         switch (graph.Type)
         {
@@ -73,7 +73,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    public static float3 GetNodeSize(in NavGraphData graph, int index)
+    public static float3 GetNodeSize(in NavGraphData graph, in int index)
     {
         switch (graph.Type)
         {
@@ -91,7 +91,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    public static float3 GetNodeNormal(in NavGraphData graph, int index)
+    public static float3 GetNodeNormal(in NavGraphData graph, in int index)
     {
         switch (graph.Type)
         {
@@ -109,7 +109,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    public static float3 GetClosestPointOnNode(in NavGraphData graph, int node, in float3 position)
+    public static float3 GetClosestPointOnNode(in NavGraphData graph, in int node, in float3 position)
     {
         switch (graph.Type)
         {
@@ -293,7 +293,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    public static float GetDistanceBetweenNeighbors(in NavGraphData graph, int fromIndex, int toIndex)
+    public static float GetDistanceBetweenNeighbors(in NavGraphData graph, in int fromIndex, in int toIndex)
     {
         switch (graph.Type)
         {
@@ -754,7 +754,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    private static CubeFace GetCubeFace(float3 dir)
+    private static CubeFace GetCubeFace(in float3 dir)
     {
         float3 absDir = math.abs(dir);
         if (absDir.x >= absDir.y && absDir.x >= absDir.z)
@@ -765,7 +765,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    private static float2 DirectionToUV(CubeFace face, float3 d)
+    private static float2 DirectionToUV(in CubeFace face, in float3 d)
     {
         float u = 0f, v = 0f;
         float3 absD = math.abs(d);
@@ -782,11 +782,11 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    private static CubeCoordinate DirectionToCubeCoordinate(float3 dir, int resolution)
+    private static CubeCoordinate DirectionToCubeCoordinate(in float3 dir, int resolution)
     {
-        dir = math.normalize(dir);
-        CubeFace face = GetCubeFace(dir);
-        float2 uv = DirectionToUV(face, dir);
+        float3 normalizedDir = math.normalize(dir);
+        CubeFace face = GetCubeFace(normalizedDir);
+        float2 uv = DirectionToUV(face, normalizedDir);
         int x = math.clamp((int)math.floor(uv.x * resolution), 0, resolution - 1);
         int y = math.clamp((int)math.floor(uv.y * resolution), 0, resolution - 1);
         return new CubeCoordinate(face, x, y);
@@ -813,7 +813,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    private static CubeCoordinate GetQuadSphereNeighbor(in CubeCoordinate coord, CubeDirection direction, int resolution)
+    private static CubeCoordinate GetQuadSphereNeighbor(in CubeCoordinate coord, in CubeDirection direction, int resolution)
     {
         int x = coord.X;
         int y = coord.Y;
@@ -871,7 +871,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    private static FaceTransition GetTransition(CubeFace face, CubeDirection direction)
+    private static FaceTransition GetTransition(in CubeFace face, in CubeDirection direction)
     {
         int f = (int)face;
         int d = (int)direction;
