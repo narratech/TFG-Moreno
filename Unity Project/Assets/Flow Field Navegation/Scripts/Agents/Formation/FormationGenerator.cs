@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 public enum FormationType
@@ -43,6 +45,25 @@ public static class FormationGenerator
 
             if (steering != null)
                 steering.SetDesiredOffset(offsets[i]);
+        }
+    }
+
+    /// <summary>
+    /// Genera y aplica los offsets directamente desde una EntityQuery usando EntityManager.
+    /// </summary>
+    public static void GenerateAndApply(FormationType type, float spacing, EntityQuery query, EntityManager entityManager)
+    {
+        using var entities = query.ToEntityArray(Unity.Collections.Allocator.Temp);
+        List<Vector3> offsets = Generate(type, entities.Length, spacing);
+
+        int count = Mathf.Min(entities.Length, offsets.Count);
+
+        for (int i = 0; i < count; i++)
+        {
+            Entity entity = entities[i];
+            AgentComponent agent = entityManager.GetComponentData<AgentComponent>(entity);
+            agent.FormationOffset = (float3)offsets[i];
+            entityManager.SetComponentData(entity, agent);
         }
     }
 

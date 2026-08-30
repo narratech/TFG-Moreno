@@ -103,7 +103,10 @@ public class FlowFieldStorage : IDisposable
     /// GraphId debe coincidir con el índice que ocupará dentro
     /// de _navGraphData.
     /// </summary>
-    public void RegisterNavGraphData(NavGraphData graph)
+    public void RegisterNavGraphData(
+        NavGraphData graph,
+        NativeArray<float> graphStaticCosts,
+        NativeArray<bool> graphWalkability)
     {
         if (graph.GraphId != _navGraphData.Length)
         {
@@ -114,17 +117,22 @@ public class FlowFieldStorage : IDisposable
         }
 
         graph.GraphId = NavGraphs.Length;
-
-        graph.NodeOffset = Walkability.Length;
+        graph.NodeOffset = Walkability.Length; // Importantisimo
 
         NavGraphs.Add(graph);
 
         int nodeCount = graph.NodeCount;
 
+        if (graphStaticCosts.Length != nodeCount)
+            throw new ArgumentException("graphStaticCosts no coincide con NodeCount.");
+
+        if (graphWalkability.Length != nodeCount)
+            throw new ArgumentException("graphWalkability no coincide con NodeCount.");
+
         for (int i = 0; i < nodeCount; i++)
         {
-            Walkability.Add(true);
-            StaticCosts.Add(1f);
+            Walkability.Add(graphWalkability[i]);
+            StaticCosts.Add(graphStaticCosts[i]);
         }
     }
 
@@ -174,9 +182,22 @@ public class FlowFieldStorage : IDisposable
             _directions.Dispose();
 
         if (_navGraphData.IsCreated)
-        {
             _navGraphData.Dispose();
-        }
+
+        if (StaticCosts.IsCreated)
+            StaticCosts.Dispose();
+
+        if (Walkability.IsCreated)
+            Walkability.Dispose();
+    }
+
+    public static void DisposeInstance()
+    {
+        if (_instance == null)
+            return;
+
+        _instance.Dispose();
+        _instance = null;
     }
 }
 

@@ -73,9 +73,6 @@ public class FlowFieldManager
         // Construir representación nativa para DOTS
         NavGraphData graphData = NavGraphFactory.CreateNavGraphData(nav);
 
-        // Registrar el grafo en el almacenamiento DOTS
-        FlowFieldStorage.Instance.RegisterNavGraphData(graphData);
-
         PortalGraph pg = new PortalGraph();
         PortalGraphBaker.Bake(nav, pg);
 

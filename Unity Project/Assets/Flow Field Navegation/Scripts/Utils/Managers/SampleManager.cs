@@ -1,4 +1,3 @@
-using DOTSFlowField;
 using System.Collections.Generic;
 using Unity.Entities;
 using UnityEngine;
@@ -14,6 +13,7 @@ public class SampleManager : MonoBehaviour
     public NavGraphProvider graphProvider;
     public int targetNode = -1;
 
+    [Header("Configuración de Formaciones")]
     [Header("Configuración de Formaciones")]
     [SerializeField] private FormationType formationType;
 
@@ -214,15 +214,12 @@ private void EndSelection()
 
     public void ProcessAgents(int destinationNode)
     {
-        Debug.Log($"Processing agents to destination node: {destinationNode}");
-
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
         EntityQuery query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<AgentComponent>());
 
         using var entities = query.ToEntityArray(Unity.Collections.Allocator.Temp);
 
-        Debug.Log($"Found {entities.Length} agents to process.");
         foreach (var entity in entities)
         {
             AgentComponent agent = entityManager.GetComponentData<AgentComponent>(entity);
@@ -230,6 +227,8 @@ private void EndSelection()
             agent.NextRouteId = destinationNode;
             entityManager.SetComponentData(entity, agent);
         }
+
+        FormationGenerator.GenerateAndApply(formationType, 10f, query, entityManager);
     }
 
     // --- GESTIÓN DE SELECCIÓN DE UNIDADES ---
