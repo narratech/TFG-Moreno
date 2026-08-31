@@ -3,7 +3,6 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using Unity.VisualScripting;
 
 [UpdateInGroup(typeof(SimulationSystemGroup))]
 [UpdateAfter(typeof(RouteSystem))]
@@ -11,14 +10,15 @@ using Unity.VisualScripting;
 public partial struct MovementSystem : ISystem
 {
     public void OnCreate(ref SystemState state) { }
-    public void OnDestroy(ref SystemState state) {
+    public void OnDestroy(ref SystemState state)
+    {
         FlowFieldStorage.DisposeInstance();
     }
+
     public void OnUpdate(ref SystemState state)
     {
         var storage = FlowFieldStorage.Instance;
 
-        // Crear e invocar el Job Paralelo
         var movementJob = new ProcessMovementJob
         {
             DeltaTime = SystemAPI.Time.DeltaTime,
@@ -28,7 +28,6 @@ public partial struct MovementSystem : ISystem
             Walkability = storage.Walkability.AsArray()
         };
 
-        // Asignación paralela eficiente a través de los Workers de Unity
         state.Dependency = movementJob.ScheduleParallel(state.Dependency);
     }
 }
@@ -43,7 +42,6 @@ public partial struct ProcessMovementJob : IJobEntity
     [ReadOnly] public NativeArray<NavGraphData> NavGraphs;
     [ReadOnly] public NativeArray<bool> Walkability;
 
-    // Ejecución paralela por cada entidad que contenga AgentComponent y LocalTransform
     public void Execute(ref AgentComponent agent, ref LocalTransform transform)
     {
         int graphId = agent.GraphId;
@@ -56,6 +54,20 @@ public partial struct ProcessMovementJob : IJobEntity
         float3 currentPos = transform.Position;
 
         // --------------------------------------------------
+        // COMPROBACIÓN: ¿Está el agente en un nodo no transitable?
+        // --------------------------------------------------
+        int currentNode = NavGraphAPI.GetClosestNode(graph, currentPos);
+        bool isCurrentNodeBlocked = currentNode >= 0 && !NavGraphAPI.IsWalkable(graph, Walkability, currentNode);
+
+        // Si está en un nodo bloqueado, ignoramos el offset de formación y reseteamos el temporizador
+        float3 activeFormationOffset = agent.FormationOffset;
+        if (isCurrentNodeBlocked)
+        {
+            agent.Timer = 0f;
+            activeFormationOffset = float3.zero;
+        }
+
+        // --------------------------------------------------
         // 1. Condición: Pasa el tiempo O recorre StepSize
         // --------------------------------------------------
         agent.Timer += DeltaTime;
@@ -64,7 +76,7 @@ public partial struct ProcessMovementJob : IJobEntity
         if (agent.Timer >= agent.TimeStamp ||
             math.distancesq(currentPos, agent.LastPosition) >= (stepSize * stepSize))
         {
-            UpdateStepSize(ref agent, graph, currentPos, FieldMap, Directions, Walkability);
+            UpdateStepSize(ref agent, graph, currentPos, activeFormationOffset, FieldMap, Directions, Walkability);
             agent.LastPosition = currentPos;
             agent.Timer = 0f;
         }
@@ -72,7 +84,7 @@ public partial struct ProcessMovementJob : IJobEntity
         // --------------------------------------------------
         // 2. Posición de muestreo real
         // --------------------------------------------------
-        float3 desiredOffset = CalculateDesiredOffset(graph, currentPos, agent.FormationOffset);
+        float3 desiredOffset = CalculateDesiredOffset(graph, currentPos, activeFormationOffset);
         bool hasFormationOffset = math.lengthsq(desiredOffset) > 0.0001f;
         float3 samplePosition = currentPos;
 
@@ -198,11 +210,12 @@ public partial struct ProcessMovementJob : IJobEntity
         ref AgentComponent agent,
         in NavGraphData graph,
         float3 currentPos,
+        float3 activeFormationOffset,
         in NativeParallelHashMap<FlowFieldKey, NativeFlowFieldInfo>.ReadOnly fieldMap,
         in NativeArray<float3> directions,
         in NativeArray<bool> walkability)
     {
-        float3 desiredOffset = CalculateDesiredOffset(graph, currentPos, agent.FormationOffset);
+        float3 desiredOffset = CalculateDesiredOffset(graph, currentPos, activeFormationOffset);
         float offsetLen = math.length(desiredOffset);
         float stepSize = agent.StepSize > 0f ? agent.StepSize : 1f;
 
@@ -336,7 +349,7 @@ public partial struct ProcessMovementJob : IJobEntity
         in NativeArray<bool> walkability)
     {
         FixedList64Bytes<int> nodes = new FixedList64Bytes<int>();
-        NavGraphAPI.GetInterpolationNodes(graph, walkability, position, ref nodes);
+        NavGraphAPI.GetInterpolationNodes(graph, position, ref nodes);
 
         if (nodes.Length == 0)
             return float3.zero;

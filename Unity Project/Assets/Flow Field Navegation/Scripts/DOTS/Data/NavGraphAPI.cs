@@ -339,7 +339,6 @@ public static class NavGraphAPI
     [BurstCompile]
     public static void GetInterpolationNodes(
         in NavGraphData graph,
-        in NativeArray<bool> walkability,
         in float3 worldPosition,
         ref FixedList64Bytes<int> nodes)
     {
@@ -356,10 +355,11 @@ public static class NavGraphAPI
                     int x0 = (int)math.floor(gx);
                     int y0 = (int)math.floor(gy);
 
-                    AddNodeIfValid2D(graph, walkability, x0, y0, ref nodes);
-                    AddNodeIfValid2D(graph, walkability, x0 + 1, y0, ref nodes);
-                    AddNodeIfValid2D(graph, walkability, x0, y0 + 1, ref nodes);
-                    AddNodeIfValid2D(graph, walkability, x0 + 1, y0 + 1, ref nodes);
+                    // Añade las 4 esquinas si están dentro del mapa (sin importar walkability)
+                    AddNodeIfInBounds2D(graph, x0, y0, ref nodes);
+                    AddNodeIfInBounds2D(graph, x0 + 1, y0, ref nodes);
+                    AddNodeIfInBounds2D(graph, x0, y0 + 1, ref nodes);
+                    AddNodeIfInBounds2D(graph, x0 + 1, y0 + 1, ref nodes);
                     break;
                 }
             case NavGraphType.Grid3D:
@@ -372,7 +372,7 @@ public static class NavGraphAPI
                     for (int z = z0; z <= z0 + 1; z++)
                         for (int y = y0; y <= y0 + 1; y++)
                             for (int x = x0; x <= x0 + 1; x++)
-                                AddNodeIfValid3D(graph, walkability, x, y, z, ref nodes);
+                                AddNodeIfInBounds3D(graph, x, y, z, ref nodes);
                     break;
                 }
             case NavGraphType.QuadSphere:
@@ -389,9 +389,9 @@ public static class NavGraphAPI
                     int y = (int)math.floor(gy);
 
                     WrapCubeCoordinate(new CubeCoordinate(face, x, y), graph.Width, out CubeCoordinate a);
-                    GetQuadSphereNeighbor(a, CubeDirection.Right, graph.Width, out CubeCoordinate b);
-                    GetQuadSphereNeighbor(a, CubeDirection.Up, graph.Width, out CubeCoordinate c);
-                    GetQuadSphereNeighbor(c, CubeDirection.Right, graph.Width, out CubeCoordinate d);
+                    WrapCubeCoordinate(new CubeCoordinate(face, x + 1, y), graph.Width, out CubeCoordinate b);
+                    WrapCubeCoordinate(new CubeCoordinate(face, x, y + 1), graph.Width, out CubeCoordinate c);
+                    WrapCubeCoordinate(new CubeCoordinate(face, x + 1, y + 1), graph.Width, out CubeCoordinate d);
 
                     int nodesPerFace = graph.Width * graph.Width;
                     nodes.Add((int)a.Face * nodesPerFace + (a.Y * graph.Width) + a.X);
@@ -400,6 +400,26 @@ public static class NavGraphAPI
                     nodes.Add((int)d.Face * nodesPerFace + (d.Y * graph.Width) + d.X);
                     break;
                 }
+        }
+    }
+
+    // --- Métodos auxiliares ajustados (solo validan límites de rango) ---
+
+    [BurstCompile]
+    private static void AddNodeIfInBounds2D(in NavGraphData graph, int x, int y, ref FixedList64Bytes<int> nodes)
+    {
+        if (x >= 0 && x < graph.Width && y >= 0 && y < graph.Height)
+        {
+            nodes.Add(y * graph.Width + x);
+        }
+    }
+
+    [BurstCompile]
+    private static void AddNodeIfInBounds3D(in NavGraphData graph, int x, int y, int z, ref FixedList64Bytes<int> nodes)
+    {
+        if (x >= 0 && x < graph.Width && y >= 0 && y < graph.Height && z >= 0 && z < graph.Depth)
+        {
+            nodes.Add(z * (graph.Width * graph.Height) + y * graph.Width + x);
         }
     }
 
