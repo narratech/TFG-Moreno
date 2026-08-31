@@ -32,7 +32,7 @@ public static class FlowFieldEngine
         if (!manager.TryGetRoute(graph, targetNode))
         {
             Debug.Log("No route cached, calculating new route for target node: " + targetNode);
-            return null;
+            manager.RegisterRoute(graph, targetNode);
         }
         FlowFieldRoute route = manager.GetRoute(graph, targetNode);
 

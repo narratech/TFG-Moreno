@@ -283,7 +283,7 @@ public partial struct ProcessMovementJob : IJobEntity
 
             for (int flowStep = 1; flowStep <= step; flowStep++)
             {
-                float3 agentProjectionPos = currentPos + flowDir * (flowStep * stepSize);
+                float3 agentProjectionPos = currentPos + flowDir * (flowStep * stepSize * 0.5f);
                 int projNode = NavGraphAPI.GetClosestNode(graph, agentProjectionPos);
 
                 if (projNode < 0 || !NavGraphAPI.IsWalkable(graph, walkability, projNode))
