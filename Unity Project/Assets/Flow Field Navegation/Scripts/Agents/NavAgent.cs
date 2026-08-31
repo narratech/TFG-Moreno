@@ -26,15 +26,18 @@ public class NavAgent : MonoBehaviour
 
     private void Awake()
     {
-        AssignGraph();
+        if (Graph == null && _provider != null)
+        {
+            AssignGraph(_provider.Graph);
+        }
         _steerings = GetComponents<IAgentSteering>();
     }
 
     private void Start()
     {
-        if (Graph == null)
+        if (Graph == null && _provider != null)
         {
-            AssignGraph();
+            AssignGraph(_provider.Graph);
         }
 
         if (TargetNode > 0)
@@ -43,9 +46,9 @@ public class NavAgent : MonoBehaviour
         }
     }
 
-    private void AssignGraph()
+    public void AssignGraph(INavGraph graph)
     {
-        Graph = _provider.Graph;
+        Graph = graph;
     }
 
     private void OnDestroy()

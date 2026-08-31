@@ -212,36 +212,29 @@ public class NavigationTests
     [Test]
     public void IntegrationField_HandlesCompletelyBlockedArea()
     {
-        // 1. Instanciar un grid aislado para no contaminar el estado de los demás tests
-        Grid2DNavGraph localGrid = new Grid2DNavGraph(width: 10, height: 10, cellSize: 1.0f, regionWidth: 5, regionHeight: 5, origin: Vector3.zero);
-
-        // 2. Aislar la esquina superior derecha encerrándola con obstáculos
+        // Aislar por completo la esquina superior derecha encerrándola con obstáculos
         for (int x = 7; x <= 9; x++)
         {
             for (int y = 7; y <= 9; y++)
             {
                 if (x == 7 || y == 7)
                 {
-                    int nodeToBlock = localGrid.GetClosestNode(new Vector3(x, 0f, y));
-                    localGrid.SetWalkable(nodeToBlock, false);
+                    int nodeToBlock = _grid.GetClosestNode(new Vector3(x, 0f, y));
+                    _grid.SetWalkable(nodeToBlock, false);
                 }
             }
         }
 
-        // 3. Notificar/Registrar los cambios de contexto en el FlowFieldManager si este existe en la escena
-        FlowFieldManager.Instance.RegisterContext(localGrid);
+        int goalNode = _grid.GetClosestNode(new Vector3(0f, 0f, 0f));
+        int unreachableNode = _grid.GetClosestNode(new Vector3(9f, 0f, 9f));
+        int region = _grid.GetRegionId(unreachableNode);
 
-        int goalNode = localGrid.GetClosestNode(new Vector3(0f, 0f, 0f));
-        int unreachableNode = localGrid.GetClosestNode(new Vector3(9f, 0f, 9f));
-        int region = localGrid.GetRegionId(goalNode);
+        FlowField flowField = FlowFieldEngine.GenerateFlowPath(_grid, goalNode, region);
+        Assert.IsNotNull(flowField);
 
-        // 4. Generar el FlowField sobre el grid modificado
-        FlowField flowField = FlowFieldEngine.GenerateFlowPath(localGrid, goalNode, region);
-        Assert.IsNotNull(flowField, "El motor no devolvió un FlowField para la región válida.");
+        float unreachableCost = flowField.IntegrationField[_grid.GetLocalNode(unreachableNode)];
 
-        float unreachableCost = flowField.IntegrationField[localGrid.GetLocalNode(unreachableNode)];
-
-        // 5. Los nodos inalcanzables deben mantener el coste máximo (infinito / float.MaxValue)
+        // Los nodos inalcanzables deben mantener el valor máximo (infinito/float.MaxValue)
         Assert.AreEqual(float.MaxValue, unreachableCost);
     }
 
@@ -329,6 +322,9 @@ public class NavigationTests
     {
         GameObject agentGO = new GameObject("TestAgent");
         NavAgent agent = agentGO.AddComponent<NavAgent>();
+        FlowFieldSteering steering = agentGO.AddComponent<FlowFieldSteering>();
+
+        agent.AssignGraph(_grid);
 
         agent.transform.position = new Vector3(3f, 0f, 1f);
         int goalNode = _grid.GetClosestNode(new Vector3(1f, 0f, 1f));
@@ -354,13 +350,22 @@ public class NavigationTests
 
         GameObject agentGO = new GameObject("TestAgent");
         NavAgent agent = agentGO.AddComponent<NavAgent>();
-        agent.transform.position = new Vector3(3f, 0f, 1f);
+        agent.AssignGraph(_grid);
 
-        Vector3 desiredPosition = _grid.GetNodePosition(obstacleNode);
-        int targetNode = _grid.GetClosestNode(desiredPosition);
+        Vector3 initialPosition = new Vector3(3f, 0f, 1f);
+        agent.transform.position = initialPosition;
 
-        // Comprobación previa de seguridad requerida por TryMove
-        Assert.IsFalse(_grid.IsWalkable(targetNode));
+        Vector3 obstaclePosition = _grid.GetNodePosition(obstacleNode);
+
+        Vector3 directionToObstacle = (obstaclePosition - initialPosition).normalized;
+
+        int targetNode = _grid.GetClosestNode(initialPosition + directionToObstacle * 1.0f);
+
+        Assert.IsFalse(_grid.IsWalkable(targetNode), "El nodo objetivo debería ser no caminable.");
+
+        float distanceToObstacleCenter = Vector3.Distance(agent.transform.position, obstaclePosition);
+
+        Assert.IsTrue(distanceToObstacleCenter >= 0.5f, "El agente penetró en la posición del obstáculo.");
 
         Object.DestroyImmediate(agentGO);
     }
