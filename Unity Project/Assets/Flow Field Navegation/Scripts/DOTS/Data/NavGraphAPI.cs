@@ -31,7 +31,7 @@ public static class NavGraphAPI
                 {
                     float3 dir = math.normalize(worldPos - graph.Origin);
                     float3 localDir = math.rotate(math.inverse(graph.Rotation), dir);
-                    CubeCoordinate coord = DirectionToCubeCoordinate(localDir, graph.Width);
+                    DirectionToCubeCoordinate(localDir, graph.Width, out CubeCoordinate coord);
                     return (int)coord.Face * (graph.Width * graph.Width) + (coord.Y * graph.Width) + coord.X;
                 }
             default: return -1;
@@ -39,7 +39,7 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    public static float3 GetNodePosition(in NavGraphData graph, in int index)
+    public static void GetNodePosition(in NavGraphData graph, in int index, out float3 position)
     {
         switch (graph.Type)
         {
@@ -47,14 +47,16 @@ public static class NavGraphAPI
                 {
                     int x = index % graph.Width;
                     int y = index / graph.Width;
-                    return graph.Origin + new float3(x * graph.CellSize, 0, y * graph.CellSize);
+                    position = graph.Origin + new float3(x * graph.CellSize, 0, y * graph.CellSize);
+                    return;
                 }
             case NavGraphType.Grid3D:
                 {
                     int x = index % graph.Width;
                     int y = (index / graph.Width) % graph.Height;
                     int z = index / (graph.Width * graph.Height);
-                    return graph.Origin + new float3(x * graph.CellSize, y * graph.CellSize, z * graph.CellSize);
+                    position = graph.Origin + new float3(x * graph.CellSize, y * graph.CellSize, z * graph.CellSize);
+                    return;
                 }
             case NavGraphType.QuadSphere:
                 {
@@ -65,51 +67,63 @@ public static class NavGraphAPI
                     int y = localIndex / graph.Width;
 
                     CubeCoordinate coord = new CubeCoordinate(face, x, y);
-                    float3 dir = CubeCoordinateToDirection(coord, graph.Width);
-                    return graph.Origin + math.rotate(graph.Rotation, dir) * graph.Radius;
+                    CubeCoordinateToDirection(coord, graph.Width, out float3 dir);
+                    position = graph.Origin + math.rotate(graph.Rotation, dir) * graph.Radius;
+                    return;
                 }
-            default: return float3.zero;
+            default: 
+                position = float3.zero;
+                return;
         }
     }
 
     [BurstCompile]
-    public static float3 GetNodeSize(in NavGraphData graph, in int index)
+    public static void GetNodeSize(in NavGraphData graph, in int index, out float3 size)
     {
         switch (graph.Type)
         {
             case NavGraphType.Grid2D:
-                return new float3(graph.CellSize, 0, graph.CellSize);
+                size = new float3(graph.CellSize, 0, graph.CellSize);
+                return;
             case NavGraphType.Grid3D:
-                return new float3(graph.CellSize, graph.CellSize, graph.CellSize);
+                size = new float3(graph.CellSize, graph.CellSize, graph.CellSize);
+                return;
             case NavGraphType.QuadSphere:
                 {
-                    float size = (graph.Radius * math.PI * 2f) / (graph.Width * 4f);
-                    return new float3(size, size, size);
+                    float sizeValue = (graph.Radius * math.PI * 2f) / (graph.Width * 4f);
+                    size = new float3(sizeValue, sizeValue, sizeValue);
+                    return;
                 }
-            default: return float3.zero;
+            default: size = float3.zero;
+                return;
         }
     }
 
     [BurstCompile]
-    public static float3 GetNodeNormal(in NavGraphData graph, in int index)
+    public static void GetNodeNormal(in NavGraphData graph, in int index, out float3 normal)
     {
         switch (graph.Type)
         {
             case NavGraphType.Grid2D:
-                return new float3(0, 1, 0);
+                normal = new float3(0, 1, 0);
+                return;
             case NavGraphType.Grid3D:
-                return float3.zero;
+                normal = float3.zero;
+                return;
             case NavGraphType.QuadSphere:
                 {
-                    float3 nodePos = GetNodePosition(graph, index);
-                    return math.normalize(nodePos - graph.Origin);
+                    GetNodePosition(graph, index, out float3 nodePos);
+                    normal = math.normalize(nodePos - graph.Origin);
+                    return;
                 }
-            default: return float3.zero;
+            default:
+                normal = float3.zero;
+                return;
         }
     }
 
     [BurstCompile]
-    public static float3 GetClosestPointOnNode(in NavGraphData graph, in int node, in float3 position)
+    public static void GetClosestPointOnNode(in NavGraphData graph, in int node, in float3 position, out float3 closestPoint)
     {
         switch (graph.Type)
         {
@@ -123,11 +137,12 @@ public static class NavGraphAPI
                     float minZ = graph.Origin.z + (z - 0.5f) * graph.CellSize;
                     float maxZ = graph.Origin.z + (z + 0.5f) * graph.CellSize;
 
-                    return new float3(
+                    closestPoint = new float3(
                         math.clamp(position.x, minX, maxX),
                         graph.Origin.y,
                         math.clamp(position.z, minZ, maxZ)
                     );
+                    return;
                 }
             case NavGraphType.Grid3D:
                 {
@@ -142,20 +157,24 @@ public static class NavGraphAPI
                     float minZ = graph.Origin.z + (z - 0.5f) * graph.CellSize;
                     float maxZ = graph.Origin.z + (z + 0.5f) * graph.CellSize;
 
-                    return new float3(
+                    closestPoint = new float3(
                         math.clamp(position.x, minX, maxX),
                         math.clamp(position.y, minY, maxY),
                         math.clamp(position.z, minZ, maxZ)
                     );
+                    return;
                 }
             case NavGraphType.QuadSphere:
                 {
-                    float3 center = GetNodePosition(graph, node);
+                    GetNodePosition(graph, node, out float3 center);
                     float3 normal = math.normalize(center - graph.Origin);
                     float distance = math.dot(position - center, normal);
-                    return position - normal * distance;
+                    closestPoint = position - normal * distance;
+                    return;
                 }
-            default: return position;
+            default:
+                closestPoint = position;
+                return;
         }
     }
 
@@ -175,7 +194,7 @@ public static class NavGraphAPI
             int node = GetClosestNode(graph, position);
             if (!IsWalkable(graph, walkability, node))
             {
-                float3 projected = GetClosestPointOnNode(graph, node, position);
+                GetClosestPointOnNode(graph, node, position, out float3 projected);
                 float3 correction = projected - position;
 
                 if (math.lengthsq(correction) > 0.0001f)
@@ -202,7 +221,7 @@ public static class NavGraphAPI
             int node = GetClosestNode(graph, position);
             if (!IsWalkable(graph, walkability, node))
             {
-                float3 projected = GetClosestPointOnNode(graph, node, position);
+                GetClosestPointOnNode(graph, node, position, out float3 projected);
                 float3 normal = math.normalize(position - projected);
 
                 if (math.lengthsq(normal) > 0.0001f)
@@ -281,7 +300,7 @@ public static class NavGraphAPI
 
                     for (int i = 0; i < 4; i++)
                     {
-                        CubeCoordinate neighborCoord = GetQuadSphereNeighbor(coord, (CubeDirection)i, graph.Width);
+                        GetQuadSphereNeighbor(coord, (CubeDirection)i, graph.Width, out CubeCoordinate neighborCoord);
                         int nIndex = (int)neighborCoord.Face * nodesPerFace + (neighborCoord.Y * graph.Width) + neighborCoord.X;
 
                         if (IsWalkable(graph, walkability, nIndex))
@@ -309,8 +328,8 @@ public static class NavGraphAPI
                 return graph.CellSize;
             case NavGraphType.QuadSphere:
                 {
-                    float3 posA = GetNodePosition(graph, fromIndex);
-                    float3 posB = GetNodePosition(graph, toIndex);
+                    GetNodePosition(graph, fromIndex, out float3 posA);
+                    GetNodePosition(graph, toIndex, out float3 posB);
                     return math.distance(posA, posB);
                 }
             default: return 0f;
@@ -360,8 +379,8 @@ public static class NavGraphAPI
                 {
                     float3 dir = math.normalize(worldPosition - graph.Origin);
                     float3 localDir = math.rotate(math.inverse(graph.Rotation), dir);
-                    CubeFace face = GetCubeFace(localDir);
-                    float2 faceUV = DirectionToUV(face, localDir);
+                    GetCubeFace(localDir, out CubeFace face);
+                    DirectionToUV(face, localDir, out float2 faceUV);
 
                     float gx = faceUV.x * graph.Width - 0.5f;
                     float gy = faceUV.y * graph.Width - 0.5f;
@@ -369,10 +388,10 @@ public static class NavGraphAPI
                     int x = (int)math.floor(gx);
                     int y = (int)math.floor(gy);
 
-                    CubeCoordinate a = WrapCubeCoordinate(new CubeCoordinate(face, x, y), graph.Width);
-                    CubeCoordinate b = GetQuadSphereNeighbor(a, CubeDirection.Right, graph.Width);
-                    CubeCoordinate c = GetQuadSphereNeighbor(a, CubeDirection.Up, graph.Width);
-                    CubeCoordinate d = GetQuadSphereNeighbor(c, CubeDirection.Right, graph.Width);
+                    WrapCubeCoordinate(new CubeCoordinate(face, x, y), graph.Width, out CubeCoordinate a);
+                    GetQuadSphereNeighbor(a, CubeDirection.Right, graph.Width, out CubeCoordinate b);
+                    GetQuadSphereNeighbor(a, CubeDirection.Up, graph.Width, out CubeCoordinate c);
+                    GetQuadSphereNeighbor(c, CubeDirection.Right, graph.Width, out CubeCoordinate d);
 
                     int nodesPerFace = graph.Width * graph.Width;
                     nodes.Add((int)a.Face * nodesPerFace + (a.Y * graph.Width) + a.X);
@@ -456,7 +475,7 @@ public static class NavGraphAPI
 
                             for (int i = 0; i < 4; i++)
                             {
-                                CubeCoordinate neighborCoord = GetQuadSphereNeighbor(coord, (CubeDirection)i, graph.Width);
+                                GetQuadSphereNeighbor(coord, (CubeDirection)i, graph.Width, out CubeCoordinate neighborCoord);
                                 int nIndex = (int)neighborCoord.Face * nodesPerFace + (neighborCoord.Y * graph.Width) + neighborCoord.X;
 
                                 if (visited.Add(nIndex))
@@ -754,18 +773,24 @@ public static class NavGraphAPI
     }
 
     [BurstCompile]
-    private static CubeFace GetCubeFace(in float3 dir)
+    private static void GetCubeFace(in float3 dir, out CubeFace face)
     {
         float3 absDir = math.abs(dir);
         if (absDir.x >= absDir.y && absDir.x >= absDir.z)
-            return dir.x >= 0 ? CubeFace.PositiveX : CubeFace.NegativeX;
+        {
+            face = dir.x >= 0 ? CubeFace.PositiveX : CubeFace.NegativeX;
+            return;
+        }
         if (absDir.y >= absDir.x && absDir.y >= absDir.z)
-            return dir.y >= 0 ? CubeFace.PositiveY : CubeFace.NegativeY;
-        return dir.z >= 0 ? CubeFace.PositiveZ : CubeFace.NegativeZ;
+        {
+            face = dir.y >= 0 ? CubeFace.PositiveY : CubeFace.NegativeY;
+            return;
+        }
+        face = dir.z >= 0 ? CubeFace.PositiveZ : CubeFace.NegativeZ;
     }
 
     [BurstCompile]
-    private static float2 DirectionToUV(in CubeFace face, in float3 d)
+    private static void DirectionToUV(in CubeFace face, in float3 d, out float2 uv)
     {
         float u = 0f, v = 0f;
         float3 absD = math.abs(d);
@@ -778,22 +803,24 @@ public static class NavGraphAPI
             case CubeFace.PositiveZ: u = (d.x / absD.z + 1f) * 0.5f; v = (d.y / absD.z + 1f) * 0.5f; break;
             case CubeFace.NegativeZ: u = (-d.x / absD.z + 1f) * 0.5f; v = (d.y / absD.z + 1f) * 0.5f; break;
         }
-        return new float2(u, v);
+        uv = new float2(u, v);
+        return;
     }
 
     [BurstCompile]
-    private static CubeCoordinate DirectionToCubeCoordinate(in float3 dir, int resolution)
+    private static void DirectionToCubeCoordinate(in float3 dir, int resolution, out CubeCoordinate coord)
     {
         float3 normalizedDir = math.normalize(dir);
-        CubeFace face = GetCubeFace(normalizedDir);
-        float2 uv = DirectionToUV(face, normalizedDir);
+        GetCubeFace(normalizedDir, out CubeFace face);
+        DirectionToUV(face, normalizedDir, out float2 uv);
         int x = math.clamp((int)math.floor(uv.x * resolution), 0, resolution - 1);
         int y = math.clamp((int)math.floor(uv.y * resolution), 0, resolution - 1);
-        return new CubeCoordinate(face, x, y);
+        coord = new CubeCoordinate(face, x, y);
+        return;
     }
 
     [BurstCompile]
-    private static float3 CubeCoordinateToDirection(in CubeCoordinate coord, int resolution)
+    private static void CubeCoordinateToDirection(in CubeCoordinate coord, int resolution, out float3 direction)
     {
         float u = (coord.X + 0.5f) / resolution * 2f - 1f;
         float v = (coord.Y + 0.5f) / resolution * 2f - 1f;
@@ -809,11 +836,15 @@ public static class NavGraphAPI
             case CubeFace.NegativeZ: p = new float3(-u, v, -1f); break;
             default: p = float3.zero; break;
         }
-        return math.normalize(p);
+        direction = math.normalize(p);
     }
 
     [BurstCompile]
-    private static CubeCoordinate GetQuadSphereNeighbor(in CubeCoordinate coord, in CubeDirection direction, int resolution)
+    private static void GetQuadSphereNeighbor(
+        in CubeCoordinate coord, 
+        in CubeDirection direction, 
+        int resolution, 
+        out CubeCoordinate cubeCoordinate)
     {
         int x = coord.X;
         int y = coord.Y;
@@ -827,9 +858,12 @@ public static class NavGraphAPI
         }
 
         if (x >= 0 && x < resolution && y >= 0 && y < resolution)
-            return new CubeCoordinate(coord.Face, x, y);
+        {
+            cubeCoordinate = new CubeCoordinate(coord.Face, x, y);
+            return;
+        }
 
-        FaceTransition transition = GetTransition(coord.Face, direction);
+        GetTransition(coord.Face, direction, out FaceTransition transition);
 
         int t = direction switch
         {
@@ -851,70 +885,85 @@ public static class NavGraphAPI
             case CubeEdge.Down: nx = t; ny = 0; break;
         }
 
-        return new CubeCoordinate(transition.Face, nx, ny);
+        cubeCoordinate = new CubeCoordinate(transition.Face, nx, ny);
+        return;
     }
 
     [BurstCompile]
-    private static CubeCoordinate WrapCubeCoordinate(in CubeCoordinate coord, int resolution)
+    private static void WrapCubeCoordinate(in CubeCoordinate coord, int resolution, out CubeCoordinate wrappedCoord)
     {
         if (coord.X >= 0 && coord.X < resolution && coord.Y >= 0 && coord.Y < resolution)
-            return coord;
+        {
+            wrappedCoord = coord;
+            return;
+        }
 
         if (coord.X < 0)
-            return GetQuadSphereNeighbor(new CubeCoordinate(coord.Face, 0, coord.Y), CubeDirection.Left, resolution);
+        {
+            GetQuadSphereNeighbor(new CubeCoordinate(coord.Face, 0, coord.Y), CubeDirection.Left, resolution, out wrappedCoord);
+            return;
+        }
         if (coord.X >= resolution)
-            return GetQuadSphereNeighbor(new CubeCoordinate(coord.Face, resolution - 1, coord.Y), CubeDirection.Right, resolution);
+        {
+            GetQuadSphereNeighbor(new CubeCoordinate(coord.Face, resolution - 1, coord.Y), CubeDirection.Right, resolution, out wrappedCoord);
+            return;
+        }
         if (coord.Y < 0)
-            return GetQuadSphereNeighbor(new CubeCoordinate(coord.Face, coord.X, 0), CubeDirection.Down, resolution);
+        {
+            GetQuadSphereNeighbor(new CubeCoordinate(coord.Face, coord.X, 0), CubeDirection.Down, resolution, out wrappedCoord);
+            return;
+        }
 
-        return GetQuadSphereNeighbor(new CubeCoordinate(coord.Face, coord.X, resolution - 1), CubeDirection.Up, resolution);
+        GetQuadSphereNeighbor(new CubeCoordinate(coord.Face, coord.X, resolution - 1), CubeDirection.Up, resolution, out wrappedCoord);
+        return;
     }
 
+
     [BurstCompile]
-    private static FaceTransition GetTransition(in CubeFace face, in CubeDirection direction)
+    private static void GetTransition(in CubeFace face, in CubeDirection direction, out FaceTransition transition)
     {
         int f = (int)face;
         int d = (int)direction;
 
         if (f == 0) // PositiveX
         {
-            if (d == 0) return new FaceTransition(CubeFace.PositiveZ, CubeEdge.Right);
-            if (d == 1) return new FaceTransition(CubeFace.NegativeZ, CubeEdge.Left);
-            if (d == 2) return new FaceTransition(CubeFace.PositiveY, CubeEdge.Right);
-            return new FaceTransition(CubeFace.NegativeY, CubeEdge.Right, true);
+            if (d == 0) { transition = new FaceTransition(CubeFace.PositiveZ, CubeEdge.Right); return; }
+            if (d == 1) { transition = new FaceTransition(CubeFace.NegativeZ, CubeEdge.Left); return; }
+            if (d == 2) { transition = new FaceTransition(CubeFace.PositiveY, CubeEdge.Right); return; }
+            transition = new FaceTransition(CubeFace.NegativeY, CubeEdge.Right, true); return; 
         }
         if (f == 1) // NegativeX
         {
-            if (d == 0) return new FaceTransition(CubeFace.NegativeZ, CubeEdge.Right);
-            if (d == 1) return new FaceTransition(CubeFace.PositiveZ, CubeEdge.Left);
-            if (d == 2) return new FaceTransition(CubeFace.PositiveY, CubeEdge.Left, true);
-            return new FaceTransition(CubeFace.NegativeY, CubeEdge.Left);
+            if (d == 0) { transition = new FaceTransition(CubeFace.NegativeZ, CubeEdge.Right); return; }
+            if (d == 1) { transition = new FaceTransition(CubeFace.PositiveZ, CubeEdge.Left); return; }
+            if (d == 2) { transition = new FaceTransition(CubeFace.PositiveY, CubeEdge.Left, true); return; }
+            transition = new FaceTransition(CubeFace.NegativeY, CubeEdge.Left); return;
         }
         if (f == 2) // PositiveY
         {
-            if (d == 0) return new FaceTransition(CubeFace.NegativeX, CubeEdge.Up, true);
-            if (d == 1) return new FaceTransition(CubeFace.PositiveX, CubeEdge.Up);
-            if (d == 2) return new FaceTransition(CubeFace.NegativeZ, CubeEdge.Up, true);
-            return new FaceTransition(CubeFace.PositiveZ, CubeEdge.Up);
+            if (d == 0) { transition = new FaceTransition(CubeFace.NegativeX, CubeEdge.Up, true); return; }
+            if (d == 1) { transition = new FaceTransition(CubeFace.PositiveX, CubeEdge.Up); return; }
+            if (d == 2) { transition = new FaceTransition(CubeFace.NegativeZ, CubeEdge.Up, true); return; }
+            transition = new FaceTransition(CubeFace.PositiveZ, CubeEdge.Up); return;
         }
         if (f == 3) // NegativeY
         {
-            if (d == 0) return new FaceTransition(CubeFace.NegativeX, CubeEdge.Down);
-            if (d == 1) return new FaceTransition(CubeFace.PositiveX, CubeEdge.Down, true);
-            if (d == 2) return new FaceTransition(CubeFace.PositiveZ, CubeEdge.Down);
-            return new FaceTransition(CubeFace.NegativeZ, CubeEdge.Down, true);
+            if (d == 0) { transition = new FaceTransition(CubeFace.NegativeX, CubeEdge.Down); return; }
+            if (d == 1) { transition = new FaceTransition(CubeFace.PositiveX, CubeEdge.Down, true); return; }
+            if (d == 2) { transition = new FaceTransition(CubeFace.PositiveZ, CubeEdge.Down); return; }
+            transition = new FaceTransition(CubeFace.NegativeZ, CubeEdge.Down, true); return;
         }
         if (f == 4) // PositiveZ
         {
-            if (d == 0) return new FaceTransition(CubeFace.NegativeX, CubeEdge.Right);
-            if (d == 1) return new FaceTransition(CubeFace.PositiveX, CubeEdge.Left);
-            if (d == 2) return new FaceTransition(CubeFace.PositiveY, CubeEdge.Down);
-            return new FaceTransition(CubeFace.NegativeY, CubeEdge.Up);
+            if (d == 0) { transition = new FaceTransition(CubeFace.NegativeX, CubeEdge.Right); return; }
+            if (d == 1) { transition = new FaceTransition(CubeFace.PositiveX, CubeEdge.Left); return; }
+            if (d == 2) { transition = new FaceTransition(CubeFace.PositiveY, CubeEdge.Down); return; }
+            transition = new FaceTransition(CubeFace.NegativeY, CubeEdge.Up); return;
         }
         // NegativeZ
-        if (d == 0) return new FaceTransition(CubeFace.PositiveX, CubeEdge.Right);
-        if (d == 1) return new FaceTransition(CubeFace.NegativeX, CubeEdge.Left);
-        if (d == 2) return new FaceTransition(CubeFace.PositiveY, CubeEdge.Up, true);
-        return new FaceTransition(CubeFace.NegativeY, CubeEdge.Down, true);
+        if (d == 0) { transition = new FaceTransition(CubeFace.PositiveX, CubeEdge.Right); return; }
+        if (d == 1) { transition = new FaceTransition(CubeFace.NegativeX, CubeEdge.Left); return; }
+        if (d == 2) { transition = new FaceTransition(CubeFace.PositiveY, CubeEdge.Up, true); return; }
+        transition = new FaceTransition(CubeFace.NegativeY, CubeEdge.Down, true); return;
     }
 }

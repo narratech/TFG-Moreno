@@ -296,7 +296,7 @@ public partial struct ProcessMovementJob : IJobEntity
             return float3.zero;
 
         int currentNode = NavGraphAPI.GetClosestNode(graph, currentPos);
-        float3 normal = NavGraphAPI.GetNodeNormal(graph, currentNode);
+        NavGraphAPI.GetNodeNormal(graph, currentNode, out float3 normal);
         float3 desiredOffset = formationOffset;
 
         if (math.lengthsq(normal) > 0.0001f)
@@ -350,7 +350,7 @@ public partial struct ProcessMovementJob : IJobEntity
             if (node < 0)
                 continue;
 
-            float3 nodePos = NavGraphAPI.GetNodePosition(graph, node);
+            NavGraphAPI.GetNodePosition(graph, node, out float3 nodePos);
             float distSq = math.distancesq(position, nodePos);
 
             float weight = 1.0f / math.max(distSq, 0.0001f);
