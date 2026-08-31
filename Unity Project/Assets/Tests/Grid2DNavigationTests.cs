@@ -1,11 +1,10 @@
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 [TestFixture]
-public class NavigationTests
+public class Grid2DNavigationTests
 {
     private Grid2DNavGraph _grid;
 
