@@ -457,9 +457,11 @@ MonoBehaviour:
   _provider: {fileID: 0}
   MaxSpeed: 8
   MaxForce: 20
-  FrictionForce: 0.45
-  MinForce: 0.1
-  MinSpeed: 0.1
+  MinSteeringForce: 0.5
+  MaxAngularSpeed: 240
+  AngularFrequency: 12
+  AngularDamping: 1
+  TurnTightness: 2
 --- !u!114 &512252183425919639
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -473,7 +475,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldSteering
   _weight: 1
-  settings: {fileID: 0}
+  settings: {fileID: 11400000, guid: 06897336b6a26654b87cce508bb6a759, type: 2}
   _stepSize: 0.5
   _stopRadius: 1
   _timeStamp: 0.1

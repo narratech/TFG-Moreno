@@ -26,34 +26,46 @@ public class FlowFieldSteering : IAgentSteering
     private readonly int[] _nodes = new int[8];
 
     private float _time = 0f;
-    public int _currentSteps = 0;
+    private int _currentSteps = 0;
 
     public override Vector3 GetForce()
     {
-        // 1. Si no hay objetivo, no devolvemos fuerza
-        if (Agent == null || Agent.TargetNode < 0)
+        if (Agent == null || Agent.Graph == null)
             return Vector3.zero;
 
-        // 2. Muestreamos el FlowField
+        bool hasTarget = Agent.TargetNode >= 0;
+
+        // 1. Muestreamos el FlowField o las fuerzas de colisión
         Vector3 desiredOffset = GetRealOffset(_formationOffset);
         Vector3 desiredOffsetDir = desiredOffset.normalized;
 
-        if (Time.time - _time > TimeStamp)
+        if (hasTarget && Time.time - _time > TimeStamp)
         {
             _currentSteps = UpdateSteps(_currentSteps, desiredOffsetDir);
             _time = Time.time;
         }
+        else if (!hasTarget)
+        {
+            _currentSteps = 0;
+        }
 
         Vector3 samplePosition = Agent.transform.position + desiredOffsetDir * (_currentSteps * StepSize);
         Vector3 flowDirection = SampleFlowField(samplePosition);
-        Vector3 targetPosition = Agent.Graph.GetNodePosition(Agent.TargetNode);
 
-        if (Vector3.SqrMagnitude(samplePosition - targetPosition) < _stopRadius * _stopRadius)
-            return -Agent.Velocity;
+        // 2. Si hay destino, verificar radio de parada
+        if (hasTarget)
+        {
+            Vector3 targetPosition = Agent.Graph.GetNodePosition(Agent.TargetNode);
+            if (Vector3.SqrMagnitude(samplePosition - targetPosition) < _stopRadius * _stopRadius)
+                return -Agent.Velocity;
+        }
+        else if (flowDirection.sqrMagnitude < 0.0001f)
+        {
+            // Si no hay objetivo Y tampoco hay colisión/repulsión cercana, no hay fuerza
+            return Vector3.zero;
+        }
 
-        Debug.Log(flowDirection.magnitude);
-
-        // 3. Calculamos la velocidad deseada y devolvemos la fuerza de dirección (Steering Force)
+        // 3. Calculamos la velocidad deseada y devolvemos la fuerza de dirección
         Vector3 desiredVelocity = Vector3.ClampMagnitude(flowDirection * 0.5f, Agent.MaxSpeed);
         return desiredVelocity - Agent.Velocity;
     }
@@ -137,9 +149,6 @@ public class FlowFieldSteering : IAgentSteering
         return 0;
     }
 
-    /// <summary>
-    /// Orientamos el offset respecto a la normal del terreno en la posición del agente.
-    /// </summary>
     private Vector3 GetRealOffset(Vector3 formationOffset)
     {
         Vector3 offset = formationOffset;
@@ -149,12 +158,10 @@ public class FlowFieldSteering : IAgentSteering
 
         Vector3 normal = Agent.Graph.GetNodeNormal(Agent.CurrentNode);
 
-        // Si la normal es válida y el suelo no es plano (Vector3.up)
         if (normal != Vector3.zero)
         {
             float dot = Vector3.Dot(normal, Vector3.up);
 
-            // Si hay inclinación respecto a la vertical, rotamos el offset
             if (dot < 0.9999f)
             {
                 Quaternion surfaceRotation = Quaternion.FromToRotation(Vector3.up, normal);
@@ -164,7 +171,6 @@ public class FlowFieldSteering : IAgentSteering
 
         return offset;
     }
-
 
     private Vector3 SampleFlowField(Vector3 samplePosition)
     {
@@ -181,7 +187,6 @@ public class FlowFieldSteering : IAgentSteering
             int node = _nodes[i];
             Vector3 nodePosition = Agent.Graph.GetNodePosition(node);
 
-            // Calculo directo de distancia al cuadrado
             float dx = samplePosition.x - nodePosition.x;
             float dy = samplePosition.y - nodePosition.y;
             float dz = samplePosition.z - nodePosition.z;
@@ -189,6 +194,7 @@ public class FlowFieldSteering : IAgentSteering
 
             float weight = 1f / (sqrDistance + 0.0001f);
 
+            // A) Si el nodo NO es transitable, siempre genera vector de repulsión
             if (!Agent.Graph.IsWalkable(node))
             {
                 if (sqrDistance > 0.0001f)
@@ -200,6 +206,10 @@ public class FlowFieldSteering : IAgentSteering
                 }
                 continue;
             }
+
+            // B) Si el nodo es caminable pero NO tenemos un objetivo válido, omitimos la búsqueda de FlowField
+            if (targetNode < 0)
+                continue;
 
             int region = Agent.Graph.GetRegionId(node);
             FlowField field = fieldManager.GetFlowField(Agent.Graph, region, targetNode);
@@ -244,15 +254,9 @@ public class FlowFieldSteering : IAgentSteering
         float stepSize = StepSize > 0f ? StepSize : 1f;
         int absoluteMaxSteps = Mathf.CeilToInt(offsetLen / stepSize);
 
-        // ==========================================================
-        // 1ª COMPROBACIÓN: MUESTREO DE PASOS Y NODOS CAMINABLES
-        // ==========================================================
-
-        // Línea base del offset completo
         Gizmos.color = new Color(1f, 1f, 1f, 0.2f);
         Gizmos.DrawLine(currentPos, currentPos + desiredOffset);
 
-        // Pasos posibles vs. validados
         for (int i = 1; i <= absoluteMaxSteps; i++)
         {
             Vector3 stepPos = currentPos + offsetDir * (i * stepSize);
@@ -265,14 +269,11 @@ public class FlowFieldSteering : IAgentSteering
             }
             else
             {
-                Gizmos.color = new Color(1f, 0f, 0f, 0.4f); // Rojo transparente: no caminable o descartado
+                Gizmos.color = new Color(1f, 0f, 0f, 0.4f);
                 Gizmos.DrawWireSphere(stepPos, 0.1f);
             }
         }
 
-        // ==========================================================
-        // 2ª COMPROBACIÓN: ESCANEO Y PROYECCIÓN DE TRAYECTORIA
-        // ==========================================================
         if (_currentSteps > 0)
         {
             Vector3 samplePos = currentPos + offsetDir * (_currentSteps * stepSize);
@@ -282,11 +283,9 @@ public class FlowFieldSteering : IAgentSteering
             {
                 Vector3 flowDir = sampleFlow.normalized;
 
-                // Dibujar el vector de dirección en el SmartOffset (Azul Cyan)
                 Gizmos.color = Color.cyan;
                 Gizmos.DrawRay(samplePos, flowDir * 1.2f);
 
-                // SIMULACIÓN DE ESCANEO DE TRAYECTORIA PASO A PASO
                 Vector3 prevProjPos = currentPos;
 
                 for (int flowStep = 1; flowStep <= _currentSteps; flowStep++)
@@ -296,17 +295,14 @@ public class FlowFieldSteering : IAgentSteering
 
                     bool isStepWalkable = (projNode >= 0 && Agent.Graph.IsWalkable(projNode));
 
-                    // Color de la línea de simulación: Verde si es caminable, Rojo si detecta colisión
                     Gizmos.color = isStepWalkable ? Color.magenta : Color.red;
                     Gizmos.DrawLine(prevProjPos, agentProjectionPos);
-
-                    // Bolita en cada punto de control del Raycast/Escaneo
                     Gizmos.DrawSphere(agentProjectionPos, isStepWalkable ? 0.08f : 0.18f);
 
                     prevProjPos = agentProjectionPos;
 
                     if (!isStepWalkable)
-                        break; // Si choca en la visualización, cortamos el trazado
+                        break;
                 }
             }
         }

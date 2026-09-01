@@ -53,9 +53,11 @@ MonoBehaviour:
   _provider: {fileID: 0}
   MaxSpeed: 8
   MaxForce: 20
-  FrictionForce: 0.45
-  MinForce: 0.1
-  MinSpeed: 0.1
+  MinSteeringForce: 0.5
+  MaxAngularSpeed: 240
+  AngularFrequency: 12
+  AngularDamping: 1
+  TurnTightness: 2
 --- !u!114 &512252183425919639
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -71,8 +73,9 @@ MonoBehaviour:
   _weight: 1
   settings: {fileID: 11400000, guid: 06897336b6a26654b87cce508bb6a759, type: 2}
   _stepSize: 0.5
+  _stopRadius: 1
   _timeStamp: 0.1
-  _desiredOffset: {x: 0, y: 0, z: 0}
+  _formationOffset: {x: 0, y: 0, z: 0}
 --- !u!114 &1757343662618969882
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -154,8 +157,8 @@ Transform:
   m_GameObject: {fileID: 8895201683730596983}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.3714294, y: 2.400759, z: -2.27092}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 1.59, z: -0.00000017881}
+  m_LocalScale: {x: 3, y: 3, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 357578434101926732}
@@ -304,7 +307,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: ccedf3b411c7767479f68bddd5927a46, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

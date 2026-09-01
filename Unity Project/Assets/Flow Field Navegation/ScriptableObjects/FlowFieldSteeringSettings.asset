@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 241e314d9b03de04c8e5e4879b0f22b6, type: 3}
   m_Name: FlowFieldSteeringSettings
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldSteeringSettings
-  StepSize: 0.5
+  StepSize: 1
   TimeStamp: 0.2
