@@ -40,12 +40,12 @@ public class LocalAvoidanceSteering : IAgentSteering
         LocalAvoidanceManager.Instance.Subscribe(Agent);
     }
 
-    public override Vector3 GetDirection(NavAgent agent)
+    public override Vector3 GetForce()
     {
-        NodeAgentData[] nodeData = LocalAvoidanceManager.Instance.GetNodeData(agent.Graph);
+        NodeAgentData[] nodeData = LocalAvoidanceManager.Instance.GetNodeData(Agent.Graph);
 
-        int count = agent.Graph.GetNodesInRadius(
-            agent.CurrentNode,
+        int count = Agent.Graph.GetNodesInRadius(
+            Agent.CurrentNode,
             AvoidanceNodeRadius,
             _nodes);
 
@@ -63,13 +63,13 @@ public class LocalAvoidanceSteering : IAgentSteering
             int agentCount = data.Count;
 
             // Quitarnos de la media del nodo en el que estamos
-            if (_nodes[i] == agent.CurrentNode)
+            if (_nodes[i] == Agent.CurrentNode)
             {
                 if (agentCount == 1)
                     continue;
 
-                sumPos -= (float3)agent.transform.position;
-                sumVel -= (float3)agent.Velocity;
+                sumPos -= (float3)Agent.transform.position;
+                sumVel -= (float3)Agent.Velocity;
                 agentCount--;
             }
 
@@ -77,7 +77,7 @@ public class LocalAvoidanceSteering : IAgentSteering
             Vector3 meanVelocity = (Vector3)(sumVel / agentCount);
 
             Vector3 delta =
-                agent.transform.position - meanPosition;
+                Agent.transform.position - meanPosition;
 
             float distance = delta.magnitude;
 
@@ -89,7 +89,7 @@ public class LocalAvoidanceSteering : IAgentSteering
 
             Vector3 separation = delta.normalized * weight * agentCount;
 
-            Vector3 velocityAvoidance = agent.Velocity - meanVelocity;
+            Vector3 velocityAvoidance = Agent.Velocity - meanVelocity;
 
             force += separation;
         }

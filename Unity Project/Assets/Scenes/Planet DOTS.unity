@@ -719,7 +719,7 @@ MonoBehaviour:
   graphProvider: {fileID: 1999247484}
   targetNode: -1
   formationType: 2
-  formationSpacing: 5
+  formationSpacing: 2
   shapeTexture: {fileID: 2800000, guid: a205d7639d753444d951396646689088, type: 3}
 --- !u!43 &1307551384
 Mesh:

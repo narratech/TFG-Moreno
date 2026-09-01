@@ -473,10 +473,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldSteering
   _weight: 1
-  settings: {fileID: 11400000, guid: 06897336b6a26654b87cce508bb6a759, type: 2}
+  settings: {fileID: 0}
   _stepSize: 0.5
+  _stopRadius: 1
   _timeStamp: 0.1
-  _desiredOffset: {x: 0, y: 0, z: 0}
+  _formationOffset: {x: 0, y: 0, z: 0}
+  _currentSteps: 0
 --- !u!114 &1757343662618969882
 MonoBehaviour:
   m_ObjectHideFlags: 0

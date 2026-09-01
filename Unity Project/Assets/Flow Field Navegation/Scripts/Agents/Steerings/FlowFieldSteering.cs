@@ -1,201 +1,185 @@
-﻿using UnityEngine;
+﻿using System;
+using Unity.Transforms;
+using UnityEngine;
 
 public class FlowFieldSteering : IAgentSteering
 {
     [Header("Settings")]
     [SerializeField]
     private FlowFieldSteeringSettings settings;
+    private float StepSize => settings != null ? settings.StepSize : _stepSize;
+    private float TimeStamp => settings != null ? settings.TimeStamp : _timeStamp;
 
     [Header("Manual Settings")]
     [SerializeField]
     private float _stepSize = 1f;
 
     [SerializeField]
-    private float _timeStamp = 0.1f;
-    private float _time = 0f;
+    private float _stopRadius = 1.0f;
 
     [SerializeField]
-    private Vector3 _desiredOffset;
+    private float _timeStamp = 0.1f;
+
+    [SerializeField]
+    private Vector3 _formationOffset;
 
     private readonly int[] _nodes = new int[8];
 
-    private Vector3 _samplePosition;
-    private Vector3 _lastAgentPosition;
+    private float _time = 0f;
+    public int _currentSteps = 0;
 
-    private int _currentSteps = 0;
-
-    private float StepSize => settings != null ? settings.StepSize : _stepSize;
-    private float TimeStamp => settings != null ? settings.TimeStamp : _timeStamp;
-
-    public void Start()
+    public override Vector3 GetForce()
     {
-        _lastAgentPosition = transform.position;
-        _currentSteps = 0;
-        _time = Random.Range(0f, TimeStamp);
-    }
-
-    public override Vector3 GetDirection(NavAgent agent)
-    {
-        if (agent.TargetNode < 0)
+        // 1. Si no hay objetivo, no devolvemos fuerza
+        if (Agent == null || Agent.TargetNode < 0)
             return Vector3.zero;
 
-        // Guardamos referencias locales para evitar llamadas a propiedades de Unity
-        Transform agentTransform = agent.transform;
-        Vector3 agentPos = agentTransform.position;
-        INavGraph graph = agent.Graph;
+        // 2. Muestreamos el FlowField
+        Vector3 desiredOffset = GetRealOffset(_formationOffset);
+        Vector3 desiredOffsetDir = desiredOffset.normalized;
 
-        _time += Time.deltaTime;
-        if (_time > TimeStamp)
+        if (Time.time - _time > TimeStamp)
         {
-            UpdateSamplePosition(agent);
-            _lastAgentPosition = agentPos;
-            _time = 0f;
+            _currentSteps = UpdateSteps(_currentSteps, desiredOffsetDir);
+            _time = Time.time;
         }
 
-        Vector3 flowDirection = SampleFlowField(agent, _samplePosition);
+        Vector3 samplePosition = Agent.transform.position + desiredOffsetDir * (_currentSteps * StepSize);
+        Vector3 flowDirection = SampleFlowField(samplePosition);
+        Vector3 targetPosition = Agent.Graph.GetNodePosition(Agent.TargetNode);
 
-        if (flowDirection.sqrMagnitude < 0.05f)
-            return -agent.Velocity;
+        if (Vector3.SqrMagnitude(samplePosition - targetPosition) < _stopRadius * _stopRadius)
+            return -Agent.Velocity;
 
-        flowDirection.Normalize();
+        Debug.Log(flowDirection.magnitude);
 
-        // Evitar que la dirección apunte frontalmente a una pared
-        float stepSize = StepSize;
-        Vector3 probePos = agentPos + flowDirection * stepSize;
-        int probeNode = graph.GetClosestNode(probePos);
+        // 3. Calculamos la velocidad deseada y devolvemos la fuerza de dirección (Steering Force)
+        Vector3 desiredVelocity = Vector3.ClampMagnitude(flowDirection * 0.5f, Agent.MaxSpeed);
+        return desiredVelocity - Agent.Velocity;
+    }
 
-        if (!graph.IsWalkable(probeNode))
+    private int UpdateSteps(int currentSteps, Vector3 offsetDir)
+    {
+        Vector3 desiredOffset = GetRealOffset(_formationOffset);
+        float offsetLen = desiredOffset.magnitude;
+        float stepSize = StepSize > 0f ? StepSize : 1f;
+
+        if (offsetLen < 0.001f)
         {
-            Vector3 obstaclePos = graph.GetNodePosition(probeNode);
-            Vector3 agentSafePos = graph.GetNodePosition(agent.CurrentNode);
-            Vector3 surfaceNormal = graph.GetNodeNormal(agent.CurrentNode);
+            return 0;
+        }
 
-            Vector3 toAgent = agentSafePos - obstaclePos;
-            if (toAgent.sqrMagnitude < 0.0001f)
-                toAgent = -flowDirection;
+        int absoluteMaxSteps = Mathf.CeilToInt(offsetLen / stepSize);
 
-            // Proyección agnóstica a la superficie
-            Vector3 wallNormal = Vector3.ProjectOnPlane(toAgent, surfaceNormal).normalized;
+        if (absoluteMaxSteps <= 0)
+        {
+            return 0;
+        }
 
-            if (wallNormal.sqrMagnitude > 0.0001f)
+        Vector3 currentPos = Agent.transform.position;
+
+        // 1. Buscamos hasta qué paso incremental es caminable el suelo (CurrentSteps + 1)
+        int targetCheckStep = Mathf.Min(currentSteps + 1, absoluteMaxSteps);
+        int maxWalkableStep = 0;
+
+        for (int step = 1; step <= targetCheckStep; step++)
+        {
+            Vector3 checkPos = currentPos + offsetDir * (step * stepSize);
+            int node = Agent.Graph.GetClosestNode(checkPos);
+
+            if (node >= 0 && Agent.Graph.IsWalkable(node))
             {
-                // Deslizar paralelamente a la pared
-                flowDirection = Vector3.ProjectOnPlane(flowDirection, wallNormal).normalized;
+                maxWalkableStep = step;
             }
             else
             {
-                flowDirection = Vector3.zero;
+                break;
             }
         }
 
-        if (flowDirection.sqrMagnitude < 0.0001f)
-            return -agent.Velocity;
-
-        Vector3 desiredVelocity = flowDirection * agent.MaxSpeed;
-        return desiredVelocity - agent.Velocity;
-    }
-
-    private void UpdateSamplePosition(NavAgent agent)
-    {
-        INavGraph graph = agent.Graph;
-        Vector3 position = agent.transform.position;
-
-        // Early Exit: Si el agente apenas se ha movido, no recalculamos
-        if ((position - _lastAgentPosition).sqrMagnitude < 0.001f && _currentSteps > 0)
+        if (maxWalkableStep == 0)
         {
-            return;
+            return 0;
         }
 
-        Vector3 offset = _desiredOffset;
-        Vector3 normal = graph.GetNodeNormal(agent.CurrentNode);
-
-        if (normal != Vector3.zero)
+        // 2. Evaluamos desde el paso caminable más alto hacia abajo la validez del flujo
+        for (int step = maxWalkableStep; step >= 1; step--)
         {
-            float dot = Vector3.Dot(normal, Vector3.up);
-            if (dot < 0.9999f)
-                offset = Quaternion.FromToRotation(Vector3.up, normal) * offset;
-        }
+            Vector3 samplePos = currentPos + offsetDir * (step * stepSize);
+            Vector3 sampleFlow = SampleFlowField(samplePos);
 
-        float distance = offset.magnitude;
-
-        if (distance < 0.001f)
-        {
-            _currentSteps = 0;
-            _samplePosition = position;
-            return;
-        }
-
-        float stepSize = StepSize;
-        float invStepSize = 1f / stepSize;
-
-        Vector3 offsetDir = offset / distance;
-        int maxSteps = Mathf.CeilToInt(distance * invStepSize);
-
-        float speed = agent.Velocity.magnitude;
-        int maxPredictionSteps = Mathf.Clamp(Mathf.RoundToInt(speed * 3f * invStepSize), 1, 6);
-
-        int bestValidStep = 0;
-
-        // 💡 BUCLE INVERSO: Empezamos buscando desde el punto MÁS LEJANO (maxSteps) hacia el agente (1)
-        for (int step = maxSteps; step >= 1; step--)
-        {
-            Vector3 sample = position + offsetDir * (step * stepSize);
-            int sampleNode = graph.GetClosestNode(sample);
-
-            // 1. Si la propia posición lejana cae en muro, descartamos esta distancia y probamos una más cercana
-            if (!graph.IsWalkable(sampleNode))
-                continue;
-
-            // 2. Leemos flujo del sample
-            Vector3 flowFromSample = SampleFlowField(agent, sample);
-            if (flowFromSample.sqrMagnitude < 0.0001f)
-                continue;
-
-            Vector3 flowDir = flowFromSample.normalized;
-            Vector3 simulatedPosition = position;
-            bool predictionHitWall = false;
-
-            // 3. Simulamos avance del agente en esa dirección
-            for (int i = 1; i <= maxPredictionSteps; i++)
+            if (sampleFlow.sqrMagnitude < 0.0001f)
             {
-                simulatedPosition += flowDir * stepSize;
-                int simulatedNode = graph.GetClosestNode(simulatedPosition);
+                return step;
+            }
 
-                if (!graph.IsWalkable(simulatedNode))
+            Vector3 flowDir = sampleFlow.normalized;
+            bool pathBlocked = false;
+
+            for (int flowStep = 1; flowStep <= step; flowStep++)
+            {
+                Vector3 agentProjectionPos = currentPos + flowDir * (flowStep * stepSize * 0.5f);
+                int projNode = Agent.Graph.GetClosestNode(agentProjectionPos);
+
+                if (projNode < 0 || !Agent.Graph.IsWalkable(projNode))
                 {
-                    predictionHitWall = true;
+                    pathBlocked = true;
                     break;
                 }
             }
 
-            // Si la trayectoria no choca, ¡ENCONTRAMOS EL MEJOR PASO!
-            // Como íbamos de más lejano a más cercano, el primero que funcione es matemáticamente el MÁXIMO posible.
-            if (!predictionHitWall)
+            if (!pathBlocked)
             {
-                bestValidStep = step;
-                break; // 🚀 Cortamos el bucle inmediatamente
+                return step;
             }
         }
 
-        _currentSteps = bestValidStep;
-        _samplePosition = position + offsetDir * (_currentSteps * stepSize);
+        return 0;
     }
 
-    private Vector3 SampleFlowField(NavAgent agent, Vector3 samplePosition)
+    /// <summary>
+    /// Orientamos el offset respecto a la normal del terreno en la posición del agente.
+    /// </summary>
+    private Vector3 GetRealOffset(Vector3 formationOffset)
     {
-        INavGraph graph = agent.Graph;
-        int count = graph.GetInterpolationNodes(samplePosition, _nodes);
+        Vector3 offset = formationOffset;
+
+        if (Agent.Graph == null)
+            return offset;
+
+        Vector3 normal = Agent.Graph.GetNodeNormal(Agent.CurrentNode);
+
+        // Si la normal es válida y el suelo no es plano (Vector3.up)
+        if (normal != Vector3.zero)
+        {
+            float dot = Vector3.Dot(normal, Vector3.up);
+
+            // Si hay inclinación respecto a la vertical, rotamos el offset
+            if (dot < 0.9999f)
+            {
+                Quaternion surfaceRotation = Quaternion.FromToRotation(Vector3.up, normal);
+                offset = surfaceRotation * offset;
+            }
+        }
+
+        return offset;
+    }
+
+
+    private Vector3 SampleFlowField(Vector3 samplePosition)
+    {
+        int count = Agent.Graph.GetInterpolationNodes(samplePosition, _nodes);
 
         Vector3 direction = Vector3.zero;
         float totalWeight = 0f;
 
-        int targetNode = agent.TargetNode;
+        int targetNode = Agent.TargetNode;
         FlowFieldManager fieldManager = FlowFieldManager.Instance;
 
         for (int i = 0; i < count; i++)
         {
             int node = _nodes[i];
-            Vector3 nodePosition = graph.GetNodePosition(node);
+            Vector3 nodePosition = Agent.Graph.GetNodePosition(node);
 
             // Calculo directo de distancia al cuadrado
             float dx = samplePosition.x - nodePosition.x;
@@ -205,7 +189,7 @@ public class FlowFieldSteering : IAgentSteering
 
             float weight = 1f / (sqrDistance + 0.0001f);
 
-            if (!graph.IsWalkable(node))
+            if (!Agent.Graph.IsWalkable(node))
             {
                 if (sqrDistance > 0.0001f)
                 {
@@ -217,18 +201,19 @@ public class FlowFieldSteering : IAgentSteering
                 continue;
             }
 
-            int region = graph.GetRegionId(node);
-            FlowField field = fieldManager.GetFlowField(graph, region, targetNode);
+            int region = Agent.Graph.GetRegionId(node);
+            FlowField field = fieldManager.GetFlowField(Agent.Graph, region, targetNode);
 
             if (field == null)
             {
-                field = FlowFieldEngine.GenerateFlowPath(graph, targetNode, region);
+                field = FlowFieldEngine.GenerateFlowPath(Agent.Graph, targetNode, region);
             }
 
             if (field == null)
                 continue;
 
-            direction += field.FlowDirections[graph.GetLocalNode(node)] * weight;
+            int localNode = Agent.Graph.GetLocalNode(node);
+            direction += field.FlowDirections[localNode] * weight * field.IntegrationField[localNode];
             totalWeight += weight;
         }
 
@@ -238,29 +223,91 @@ public class FlowFieldSteering : IAgentSteering
         return direction;
     }
 
-    public void SetDesiredOffset(Vector3 vec)
+    public void SetFormationOffset(Vector3 vector3)
     {
-        _desiredOffset = vec;
+        _formationOffset = vector3;
     }
 
     private void OnDrawGizmosSelected()
     {
-        if (!Application.isPlaying) return;
+        if (Agent == null || Agent.Graph == null)
+            return;
 
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(transform.position, _samplePosition);
+        Vector3 currentPos = Agent.transform.position;
+        Vector3 desiredOffset = GetRealOffset(_formationOffset);
+        float offsetLen = desiredOffset.magnitude;
 
-        Gizmos.color = _currentSteps > 0 ? Color.green : Color.red;
-        Gizmos.DrawWireSphere(_samplePosition, StepSize * 0.5f);
+        if (offsetLen < 0.001f)
+            return;
 
-        NavAgent agent = GetComponent<NavAgent>();
-        if (agent != null && agent.Graph != null)
+        Vector3 offsetDir = desiredOffset / offsetLen;
+        float stepSize = StepSize > 0f ? StepSize : 1f;
+        int absoluteMaxSteps = Mathf.CeilToInt(offsetLen / stepSize);
+
+        // ==========================================================
+        // 1ª COMPROBACIÓN: MUESTREO DE PASOS Y NODOS CAMINABLES
+        // ==========================================================
+
+        // Línea base del offset completo
+        Gizmos.color = new Color(1f, 1f, 1f, 0.2f);
+        Gizmos.DrawLine(currentPos, currentPos + desiredOffset);
+
+        // Pasos posibles vs. validados
+        for (int i = 1; i <= absoluteMaxSteps; i++)
         {
-            Vector3 flow = SampleFlowField(agent, _samplePosition);
-            if (flow.sqrMagnitude > 0.0001f)
+            Vector3 stepPos = currentPos + offsetDir * (i * stepSize);
+
+            if (i <= _currentSteps)
             {
+                bool isTargetStep = (i == _currentSteps);
+                Gizmos.color = isTargetStep ? Color.green : Color.yellow;
+                Gizmos.DrawSphere(stepPos, isTargetStep ? 0.22f : 0.12f);
+            }
+            else
+            {
+                Gizmos.color = new Color(1f, 0f, 0f, 0.4f); // Rojo transparente: no caminable o descartado
+                Gizmos.DrawWireSphere(stepPos, 0.1f);
+            }
+        }
+
+        // ==========================================================
+        // 2ª COMPROBACIÓN: ESCANEO Y PROYECCIÓN DE TRAYECTORIA
+        // ==========================================================
+        if (_currentSteps > 0)
+        {
+            Vector3 samplePos = currentPos + offsetDir * (_currentSteps * stepSize);
+            Vector3 sampleFlow = SampleFlowField(samplePos);
+
+            if (sampleFlow.sqrMagnitude > 0.0001f)
+            {
+                Vector3 flowDir = sampleFlow.normalized;
+
+                // Dibujar el vector de dirección en el SmartOffset (Azul Cyan)
                 Gizmos.color = Color.cyan;
-                Gizmos.DrawRay(_samplePosition, flow.normalized * 1.5f);
+                Gizmos.DrawRay(samplePos, flowDir * 1.2f);
+
+                // SIMULACIÓN DE ESCANEO DE TRAYECTORIA PASO A PASO
+                Vector3 prevProjPos = currentPos;
+
+                for (int flowStep = 1; flowStep <= _currentSteps; flowStep++)
+                {
+                    Vector3 agentProjectionPos = currentPos + flowDir * (flowStep * stepSize * 0.5f);
+                    int projNode = Agent.Graph.GetClosestNode(agentProjectionPos);
+
+                    bool isStepWalkable = (projNode >= 0 && Agent.Graph.IsWalkable(projNode));
+
+                    // Color de la línea de simulación: Verde si es caminable, Rojo si detecta colisión
+                    Gizmos.color = isStepWalkable ? Color.magenta : Color.red;
+                    Gizmos.DrawLine(prevProjPos, agentProjectionPos);
+
+                    // Bolita en cada punto de control del Raycast/Escaneo
+                    Gizmos.DrawSphere(agentProjectionPos, isStepWalkable ? 0.08f : 0.18f);
+
+                    prevProjPos = agentProjectionPos;
+
+                    if (!isStepWalkable)
+                        break; // Si choca en la visualización, cortamos el trazado
+                }
             }
         }
     }

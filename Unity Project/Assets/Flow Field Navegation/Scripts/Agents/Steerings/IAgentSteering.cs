@@ -18,5 +18,5 @@ public abstract class IAgentSteering : MonoBehaviour
         }
     }
 
-    public abstract Vector3 GetDirection(NavAgent agent);
+    public abstract Vector3 GetForce();
 }

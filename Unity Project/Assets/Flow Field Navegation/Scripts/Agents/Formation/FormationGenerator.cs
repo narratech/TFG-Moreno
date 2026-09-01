@@ -54,7 +54,7 @@ public static class FormationGenerator
             FlowFieldSteering steering = agents[i].GetComponent<FlowFieldSteering>();
 
             if (steering != null)
-                steering.SetDesiredOffset(offsets[i]);
+                steering.SetFormationOffset(offsets[i]);
         }
     }
 
