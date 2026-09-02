@@ -97,6 +97,17 @@ public class Grid3DNavGraph : INavGraph
 
     public bool IsWalkable(int index) => _walkability[index];
 
+    public bool IsInBounds(Vector3 position)
+    {
+        Vector3 local = position - _origin;
+        int x = Mathf.FloorToInt(local.x / _cellSize);
+        int y = Mathf.FloorToInt(local.y / _cellSize);
+        int z = Mathf.FloorToInt(local.z / _cellSize);
+        return x >= 0 && x < _width &&
+               y >= 0 && y < _height &&
+               z >= 0 && z < _depth;
+    }
+
     public Vector3 GetNodePosition(int index)
     {
         IndexToCoord(index, out int x, out int y, out int z);
@@ -369,6 +380,13 @@ public class Grid3DNavGraph : INavGraph
                 velocity = Vector3.ProjectOnPlane(velocity, normal);
 
             position = projected;
+        }
+
+        if (!IsInBounds(position))
+        {
+            position.x = Mathf.Clamp(position.x, _origin.x, _origin.x + _width * _cellSize);
+            position.y = Mathf.Clamp(position.y, _origin.y, _origin.y + _height * _cellSize);
+            position.z = Mathf.Clamp(position.z, _origin.z, _origin.z + _depth * _cellSize);
         }
     }
 

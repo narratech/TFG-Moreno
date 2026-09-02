@@ -1083,6 +1083,8 @@ MonoBehaviour:
   graphProvider: {fileID: 1999247487}
   targetNode: -1
   formationType: 2
+  formationSpacing: 2
+  shapeTexture: {fileID: 0}
 --- !u!1 &1469837800
 GameObject:
   m_ObjectHideFlags: 0

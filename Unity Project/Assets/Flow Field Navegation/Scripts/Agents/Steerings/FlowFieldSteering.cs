@@ -99,7 +99,7 @@ public class FlowFieldSteering : IAgentSteering
             Vector3 checkPos = currentPos + offsetDir * (step * stepSize);
             int node = Agent.Graph.GetClosestNode(checkPos);
 
-            if (node >= 0 && Agent.Graph.IsWalkable(node))
+            if (node >= 0 && Agent.Graph.IsWalkable(node) && Agent.Graph.IsInBounds(checkPos))
             {
                 maxWalkableStep = step;
             }
@@ -133,7 +133,7 @@ public class FlowFieldSteering : IAgentSteering
                 Vector3 agentProjectionPos = currentPos + flowDir * (flowStep * stepSize * 0.5f);
                 int projNode = Agent.Graph.GetClosestNode(agentProjectionPos);
 
-                if (projNode < 0 || !Agent.Graph.IsWalkable(projNode))
+                if (projNode < 0 || !Agent.Graph.IsWalkable(projNode) || !Agent.Graph.IsInBounds(agentProjectionPos))
                 {
                     pathBlocked = true;
                     break;
@@ -293,7 +293,7 @@ public class FlowFieldSteering : IAgentSteering
                     Vector3 agentProjectionPos = currentPos + flowDir * (flowStep * stepSize * 0.5f);
                     int projNode = Agent.Graph.GetClosestNode(agentProjectionPos);
 
-                    bool isStepWalkable = (projNode >= 0 && Agent.Graph.IsWalkable(projNode));
+                    bool isStepWalkable = (projNode >= 0 && Agent.Graph.IsWalkable(projNode) && Agent.Graph.IsInBounds(agentProjectionPos));
 
                     Gizmos.color = isStepWalkable ? Color.magenta : Color.red;
                     Gizmos.DrawLine(prevProjPos, agentProjectionPos);

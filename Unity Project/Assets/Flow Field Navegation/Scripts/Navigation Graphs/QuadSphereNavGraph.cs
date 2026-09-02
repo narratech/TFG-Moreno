@@ -133,6 +133,11 @@ public class QuadSphereNavGraph : INavGraph
         return _walkable[index];
     }
 
+    public bool IsInBounds(Vector3 position)
+    {
+        return true;
+    }
+
     public void SetWalkable(int index, bool walkable)
     {
         _walkable[index] = walkable;

@@ -1,4 +1,5 @@
-﻿using Unity.Burst;
+﻿using System.Numerics;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 
@@ -180,11 +181,11 @@ public static class NavGraphAPI
 
     [BurstCompile]
     public static void ConstrainPositionAndRotation(
-        in NavGraphData graph,
-        in NativeArray<bool> walkability,
-        ref float3 position,
-        ref float3 velocity,
-        ref quaternion rotation)
+    in NavGraphData graph,
+    in NativeArray<bool> walkability,
+    ref float3 position,
+    ref float3 velocity,
+    ref quaternion rotation)
     {
         if (graph.Type == NavGraphType.QuadSphere)
         {
@@ -216,20 +217,76 @@ public static class NavGraphAPI
                 }
             }
         }
-        else
+        else if (graph.Type == NavGraphType.Grid3D)
         {
+            // 1. Clampear posición dentro de los límites del volumen 3D
+            float minX = graph.Origin.x;
+            float maxX = graph.Origin.x + (graph.Width - 1) * graph.CellSize;
+            float minY = graph.Origin.y;
+            float maxY = graph.Origin.y + (graph.Height - 1) * graph.CellSize;
+            float minZ = graph.Origin.z;
+            float maxZ = graph.Origin.z + (graph.Depth - 1) * graph.CellSize;
+
+            position.x = math.clamp(position.x, minX, maxX);
+            position.y = math.clamp(position.y, minY, maxY);
+            position.z = math.clamp(position.z, minZ, maxZ);
+
+            // 2. Colisión con nodos no caminables
             int node = GetClosestNode(graph, position);
             if (!IsWalkable(graph, walkability, node))
             {
-                GetClosestPointOnNode(graph, node, position, out float3 projected);
-                float3 normal = math.normalize(position - projected);
+                GetNodePosition(graph, node, out float3 nodeCenter);
+                float3 pushDir = position - nodeCenter;
 
-                if (math.lengthsq(normal) > 0.0001f)
+                if (math.lengthsq(pushDir) > 0.0001f)
                 {
-                    velocity = velocity - normal * math.dot(velocity, normal);
+                    float3 wallNormal = math.normalize(pushDir);
+                    velocity = velocity - wallNormal * math.dot(velocity, wallNormal);
                 }
 
-                position = projected;
+                GetClosestPointOnNode(graph, node, position, out position);
+            }
+
+            // 3. Orientación en 3D
+            if (math.lengthsq(velocity) > 0.0001f)
+            {
+                rotation = quaternion.LookRotation(math.normalize(velocity), new float3(0, 1, 0));
+            }
+        }
+        else // Grid2D
+        {
+            // 1. Clampear posición dentro de los límites del mapa 2D
+            float minX = graph.Origin.x;
+            float maxX = graph.Origin.x + (graph.Width - 1) * graph.CellSize;
+            float minZ = graph.Origin.z;
+            float maxZ = graph.Origin.z + (graph.Height - 1) * graph.CellSize;
+
+            position.x = math.clamp(position.x, minX, maxX);
+            position.y = graph.Origin.y; // Forzar altura exacta del plano
+            position.z = math.clamp(position.z, minZ, maxZ);
+
+            // 2. Colisión con nodos no caminables
+            int node = GetClosestNode(graph, position);
+            if (!IsWalkable(graph, walkability, node))
+            {
+                GetNodePosition(graph, node, out float3 nodeCenter);
+                float3 pushDir = position - nodeCenter;
+                pushDir.y = 0f; // Ignorar eje vertical en 2D
+
+                if (math.lengthsq(pushDir) > 0.0001f)
+                {
+                    float3 wallNormal = math.normalize(pushDir);
+                    velocity = velocity - wallNormal * math.dot(velocity, wallNormal);
+                }
+
+                GetClosestPointOnNode(graph, node, position, out position);
+            }
+
+                // 3. Orientación plana en Y
+                float3 flatVel = new float3(velocity.x, 0f, velocity.z);
+            if (math.lengthsq(flatVel) > 0.0001f)
+            {
+                rotation = quaternion.LookRotation(math.normalize(flatVel), new float3(0, 1, 0));
             }
         }
     }
@@ -520,6 +577,35 @@ public static class NavGraphAPI
         int index)
     {
         return walkability[graph.NodeOffset + index];
+    }
+
+    [BurstCompile]
+    public static bool IsInBounds(
+        in NavGraphData graph,
+        in float3 position)
+    {
+        switch (graph.Type)
+        {
+            case NavGraphType.Grid2D:
+                {
+                    float3 local = position - graph.Origin;
+                    return local.x >= 0 && local.x < graph.Width * graph.CellSize &&
+                           local.z >= 0 && local.z < graph.Height * graph.CellSize;
+                }
+            case NavGraphType.Grid3D:
+                {
+                    float3 local = position - graph.Origin;
+                    return local.x >= 0 && local.x < graph.Width * graph.CellSize &&
+                           local.y >= 0 && local.y < graph.Height * graph.CellSize &&
+                           local.z >= 0 && local.z < graph.Depth * graph.CellSize;
+                }
+            case NavGraphType.QuadSphere:
+                {
+                    return true; 
+                }
+            default: 
+                return false;
+        }
     }
 
     [BurstCompile]

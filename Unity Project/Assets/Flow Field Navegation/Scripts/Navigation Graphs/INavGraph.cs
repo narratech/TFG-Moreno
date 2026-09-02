@@ -42,6 +42,7 @@ public interface INavGraph
     // --- Datos de Coste y Estado ---
     float GetNodeCost(int index);
     bool IsWalkable(int index);
+    bool IsInBounds(Vector3 position);
 
     /// <summary>
     /// Distancia real entre dos nodos vecinos.

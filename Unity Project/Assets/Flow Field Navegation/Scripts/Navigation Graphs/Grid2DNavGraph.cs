@@ -69,6 +69,13 @@ public class Grid2DNavGraph : INavGraph
     }
 
     public bool IsWalkable(int index) => _walkability[index];
+    public bool IsInBounds(Vector3 position)
+    {
+        Vector3 local = position - _origin;
+        int x = Mathf.FloorToInt(local.x / _cellSize);
+        int y = Mathf.FloorToInt(local.z / _cellSize);
+        return x >= 0 && x < _width && y >= 0 && y < _height;
+    }
 
     public Vector3 GetNodePosition(int index)
     {
@@ -294,9 +301,9 @@ public class Grid2DNavGraph : INavGraph
     }
 
     public void ConstrainPositionAndRotation(
-    ref Vector3 position,
-    ref Vector3 velocity,
-    ref Quaternion rotation)
+        ref Vector3 position,
+        ref Vector3 velocity,
+        ref Quaternion rotation)
     {
         int node = GetClosestNode(position);
 
@@ -309,6 +316,12 @@ public class Grid2DNavGraph : INavGraph
             velocity = Vector3.ProjectOnPlane(
                 velocity,
                 position - GetNodePosition(node));
+        }
+
+        if (!IsInBounds(position))
+        {
+            position.x = Mathf.Clamp(position.x, _origin.x, _origin.x + _width * _cellSize);
+            position.z = Mathf.Clamp(position.z, _origin.z, _origin.z + _height * _cellSize);
         }
     }
 
@@ -328,5 +341,5 @@ public class Grid2DNavGraph : INavGraph
         position.y = _origin.y;
 
         return position;
-    }
+    } 
 }

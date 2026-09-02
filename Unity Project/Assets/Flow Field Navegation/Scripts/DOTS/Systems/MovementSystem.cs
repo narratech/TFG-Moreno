@@ -243,7 +243,7 @@ public partial struct ProcessMovementJob : IJobEntity
             float3 checkPos = currentPos + offsetDir * (step * stepSize);
             int node = NavGraphAPI.GetClosestNode(graph, checkPos);
 
-            if (node >= 0 && NavGraphAPI.IsWalkable(graph, walkability, node))
+            if (node >= 0 && NavGraphAPI.IsWalkable(graph, walkability, node) && NavGraphAPI.IsInBounds(graph, checkPos))
             {
                 maxWalkableStep = step;
             }
@@ -286,7 +286,7 @@ public partial struct ProcessMovementJob : IJobEntity
                 float3 agentProjectionPos = currentPos + flowDir * (flowStep * stepSize * 0.5f);
                 int projNode = NavGraphAPI.GetClosestNode(graph, agentProjectionPos);
 
-                if (projNode < 0 || !NavGraphAPI.IsWalkable(graph, walkability, projNode))
+                if (projNode < 0 || !NavGraphAPI.IsWalkable(graph, walkability, projNode) || !NavGraphAPI.IsInBounds(graph, agentProjectionPos))
                 {
                     pathBlocked = true;
                     break;
