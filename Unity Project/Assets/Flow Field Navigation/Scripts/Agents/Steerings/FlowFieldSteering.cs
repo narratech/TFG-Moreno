@@ -35,7 +35,7 @@ public class FlowFieldSteering : IAgentSteering
 
         bool hasTarget = Agent.TargetNode >= 0;
 
-        // 1. Muestreamos el FlowField o las fuerzas de colisión
+        // 1. Muestreamos el FlowField
         Vector3 desiredOffset = GetRealOffset(_formationOffset);
         Vector3 desiredOffsetDir = desiredOffset.normalized;
 
@@ -52,7 +52,18 @@ public class FlowFieldSteering : IAgentSteering
         Vector3 samplePosition = Agent.transform.position + desiredOffsetDir * (_currentSteps * StepSize);
         Vector3 flowDirection = SampleFlowField(samplePosition);
 
-        // 2. Si hay destino, verificar radio de parada
+        // 2. Corregimos el flujo eliminado la componente normal si se dirige contra un obstáculo cercano
+        if (GetObstacleNormal(Agent.transform.position, out Vector3 wallNormal))
+        {
+            float dot = Vector3.Dot(flowDirection, wallNormal);
+            if (dot < 0f)
+            {
+                // Proyección tangencial pura: elimina la fuerza que empuja hacia dentro del nodo no caminable
+                flowDirection -= wallNormal * dot;
+            }
+        }
+
+        // 3. Si hay destino, verificar radio de parada
         if (hasTarget)
         {
             Vector3 targetPosition = Agent.Graph.GetNodePosition(Agent.TargetNode);
@@ -61,13 +72,56 @@ public class FlowFieldSteering : IAgentSteering
         }
         else if (flowDirection.sqrMagnitude < 0.0001f)
         {
-            // Si no hay objetivo Y tampoco hay colisión/repulsión cercana, no hay fuerza
             return Vector3.zero;
         }
 
-        // 3. Calculamos la velocidad deseada y devolvemos la fuerza de dirección
+        // 4. Calculamos la velocidad deseada y devolvemos la fuerza de dirección
         Vector3 desiredVelocity = Vector3.ClampMagnitude(flowDirection * 0.5f, Agent.MaxSpeed);
         return desiredVelocity - Agent.Velocity;
+    }
+
+    /// <summary>
+    /// Consulta los nodos interpolables circundantes y extrae la normal saliente media si detecta nodos no caminables.
+    /// </summary>
+    private bool GetObstacleNormal(Vector3 position, out Vector3 wallNormal)
+    {
+        wallNormal = Vector3.zero;
+
+        int count = Agent.Graph.GetInterpolationNodes(position, _nodes);
+        if (count <= 0) return false;
+
+        Vector3 accumNormal = Vector3.zero;
+        float totalWeight = 0f;
+
+        for (int i = 0; i < count; i++)
+        {
+            int node = _nodes[i];
+
+            // Solo filtramos los nodos NO caminables
+            if (Agent.Graph.IsWalkable(node))
+                continue;
+
+            Vector3 nodePos = Agent.Graph.GetNodePosition(node);
+            Vector3 diff = position - nodePos;
+            float sqrDistance = diff.sqrMagnitude;
+
+            if (sqrDistance > 0.0001f)
+            {
+                float weight = 1f / sqrDistance;
+                Vector3 awayDir = diff / Mathf.Sqrt(sqrDistance);
+
+                accumNormal += awayDir * weight;
+                totalWeight += weight;
+            }
+        }
+
+        if (totalWeight > 0f && accumNormal.sqrMagnitude > 0.0001f)
+        {
+            wallNormal = accumNormal.normalized;
+            return true;
+        }
+
+        return false;
     }
 
     private int UpdateSteps(int currentSteps, Vector3 offsetDir)
@@ -185,6 +239,11 @@ public class FlowFieldSteering : IAgentSteering
         for (int i = 0; i < count; i++)
         {
             int node = _nodes[i];
+
+            // Ignoramos nodos no transitables en el muestreo de flujo
+            if (!Agent.Graph.IsWalkable(node) || targetNode < 0)
+                continue;
+
             Vector3 nodePosition = Agent.Graph.GetNodePosition(node);
 
             float dx = samplePosition.x - nodePosition.x;
@@ -193,23 +252,6 @@ public class FlowFieldSteering : IAgentSteering
             float sqrDistance = dx * dx + dy * dy + dz * dz;
 
             float weight = 1f / (sqrDistance + 0.0001f);
-
-            // A) Si el nodo NO es transitable, siempre genera vector de repulsión
-            if (!Agent.Graph.IsWalkable(node))
-            {
-                if (sqrDistance > 0.0001f)
-                {
-                    float invDist = 1f / Mathf.Sqrt(sqrDistance);
-                    Vector3 deltaNorm = new Vector3(dx * invDist, dy * invDist, dz * invDist);
-                    direction += deltaNorm * weight;
-                    totalWeight += weight;
-                }
-                continue;
-            }
-
-            // B) Si el nodo es caminable pero NO tenemos un objetivo válido, omitimos la búsqueda de FlowField
-            if (targetNode < 0)
-                continue;
 
             int region = Agent.Graph.GetRegionId(node);
             FlowField field = fieldManager.GetFlowField(Agent.Graph, region, targetNode);
@@ -276,6 +318,13 @@ public class FlowFieldSteering : IAgentSteering
 
         if (_currentSteps > 0)
         {
+            // Gizmo de la normal de pared si está cerca de un nodo no caminable
+            if (GetObstacleNormal(currentPos, out Vector3 wallNormal))
+            {
+                Gizmos.color = Color.blue;
+                Gizmos.DrawRay(currentPos, wallNormal * 1.5f);
+            }
+
             Vector3 samplePos = currentPos + offsetDir * (_currentSteps * stepSize);
             Vector3 sampleFlow = SampleFlowField(samplePos);
 

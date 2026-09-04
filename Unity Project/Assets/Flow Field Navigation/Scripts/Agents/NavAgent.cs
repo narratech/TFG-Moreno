@@ -26,6 +26,12 @@ public class NavAgent : MonoBehaviour
     [Range(1f, 4f)]
     [SerializeField] public float TurnTightness = 2f;
 
+    [Header("Edge Constraint Settings")]
+    [Tooltip("Distancia mínima de seguridad respecto a los nodos no caminables.")]
+    [SerializeField] public float BoundaryPadding = 0.15f;
+
+    private readonly int[] _interpolationNodes = new int[8];
+
     private IAgentSteering[] _steerings;
     private float _currentAngularSpeed = 0f;
 
@@ -76,12 +82,24 @@ public class NavAgent : MonoBehaviour
 
         SteeringForce = ComputeSteering();
 
+        // 1. Obtener la normal del plano de movimiento actual
         Vector3 surfaceNormal = Graph.GetNodeNormal(CurrentNode);
         if (surfaceNormal.sqrMagnitude < 0.0001f) surfaceNormal = Vector3.up;
         else surfaceNormal.Normalize();
 
         Vector3 desiredDirection = Vector3.ProjectOnPlane(SteeringForce, surfaceNormal);
 
+        // 2. Evaluar colisión/restricción con nodos interpolables no caminables
+        if (EvaluateUnwalkableNodesNormal(transform.position, surfaceNormal, out Vector3 wallNormal, out float penetrationDepth))
+        {
+            // Eliminar la componente que penetra el obstáculo en la fuerza deseada
+            if (Vector3.Dot(desiredDirection, wallNormal) < 0f)
+            {
+                desiredDirection = Vector3.ProjectOnPlane(desiredDirection, wallNormal);
+            }
+        }
+
+        // 3. Orientación y rotación
         if (desiredDirection.sqrMagnitude > 0.0001f)
         {
             desiredDirection.Normalize();
@@ -117,8 +135,30 @@ public class NavAgent : MonoBehaviour
             _currentAngularSpeed = Mathf.MoveTowards(_currentAngularSpeed, 0f, MaxAngularSpeed * Time.deltaTime);
         }
 
-        if (Velocity.sqrMagnitude > 0.0001f) transform.position += Velocity * Time.deltaTime;
+        // 4. Aplicar restricción de normal de pared sobre la VELOCIDAD actual
+        if (wallNormal.sqrMagnitude > 0.0001f)
+        {
+            // Si la velocidad va en dirección a la pared, eliminamos la componente perpendicular (normal)
+            float velDot = Vector3.Dot(Velocity, wallNormal);
+            if (velDot < 0f)
+            {
+                Velocity -= wallNormal * velDot; // Proyección tangencial pura
+            }
 
+            // Corrección sutil de posición si el agente sobrepasa la tolerancia del borde
+            if (penetrationDepth > 0f)
+            {
+                transform.position += wallNormal * penetrationDepth;
+            }
+        }
+
+        // 5. Aplicar integración de movimiento
+        if (Velocity.sqrMagnitude > 0.0001f)
+        {
+            transform.position += Velocity * Time.deltaTime;
+        }
+
+        // 6. Restricciones finales del grafo
         Vector3 position = transform.position;
         Quaternion rotation = transform.rotation;
         Vector3 velocity = Velocity;
@@ -127,6 +167,66 @@ public class NavAgent : MonoBehaviour
 
         transform.SetPositionAndRotation(position, rotation);
         Velocity = velocity;
+    }
+
+    /// <summary>
+    /// Consulta los nodos interpolables alrededor de la posición.
+    /// Si hay nodos no caminables, calcula la normal media ponderada del obstáculo hacia la posición.
+    /// </summary>
+    private bool EvaluateUnwalkableNodesNormal(Vector3 position, Vector3 surfaceNormal, out Vector3 wallNormal, out float penetrationDepth)
+    {
+        wallNormal = Vector3.zero;
+        penetrationDepth = 0f;
+
+        int nodeCount = Graph.GetInterpolationNodes(position, _interpolationNodes);
+        if (nodeCount <= 0) return false;
+
+        Vector3 accumNormal = Vector3.zero;
+        float totalWeight = 0f;
+        float maxPenetration = 0f;
+
+        for (int i = 0; i < nodeCount; i++)
+        {
+            int node = _interpolationNodes[i];
+
+            // Solo evaluamos los nodos NO caminables
+            if (Graph.IsWalkable(node)) continue;
+
+            Vector3 nodePos = Graph.GetNodePosition(node);
+            Vector3 diff = position - nodePos;
+
+            // Proyectamos sobre el plano de la superficie para calcular la dirección tangencial en 2.5D/3D
+            Vector3 planeDiff = Vector3.ProjectOnPlane(diff, surfaceNormal);
+            float dist = planeDiff.magnitude;
+
+            if (dist < 0.0001f)
+            {
+                // Si el agente está exactamente sobre el nodo no caminable, empujar según la superficie
+                planeDiff = -transform.forward;
+                dist = 0.01f;
+            }
+
+            Vector3 dirFromObstacle = planeDiff / dist;
+            float weight = 1f / (dist * dist);
+
+            accumNormal += dirFromObstacle * weight;
+            totalWeight += weight;
+
+            float overlap = BoundaryPadding - dist;
+            if (overlap > maxPenetration)
+            {
+                maxPenetration = overlap;
+            }
+        }
+
+        if (totalWeight > 0f && accumNormal.sqrMagnitude > 0.0001f)
+        {
+            wallNormal = accumNormal.normalized;
+            penetrationDepth = Mathf.Max(0f, maxPenetration);
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary> Calcula la fuerza total acumulada de todos los comportamientos de steering. </summary>

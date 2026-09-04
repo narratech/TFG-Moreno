@@ -241,12 +241,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &2866390
 GameObject:
   m_ObjectHideFlags: 0
@@ -369,12 +370,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &7840486
 GameObject:
   m_ObjectHideFlags: 0
@@ -497,12 +499,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &18626839
 GameObject:
   m_ObjectHideFlags: 0
@@ -849,12 +852,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &26426223
 GameObject:
   m_ObjectHideFlags: 0
@@ -1089,12 +1093,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &29738464
 GameObject:
   m_ObjectHideFlags: 0
@@ -1441,12 +1446,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &40377850
 GameObject:
   m_ObjectHideFlags: 0
@@ -1569,12 +1575,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &45023857
 GameObject:
   m_ObjectHideFlags: 0
@@ -1809,12 +1816,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &63491282
 GameObject:
   m_ObjectHideFlags: 0
@@ -1937,12 +1945,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &65797488
 GameObject:
   m_ObjectHideFlags: 0
@@ -2379,12 +2388,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &91406865
 GameObject:
   m_ObjectHideFlags: 0
@@ -3069,12 +3079,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &127542831
 GameObject:
   m_ObjectHideFlags: 0
@@ -3309,12 +3320,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &136927522
 GameObject:
   m_ObjectHideFlags: 0
@@ -3549,12 +3561,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &141398967
 GameObject:
   m_ObjectHideFlags: 0
@@ -3677,12 +3690,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &143962199
 GameObject:
   m_ObjectHideFlags: 0
@@ -4209,12 +4223,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &167866866
 GameObject:
   m_ObjectHideFlags: 0
@@ -4337,12 +4352,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &181324633
 GameObject:
   m_ObjectHideFlags: 0
@@ -4735,12 +4751,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &195286890
 GameObject:
   m_ObjectHideFlags: 0
@@ -5289,12 +5306,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &234238889
 GameObject:
   m_ObjectHideFlags: 0
@@ -5417,12 +5435,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &234256553
 GameObject:
   m_ObjectHideFlags: 0
@@ -5545,12 +5564,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &241028452
 GameObject:
   m_ObjectHideFlags: 0
@@ -5875,12 +5895,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &249482370
 GameObject:
   m_ObjectHideFlags: 0
@@ -6003,12 +6024,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &250495828
 GameObject:
   m_ObjectHideFlags: 0
@@ -6221,12 +6243,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &261856692
 GameObject:
   m_ObjectHideFlags: 0
@@ -7021,12 +7044,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &299776639
 GameObject:
   m_ObjectHideFlags: 0
@@ -7329,12 +7353,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!43 &314333690
 Mesh:
   m_ObjectHideFlags: 0
@@ -8039,12 +8064,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &336135590
 GameObject:
   m_ObjectHideFlags: 0
@@ -8167,12 +8193,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &344994111
 GameObject:
   m_ObjectHideFlags: 0
@@ -8295,12 +8322,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &348758550
 GameObject:
   m_ObjectHideFlags: 0
@@ -8423,12 +8451,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &348868231
 GameObject:
   m_ObjectHideFlags: 0
@@ -8641,12 +8670,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &358193709
 GameObject:
   m_ObjectHideFlags: 0
@@ -8881,12 +8911,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &374097745
 GameObject:
   m_ObjectHideFlags: 0
@@ -9099,12 +9130,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &381421949
 GameObject:
   m_ObjectHideFlags: 0
@@ -9541,12 +9573,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &399108680
 GameObject:
   m_ObjectHideFlags: 0
@@ -9781,12 +9814,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &409113998
 GameObject:
   m_ObjectHideFlags: 0
@@ -11527,12 +11561,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &546508642
 GameObject:
   m_ObjectHideFlags: 0
@@ -11655,12 +11690,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &546686121
 GameObject:
   m_ObjectHideFlags: 0
@@ -12172,12 +12208,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &576897588
 GameObject:
   m_ObjectHideFlags: 0
@@ -13266,12 +13303,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &639497337
 GameObject:
   m_ObjectHideFlags: 0
@@ -13484,12 +13522,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &648485855
 GameObject:
   m_ObjectHideFlags: 0
@@ -13814,12 +13853,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &664734180
 GameObject:
   m_ObjectHideFlags: 0
@@ -14458,12 +14498,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &680475205
 GameObject:
   m_ObjectHideFlags: 0
@@ -14586,12 +14627,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &680484687
 GameObject:
   m_ObjectHideFlags: 0
@@ -14804,12 +14846,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &702355157
 GameObject:
   m_ObjectHideFlags: 0
@@ -15582,12 +15625,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &727273083
 GameObject:
   m_ObjectHideFlags: 0
@@ -15800,12 +15844,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &731827491
 GameObject:
   m_ObjectHideFlags: 0
@@ -15928,12 +15973,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &732240438
 GameObject:
   m_ObjectHideFlags: 0
@@ -16146,12 +16192,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &748800201
 GameObject:
   m_ObjectHideFlags: 0
@@ -16588,12 +16635,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &768667277
 GameObject:
   m_ObjectHideFlags: 0
@@ -16716,12 +16764,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &776668292
 GameObject:
   m_ObjectHideFlags: 0
@@ -16844,12 +16893,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &787583377
 GameObject:
   m_ObjectHideFlags: 0
@@ -18340,12 +18390,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &877901118
 GameObject:
   m_ObjectHideFlags: 0
@@ -18468,12 +18519,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &890056394
 GameObject:
   m_ObjectHideFlags: 0
@@ -18596,12 +18648,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &898257562
 GameObject:
   m_ObjectHideFlags: 0
@@ -18724,12 +18777,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &901941624
 GameObject:
   m_ObjectHideFlags: 0
@@ -18942,12 +18996,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &906760742
 GameObject:
   m_ObjectHideFlags: 0
@@ -19070,12 +19125,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &912546507
 GameObject:
   m_ObjectHideFlags: 0
@@ -19624,12 +19680,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &930832955
 GameObject:
   m_ObjectHideFlags: 0
@@ -19752,12 +19809,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &933424329
 GameObject:
   m_ObjectHideFlags: 0
@@ -19880,12 +19938,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &946910141
 GameObject:
   m_ObjectHideFlags: 0
@@ -20210,12 +20269,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &973760023
 GameObject:
   m_ObjectHideFlags: 0
@@ -20450,12 +20510,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &976990571
 GameObject:
   m_ObjectHideFlags: 0
@@ -20668,12 +20729,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &992183682
 GameObject:
   m_ObjectHideFlags: 0
@@ -21066,12 +21128,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1001310895
 GameObject:
   m_ObjectHideFlags: 0
@@ -21800,12 +21863,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1037866963
 GameObject:
   m_ObjectHideFlags: 0
@@ -22496,12 +22560,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1116475197
 GameObject:
   m_ObjectHideFlags: 0
@@ -22624,12 +22689,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1121748013
 GameObject:
   m_ObjectHideFlags: 0
@@ -22752,12 +22818,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1122934571
 GameObject:
   m_ObjectHideFlags: 0
@@ -22970,12 +23037,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1142004391
 GameObject:
   m_ObjectHideFlags: 0
@@ -23210,12 +23278,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1144169868
 GameObject:
   m_ObjectHideFlags: 0
@@ -23642,12 +23711,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1179349433
 GameObject:
   m_ObjectHideFlags: 0
@@ -24062,12 +24132,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1201844258
 GameObject:
   m_ObjectHideFlags: 0
@@ -24460,12 +24531,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1213394013
 GameObject:
   m_ObjectHideFlags: 0
@@ -24588,12 +24660,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1231841272
 GameObject:
   m_ObjectHideFlags: 0
@@ -24716,12 +24789,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1239168936
 GameObject:
   m_ObjectHideFlags: 0
@@ -25617,12 +25691,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1278180454
 GameObject:
   m_ObjectHideFlags: 0
@@ -25857,12 +25932,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1292682846
 GameObject:
   m_ObjectHideFlags: 0
@@ -26949,12 +27025,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1333205444
 GameObject:
   m_ObjectHideFlags: 0
@@ -27167,12 +27244,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1348167205
 GameObject:
   m_ObjectHideFlags: 0
@@ -27631,12 +27709,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1358808074
 GameObject:
   m_ObjectHideFlags: 0
@@ -28073,12 +28152,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1380986401
 GameObject:
   m_ObjectHideFlags: 0
@@ -28403,12 +28483,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1399502066
 GameObject:
   m_ObjectHideFlags: 0
@@ -28531,12 +28612,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1407171582
 GameObject:
   m_ObjectHideFlags: 0
@@ -28659,12 +28741,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1418293251
 GameObject:
   m_ObjectHideFlags: 0
@@ -28877,12 +28960,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1427392595
 GameObject:
   m_ObjectHideFlags: 0
@@ -29117,12 +29201,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1435883945
 GameObject:
   m_ObjectHideFlags: 0
@@ -29335,12 +29420,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1448677573
 GameObject:
   m_ObjectHideFlags: 0
@@ -30130,12 +30216,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1487389272
 GameObject:
   m_ObjectHideFlags: 0
@@ -30348,12 +30435,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1495657052
 GameObject:
   m_ObjectHideFlags: 0
@@ -30476,12 +30564,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1511234554
 GameObject:
   m_ObjectHideFlags: 0
@@ -31232,12 +31321,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1553744209
 GameObject:
   m_ObjectHideFlags: 0
@@ -31450,12 +31540,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1570618471
 GameObject:
   m_ObjectHideFlags: 0
@@ -31578,12 +31669,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1576024732
 GameObject:
   m_ObjectHideFlags: 0
@@ -32132,12 +32224,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1608975016
 GameObject:
   m_ObjectHideFlags: 0
@@ -32260,12 +32353,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1633861497
 GameObject:
   m_ObjectHideFlags: 0
@@ -32388,12 +32482,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1634170043
 GameObject:
   m_ObjectHideFlags: 0
@@ -32516,12 +32611,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1657444159
 GameObject:
   m_ObjectHideFlags: 0
@@ -32644,12 +32740,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1668487557
 GameObject:
   m_ObjectHideFlags: 0
@@ -32772,12 +32869,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1677645043
 GameObject:
   m_ObjectHideFlags: 0
@@ -32900,12 +32998,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1678206977
 GameObject:
   m_ObjectHideFlags: 0
@@ -33118,12 +33217,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1694835548
 GameObject:
   m_ObjectHideFlags: 0
@@ -33628,12 +33728,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1737171174
 GameObject:
   m_ObjectHideFlags: 0
@@ -33756,12 +33857,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1746568689
 GameObject:
   m_ObjectHideFlags: 0
@@ -34198,12 +34300,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1775949041
 GameObject:
   m_ObjectHideFlags: 0
@@ -34888,12 +34991,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1822579929
 GameObject:
   m_ObjectHideFlags: 0
@@ -35330,12 +35434,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1829332822
 GameObject:
   m_ObjectHideFlags: 0
@@ -35548,12 +35653,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1840721517
 GameObject:
   m_ObjectHideFlags: 0
@@ -35788,12 +35894,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1842946440
 GameObject:
   m_ObjectHideFlags: 0
@@ -36028,12 +36135,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1869736331
 GameObject:
   m_ObjectHideFlags: 0
@@ -36268,12 +36376,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1897352269
 GameObject:
   m_ObjectHideFlags: 0
@@ -36714,12 +36823,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1922652527
 GameObject:
   m_ObjectHideFlags: 0
@@ -37224,12 +37334,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1957437433
 GameObject:
   m_ObjectHideFlags: 0
@@ -37442,12 +37553,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1965361634
 GameObject:
   m_ObjectHideFlags: 0
@@ -37570,12 +37682,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1969200040
 GameObject:
   m_ObjectHideFlags: 0
@@ -37698,12 +37811,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1973275153
 GameObject:
   m_ObjectHideFlags: 0
@@ -37938,12 +38052,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &1981703017
 GameObject:
   m_ObjectHideFlags: 0
@@ -38479,14 +38594,16 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1999247477}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f6822cf1a31fe464aaea629a9e5dd54b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PortalDebuger
   _provider: {fileID: 1999247484}
-  _color: {r: 1, g: 0, b: 1, a: 1}
+  _portalColor: {r: 0, g: 0, b: 1, a: 1}
+  _connectionColor: {r: 1, g: 0, b: 1, a: 1}
   _sphereRadius: 0.5
+  _lineWidth: 6
   _drawConnections: 1
 --- !u!114 &1999247483
 MonoBehaviour:
@@ -38495,7 +38612,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1999247477}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a62a886c82af3644791879b151940d7b, type: 3}
   m_Name: 
@@ -38556,7 +38673,7 @@ MonoBehaviour:
   _radius: 300.1
   _resolution: 64
   _regionsPerAxis: 4
-  _drawWalkability: 1
+  _drawWalkability: 0
   _drawNodeIndices: 0
   _drawCoordinates: 0
   _drawFace: 0
@@ -38863,12 +38980,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &2037180267
 GameObject:
   m_ObjectHideFlags: 0
@@ -39709,12 +39827,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &2094864353
 GameObject:
   m_ObjectHideFlags: 0
@@ -40241,12 +40360,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &2108488077
 GameObject:
   m_ObjectHideFlags: 0
@@ -40683,12 +40803,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &2137354647
 GameObject:
   m_ObjectHideFlags: 0
@@ -41035,12 +41156,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldAgent
   _provider: {fileID: 1999247484}
-  MaxSpeed: 8
+  MaxSpeed: 16
   MaxForce: 20
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 1
 --- !u!1 &2146693489
 GameObject:
   m_ObjectHideFlags: 0
