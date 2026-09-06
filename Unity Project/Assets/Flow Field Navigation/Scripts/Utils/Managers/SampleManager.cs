@@ -207,13 +207,14 @@ private void EndSelection()
                 activeAgents[i] = agent;
             }
         }
+        Vector3 position = graphProvider.Graph.GetNodePosition(destination);
 
-        FormationGenerator.GenerateAndApply(formationType, formationSpacing, activeAgents, shapeTexture);
+        FormationGenerator.GenerateAndApply(formationType, position, formationSpacing, activeAgents, shapeTexture, graphProvider.Graph);
 
-        ProcessAgents(targetNode);
+        ProcessECSAgents(targetNode);
     }
 
-    public void ProcessAgents(int destinationNode)
+    public void ProcessECSAgents(int destinationNode)
     {
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
@@ -229,7 +230,9 @@ private void EndSelection()
             entityManager.SetComponentData(entity, agent);
         }
 
-        FormationGenerator.GenerateAndApply(formationType, formationSpacing, query, entityManager, shapeTexture);
+        Vector3 position = graphProvider.Graph.GetNodePosition(destinationNode);
+
+        FormationGenerator.GenerateAndApply(formationType, position, formationSpacing, query, entityManager, shapeTexture, graphProvider.Graph);
     }
 
     // --- GESTIÓN DE SELECCIÓN DE UNIDADES ---

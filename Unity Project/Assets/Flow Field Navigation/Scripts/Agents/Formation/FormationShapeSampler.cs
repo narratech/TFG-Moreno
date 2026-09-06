@@ -3,9 +3,9 @@ using UnityEngine;
 
 public static class FormationShapeSampler
 {
-    private static float formationWidth = 100f;
-    private static float formationDepth = 100f;
-    private static float rotationAngle = 90f;
+    private static float formationWidth = 10f;
+    private static float formationDepth = 10f;
+    private static float rotationAngle = -90f;
 
     public static IReadOnlyList<Vector3> GenerateSample(
         int unitCount,
