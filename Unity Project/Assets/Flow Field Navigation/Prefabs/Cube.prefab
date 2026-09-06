@@ -53,11 +53,11 @@ MonoBehaviour:
   _provider: {fileID: 0}
   MaxSpeed: 8
   MaxForce: 20
-  MinSteeringForce: 0.5
   MaxAngularSpeed: 240
   AngularFrequency: 12
   AngularDamping: 1
   TurnTightness: 2
+  BoundaryPadding: 0.15
 --- !u!114 &512252183425919639
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -307,7 +307,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: ccedf3b411c7767479f68bddd5927a46, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

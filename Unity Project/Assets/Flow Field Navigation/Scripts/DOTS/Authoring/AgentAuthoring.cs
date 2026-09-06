@@ -4,6 +4,9 @@ using Unity.Mathematics;
 
 public class AgentAuthoring : MonoBehaviour
 {
+    [Header("Graph Settings")]
+    public int graphId = 0;
+
     [Header("Movement Settings")]
     public float speed = 4.0f;
 
@@ -27,7 +30,7 @@ public class AgentAuthoring : MonoBehaviour
 
             AddComponent(entity, new AgentComponent
             {
-                GraphId = 0,
+                GraphId = authoring.graphId,
                 NextRouteId = -1,
                 RouteId = -1,
 

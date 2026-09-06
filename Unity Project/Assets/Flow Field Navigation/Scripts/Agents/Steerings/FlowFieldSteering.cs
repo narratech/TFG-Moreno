@@ -28,6 +28,37 @@ public class FlowFieldSteering : IAgentSteering
     private float _time = 0f;
     private int _currentSteps = 0;
 
+    // Propiedades y métodos públicos para el registro de precisión
+    public Vector3 FormationOffset => _formationOffset;
+    public int CurrentSteps => _currentSteps;
+
+    public float GetAbsoluteMaxSteps()
+    {
+        Vector3 desiredOffset = GetRealOffset(_formationOffset);
+        float offsetLen = desiredOffset.magnitude;
+        float stepSize = StepSize > 0f ? StepSize : 1f;
+        return Mathf.Max(1, Mathf.CeilToInt(offsetLen / stepSize));
+    }
+
+    public Vector3 GetConstrainedSamplePosition()
+    {
+        Vector3 desiredOffset = GetRealOffset(_formationOffset);
+        float offsetLen = desiredOffset.magnitude;
+        if (offsetLen < 0.001f) return Agent.transform.position;
+
+        Vector3 desiredOffsetDir = desiredOffset.normalized;
+        Vector3 samplePos = Agent.transform.position + desiredOffsetDir * (_currentSteps * StepSize);
+
+        // Aplicar constraint del grafo a la posición sampleada
+        Quaternion dummyRot = Quaternion.identity;
+        Vector3 dummyVel = Vector3.zero;
+        if (Agent != null && Agent.Graph != null)
+        {
+            Agent.Graph.ConstrainPositionAndRotation(ref samplePos, ref dummyVel, ref dummyRot);
+        }
+        return samplePos;
+    }
+
     public override Vector3 GetForce()
     {
         if (Agent == null || Agent.Graph == null)
