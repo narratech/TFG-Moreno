@@ -32,3 +32,15 @@ Thumbs.db
 *.mov
 *.avi
 *.exe
+
+# Entornos virtuales
+.venv/
+venv/
+ENV/
+
+# Caché de Python
+__pycache__/
+*.pyc
+
+# Archivos de entorno/claves (si los usas)
+.env

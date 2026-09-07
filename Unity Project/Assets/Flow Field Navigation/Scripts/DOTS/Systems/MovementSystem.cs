@@ -57,6 +57,10 @@ public partial struct ProcessMovementJob : IJobEntity
         // COMPROBACIÓN: ¿Está el agente en un nodo no transitable?
         // --------------------------------------------------
         int currentNode = NavGraphAPI.GetClosestNode(graph, currentPos);
+
+        // UNIFICACIÓN: Guardar el nodo actual para sincronización y telemetría
+        agent.CurrentNode = currentNode;
+
         bool isCurrentNodeBlocked = currentNode >= 0 && !NavGraphAPI.IsWalkable(graph, Walkability, currentNode);
 
         // Si está en un nodo bloqueado, ignoramos el offset de formación y reseteamos el temporizador
@@ -222,10 +226,12 @@ public partial struct ProcessMovementJob : IJobEntity
         if (offsetLen < 0.001f)
         {
             agent.CurrentSteps = 0;
+            agent.MaxSteps = 0; // UNIFICACIÓN: Actualizar MaxSteps
             return;
         }
 
         int absoluteMaxSteps = (int)math.ceil(offsetLen / stepSize);
+        agent.MaxSteps = absoluteMaxSteps; // UNIFICACIÓN: Guardar MaxSteps en el componente
 
         if (absoluteMaxSteps <= 0)
         {

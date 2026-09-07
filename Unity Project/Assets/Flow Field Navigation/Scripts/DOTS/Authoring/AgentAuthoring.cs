@@ -74,4 +74,7 @@ public struct AgentComponent : IComponentData
     public float Timer;
     public float3 LastPosition;
     public bool IsInTransitableNode;
+
+    public int MaxSteps;
+    public int CurrentNode;
 }

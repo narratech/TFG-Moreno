@@ -55,7 +55,6 @@ public class FormationRecorder : MonoBehaviour
     public void RecordAndSaveData()
     {
         AccuracyDataset dataset = new AccuracyDataset();
-        // Sustituir la línea obsoleta:
         NavAgent[] navAgents = FindObjectsByType<NavAgent>(FindObjectsSortMode.None);
 
         foreach (var agent in navAgents)
@@ -89,7 +88,17 @@ public class FormationRecorder : MonoBehaviour
         }
 
         string jsonString = JsonUtility.ToJson(dataset, true);
-        string filePath = Path.Combine(Application.persistentDataPath, _fileName);
+
+        // Construir la ruta completa: Assets/Tests/Metrics/data
+        string folderPath = Path.Combine(Application.dataPath, "Tests", "Metrics", "data");
+
+        // Crear el directorio si no existe previamente
+        if (!Directory.Exists(folderPath))
+        {
+            Directory.CreateDirectory(folderPath);
+        }
+
+        string filePath = Path.Combine(folderPath, _fileName);
         File.WriteAllText(filePath, jsonString);
 
         Debug.Log($"[AgentAccuracyRecorder] Datos de precisión guardados en: {filePath}");
