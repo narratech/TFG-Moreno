@@ -41,4 +41,23 @@ public class ECSAgentSpawnerEditor : Editor
     }
 }
 
+[CustomEditor(typeof(NavMeshAgentSpawner))]
+public class NavMeshAgentSpawnerEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        DrawDefaultInspector();
+
+        NavMeshAgentSpawner spawner = (NavMeshAgentSpawner)target;
+
+        GUILayout.Space(10);
+
+        if (GUILayout.Button("Spawn"))
+            spawner.Spawn();
+
+        if (GUILayout.Button("Clear"))
+            spawner.Clear();
+    }
+}
+
 #endif

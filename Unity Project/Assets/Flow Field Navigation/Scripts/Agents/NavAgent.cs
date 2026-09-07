@@ -82,52 +82,60 @@ public class NavAgent : MonoBehaviour
 
         SteeringForce = ComputeSteering();
 
-        // 1. Obtener la normal del plano de movimiento actual
+        // 1. Detectar si el entorno es volumétrico (sin normal de superficie definida)
         Vector3 surfaceNormal = Graph.GetNodeNormal(CurrentNode);
-        if (surfaceNormal.sqrMagnitude < 0.0001f) surfaceNormal = Vector3.up;
-        else surfaceNormal.Normalize();
+        bool isVolumetric = surfaceNormal.sqrMagnitude < 0.0001f;
 
-        Vector3 desiredDirection = Vector3.ProjectOnPlane(SteeringForce, surfaceNormal);
+        Vector3 desiredDirection = SteeringForce;
 
-        // 2. Evaluar colisión/restricción con nodos interpolables no caminables
-        if (EvaluateUnwalkableNodesNormal(transform.position, surfaceNormal, out Vector3 wallNormal, out float penetrationDepth))
+        if (!isVolumetric)
         {
-            // Eliminar la componente que penetra el obstáculo en la fuerza deseada
+            // Solo proyectamos sobre el plano si estamos sobre una superficie/terreno 2.5D
+            surfaceNormal.Normalize();
+            desiredDirection = Vector3.ProjectOnPlane(SteeringForce, surfaceNormal);
+        }
+
+        // 2. Evaluar restricción de paredes/obstáculos
+        if (EvaluateUnwalkableNodesNormal(transform.position, isVolumetric ? Vector3.zero : surfaceNormal, out Vector3 wallNormal, out float penetrationDepth))
+        {
             if (Vector3.Dot(desiredDirection, wallNormal) < 0f)
             {
                 desiredDirection = Vector3.ProjectOnPlane(desiredDirection, wallNormal);
             }
         }
 
-        // 3. Orientación y rotación
+        // 3. Orientación y rotación volumétrica vs. superficie
         if (desiredDirection.sqrMagnitude > 0.0001f)
         {
             desiredDirection.Normalize();
 
-            Vector3 currentForward = Vector3.ProjectOnPlane(transform.forward, surfaceNormal);
-            if (currentForward.sqrMagnitude < 0.0001f) currentForward = desiredDirection;
-            else currentForward.Normalize();
+            if (isVolumetric)
+            {
+                // Rotación 3D completa (Pitch, Yaw, Roll) usando Quaternion.Slerp/RotateTowards
+                Quaternion targetRotation = Quaternion.LookRotation(desiredDirection, transform.up);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, MaxAngularSpeed * Time.deltaTime);
 
-            float angleDifference = Vector3.SignedAngle(currentForward, desiredDirection, surfaceNormal);
+                Vector3 targetVelocity = transform.forward * MaxSpeed;
+                Velocity = Vector3.MoveTowards(Velocity, targetVelocity, MaxForce * Time.deltaTime);
+            }
+            else
+            {
+                // Lógica original de rotación en plano 2.5D
+                Vector3 currentForward = Vector3.ProjectOnPlane(transform.forward, surfaceNormal).normalized;
+                float angleDifference = Vector3.SignedAngle(currentForward, desiredDirection, surfaceNormal);
 
-            float omega = AngularFrequency;
-            float angularAcceleration = omega * omega * angleDifference - 2f * AngularDamping * omega * _currentAngularSpeed;
+                float omega = AngularFrequency;
+                float angularAcceleration = omega * omega * angleDifference - 2f * AngularDamping * omega * _currentAngularSpeed;
 
-            _currentAngularSpeed += angularAcceleration * Time.deltaTime;
-            _currentAngularSpeed = Mathf.Clamp(_currentAngularSpeed, -MaxAngularSpeed, MaxAngularSpeed);
+                _currentAngularSpeed += angularAcceleration * Time.deltaTime;
+                _currentAngularSpeed = Mathf.Clamp(_currentAngularSpeed, -MaxAngularSpeed, MaxAngularSpeed);
 
-            transform.Rotate(surfaceNormal, _currentAngularSpeed * Time.deltaTime, Space.World);
+                transform.Rotate(surfaceNormal, _currentAngularSpeed * Time.deltaTime, Space.World);
 
-            float angle = Mathf.Abs(angleDifference);
-            float speedFactor = Mathf.Clamp01(1f - angle / 120f);
-            speedFactor = Mathf.Pow(speedFactor, TurnTightness);
-
-            Vector3 movementForward = Vector3.ProjectOnPlane(transform.forward, surfaceNormal);
-            if (movementForward.sqrMagnitude > 0.0001f) movementForward.Normalize();
-            else movementForward = desiredDirection;
-
-            Vector3 targetVelocity = movementForward * (MaxSpeed * speedFactor);
-            Velocity = Vector3.MoveTowards(Velocity, targetVelocity, MaxForce * Time.deltaTime);
+                float speedFactor = Mathf.Pow(Mathf.Clamp01(1f - Mathf.Abs(angleDifference) / 120f), TurnTightness);
+                Vector3 targetVelocity = transform.forward * (MaxSpeed * speedFactor);
+                Velocity = Vector3.MoveTowards(Velocity, targetVelocity, MaxForce * Time.deltaTime);
+            }
         }
         else
         {
@@ -135,30 +143,19 @@ public class NavAgent : MonoBehaviour
             _currentAngularSpeed = Mathf.MoveTowards(_currentAngularSpeed, 0f, MaxAngularSpeed * Time.deltaTime);
         }
 
-        // 4. Aplicar restricción de normal de pared sobre la VELOCIDAD actual
+        // 4. Integración y restricciones finales...
         if (wallNormal.sqrMagnitude > 0.0001f)
         {
-            // Si la velocidad va en dirección a la pared, eliminamos la componente perpendicular (normal)
             float velDot = Vector3.Dot(Velocity, wallNormal);
-            if (velDot < 0f)
-            {
-                Velocity -= wallNormal * velDot; // Proyección tangencial pura
-            }
-
-            // Corrección sutil de posición si el agente sobrepasa la tolerancia del borde
-            if (penetrationDepth > 0f)
-            {
-                transform.position += wallNormal * penetrationDepth;
-            }
+            if (velDot < 0f) Velocity -= wallNormal * velDot;
+            if (penetrationDepth > 0f) transform.position += wallNormal * penetrationDepth;
         }
 
-        // 5. Aplicar integración de movimiento
         if (Velocity.sqrMagnitude > 0.0001f)
         {
             transform.position += Velocity * Time.deltaTime;
         }
 
-        // 6. Restricciones finales del grafo
         Vector3 position = transform.position;
         Quaternion rotation = transform.rotation;
         Vector3 velocity = Velocity;
@@ -171,7 +168,7 @@ public class NavAgent : MonoBehaviour
 
     /// <summary>
     /// Consulta los nodos interpolables alrededor de la posición.
-    /// Si hay nodos no caminables, calcula la normal media ponderada del obstáculo hacia la posición.
+    /// Soporta tanto entornos 2.5D (proyectando sobre la normal de superficie) como volumétricos puros (3D).
     /// </summary>
     private bool EvaluateUnwalkableNodesNormal(Vector3 position, Vector3 surfaceNormal, out Vector3 wallNormal, out float penetrationDepth)
     {
@@ -185,6 +182,9 @@ public class NavAgent : MonoBehaviour
         float totalWeight = 0f;
         float maxPenetration = 0f;
 
+        // Si la normal es prácticamente cero, asumimos un entorno volumétrico puro
+        bool isVolumetric = surfaceNormal.sqrMagnitude < 0.0001f;
+
         for (int i = 0; i < nodeCount; i++)
         {
             int node = _interpolationNodes[i];
@@ -195,18 +195,25 @@ public class NavAgent : MonoBehaviour
             Vector3 nodePos = Graph.GetNodePosition(node);
             Vector3 diff = position - nodePos;
 
-            // Proyectamos sobre el plano de la superficie para calcular la dirección tangencial en 2.5D/3D
-            Vector3 planeDiff = Vector3.ProjectOnPlane(diff, surfaceNormal);
-            float dist = planeDiff.magnitude;
+            // En volumétrico usamos el vector 3D real; en superficies, lo aplanamos sobre el plano del suelo
+            Vector3 collisionDiff = isVolumetric ? diff : Vector3.ProjectOnPlane(diff, surfaceNormal);
+            float dist = collisionDiff.magnitude;
 
             if (dist < 0.0001f)
             {
-                // Si el agente está exactamente sobre el nodo no caminable, empujar según la superficie
-                planeDiff = -transform.forward;
+                // Si el agente está exactamente en el mismo punto que el nodo no caminable
+                collisionDiff = isVolumetric ? -transform.forward : Vector3.ProjectOnPlane(-transform.forward, surfaceNormal);
+
+                // Fallback de seguridad extrema si no hay un forward válido
+                if (collisionDiff.sqrMagnitude < 0.0001f)
+                {
+                    collisionDiff = isVolumetric ? UnityEngine.Random.onUnitSphere : Vector3.ProjectOnPlane(UnityEngine.Random.onUnitSphere, surfaceNormal);
+                }
+
                 dist = 0.01f;
             }
 
-            Vector3 dirFromObstacle = planeDiff / dist;
+            Vector3 dirFromObstacle = collisionDiff / dist;
             float weight = 1f / (dist * dist);
 
             accumNormal += dirFromObstacle * weight;

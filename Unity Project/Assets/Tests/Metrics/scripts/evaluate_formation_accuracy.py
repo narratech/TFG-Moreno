@@ -16,8 +16,8 @@ def vector_distance(v1, v2):
 def evaluate_single_file(data_dir, json_filename, position_padding=1.5, offset_threshold=0.95):
     json_path = os.path.join(data_dir, json_filename)
     
-    # Extrae el sufijo X (ej. formation_data1.json -> "1", formation_data.json -> "")
-    suffix = json_filename[len("formation_data"):-5]
+    # Extrae el sufijo X (ej. FormationData1.json -> "1", FormationData.json -> "")
+    suffix = json_filename[len("FormationData"):-5]
 
     data = load_json_data(json_path)
     if not data or 'agents' not in data:
@@ -87,12 +87,12 @@ def evaluate_agents(position_padding=1.5, offset_threshold=0.95):
         print(f"Error: Data directory not found at '{data_dir}'")
         return
 
-    # Buscar todos los archivos que coincidan con formation_data*.json
-    search_pattern = os.path.join(data_dir, "formation_data*.json")
+    # Buscar todos los archivos que coincidan con FormationData*.json
+    search_pattern = os.path.join(data_dir, "FormationData*.json")
     files = glob.glob(search_pattern)
-
+    
     if not files:
-        print(f"No files matching 'formation_data*.json' found in '{data_dir}'.")
+        print(f"No files matching 'FormationData*.json' found in '{data_dir}'.")
         return
 
     # Procesar cada archivo en orden numérico/alfabético

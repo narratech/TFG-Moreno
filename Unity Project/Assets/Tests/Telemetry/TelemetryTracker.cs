@@ -21,7 +21,7 @@ public class TelemetryTracker : MonoBehaviour
     private float _timer = 0f;
 
     private void Awake()
-    {
+    {  
         _writer = new TelemetryWriter(fileName);
     }
 

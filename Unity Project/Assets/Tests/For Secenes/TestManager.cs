@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -126,10 +127,12 @@ public class TestManager : MonoBehaviour
 
     private void ProcessECSAgents(int destinationNode, Vector3 nodeWorldPosition)
     {
+        Debug.Log("[TestManager] Procesando agentes ECS...");
         if (World.DefaultGameObjectInjectionWorld == null) return;
 
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
         using EntityQuery query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<AgentComponent>());
+        Debug.Log($"[TestManager] Agentes ECS encontrados: {query.CalculateEntityCount()}");
 
         if (query.IsEmptyIgnoreFilter) return;
 
@@ -157,11 +160,22 @@ public class TestManager : MonoBehaviour
         NavMeshAgent[] navMeshAgents = Object.FindObjectsByType<NavMeshAgent>(FindObjectsSortMode.None);
         if (navMeshAgents.Length == 0) return;
 
+        List<Vector3> offsets = FormationGenerator.Generate(
+            formationType, 
+            navMeshAgents.Length, 
+            formationSpacing, 
+            shapeTexture, 
+            destination, 
+            graphProvider.Graph);
+
+        int index = 0;
         foreach (NavMeshAgent agent in navMeshAgents)
         {
             if (agent != null && agent.isOnNavMesh)
             {
-                agent.SetDestination(destination);
+                Vector3 offsetDestination = destination + offsets[index];
+                agent.SetDestination(offsetDestination);
+                index++;
             }
         }
     }

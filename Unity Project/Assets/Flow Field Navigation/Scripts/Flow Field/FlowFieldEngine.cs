@@ -6,7 +6,7 @@ using static FlowFieldManager;
 
 public static class FlowFieldEngine
 {
-    private static int NUM_REGIONLEVELS = 2; // Este valor indica cuantos niveles de flowfields de regiones genereamos en serie
+    private static int NUM_REGIONLEVELS = 2; // Este valor indica cuantos niveles de flowfields de regiones generamos en serie
 
     public static FlowField GenerateFlowPath(INavGraph graph, int targetNode, int initialRegion)
     {
@@ -40,8 +40,8 @@ public static class FlowFieldEngine
         if (route.FlowFields.TryGetValue(initialRegion, out var cached)) return cached;
 
         // --- FASE 1: IDENTIFICACIÓN DE REGIONES ---
-        HashSet<int> insideRegions = new HashSet<int>(); // Regiones que contienen el target o están dentro del rango de cálculo
-        HashSet<int> frontierRegions = new HashSet<int> { initialRegion }; // Regiones que forman la frontera de cálculo, empezando por la inicial
+        HashSet<int> insideRegions = new HashSet<int>(); 
+        HashSet<int> frontierRegions = new HashSet<int> { initialRegion }; 
         HierarchicalRouter router = manager.GetContext(graph).Router;
         var portalDistMap = route.DistanceMaps;
 
@@ -52,15 +52,12 @@ public static class FlowFieldEngine
             {
                 if (insideRegions.Contains(rid)) continue;
 
-                // Si ya está cacheada, será un sumidero (Sink)
                 if (route.FlowFields.ContainsKey(rid))
                 {
                     nextIterationRegs.Add(rid);
                     continue;
                 }
 
-                // IMPORTANTE: Si es la región del target, la marcamos para calcular
-                // pero NO expandimos sus vecinos (porque ya llegamos al final)
                 if (rid == targetRegion)
                 {
                     insideRegions.Add(rid);
@@ -80,7 +77,6 @@ public static class FlowFieldEngine
         // --- FASE 2: SUMIDEROS ---
         Dictionary<int, float> destinations = new Dictionary<int, float>();
 
-        // EL TARGET SIEMPRE VA (si alguna de las regiones a calcular es la suya)
         if (insideRegions.Contains(targetRegion))
         {
             destinations[targetNode] = 0f;
@@ -88,11 +84,8 @@ public static class FlowFieldEngine
 
         foreach (int rid in frontierRegions)
         {
-            // Si la región frontera es la del target y no la calculamos en esta iteración
             if (rid == targetRegion) destinations[targetNode] = 0f;
 
-            // Si la región está cacheada, DEBERÍAS intentar leer sus portales (opcional pero recomendado)
-            // Por ahora, usamos tu lógica de portalDistMap que es segura:
             List<PortalNode> entryPortals = router.SelectExitPortals(rid, targetRegion, portalDistMap);
             foreach (var portal in entryPortals)
             {
@@ -109,7 +102,6 @@ public static class FlowFieldEngine
 
         // --- FASE 3: CÁLCULO ---
         Dictionary<int, FlowField> regionDataMap = new Dictionary<int, FlowField>();
-        // Necesitamos crear FlowFields tanto para las nuevas como para las frontera para que Dijkstra fluya
         HashSet<int> allRelevantRegs = new HashSet<int>(insideRegions);
         foreach (int rid in frontierRegions) allRelevantRegs.Add(rid);
 
@@ -117,7 +109,7 @@ public static class FlowFieldEngine
             regionDataMap[rid] = new FlowField(graph.GetRegionSize(rid), rid);
 
         GenerateIntegrationFields(graph, allRelevantRegs, destinations, regionDataMap);
-        GenerateVectorFields(graph, regionDataMap);
+        GenerateVectorFields(graph, regionDataMap, targetNode);
 
         // --- FASE 4: PERSISTENCIA ---
         foreach (int rid in insideRegions)
@@ -148,13 +140,8 @@ public static class FlowFieldEngine
 
     public struct NeighborData
     {
-        // La posición absoluta en el mundo (Vector3 para ser agnóstico 2D/3D)
         public Vector3 Pos;
-
-        // El valor acumulado en el Integration Field (T)
         public float T;
-
-        // El coste intrínseco de este nodo
         public float Cost;
 
         public NeighborData(Vector3 pos, float t, float cost = 1.0f)
@@ -166,14 +153,13 @@ public static class FlowFieldEngine
     }
 
     private static void GenerateIntegrationFields(
-    INavGraph graph,
-    HashSet<int> regionIds,
-    Dictionary<int, float> destinations,
-    Dictionary<int, FlowField> regionDataMap)
+        INavGraph graph,
+        HashSet<int> regionIds,
+        Dictionary<int, float> destinations,
+        Dictionary<int, FlowField> regionDataMap)
     {
         PriorityQueue<int, float> pq = new PriorityQueue<int, float>();
 
-        // 1. Sembramos los destinos (igual que antes)
         foreach (var kvp in destinations)
         {
             int globalNode = kvp.Key;
@@ -186,12 +172,10 @@ public static class FlowFieldEngine
             }
         }
 
-        // 2. Bucle Fast Marching
         while (pq.Count > 0)
         {
             int currGlobal = pq.Dequeue();
 
-            // En Fast Marching, expandimos hacia los vecinos para RE-CALCULARLOS
             foreach (int neighborGlobal in graph.GetNeighbors(currGlobal))
             {
                 int nRegion = graph.GetRegionId(neighborGlobal);
@@ -199,9 +183,6 @@ public static class FlowFieldEngine
                 if (!regionIds.Contains(nRegion) || !graph.IsWalkable(neighborGlobal))
                     continue;
 
-                // --- PASO CLAVE: Recopilar vecinos válidos ---
-                // Para calcular el coste de 'neighborGlobal', miramos sus propios vecinos 
-                // que ya tienen un coste asignado (incluyendo 'currGlobal').
                 List<NeighborData> acceptedNeighbors = new List<NeighborData>();
 
                 foreach (int nOfN in graph.GetNeighbors(neighborGlobal))
@@ -224,19 +205,13 @@ public static class FlowFieldEngine
                     }
                 }
 
-                // --- CALCULO EIKONAL ---
                 float nodeCost = graph.GetNodeCost(neighborGlobal);
                 Vector3 targetPos = graph.GetNodePosition(neighborGlobal);
 
-                if (acceptedNeighbors.Count == 0)
-                {
-                    Debug.Log($"Nodo {neighborGlobal} sin vecinos aceptados");
-                    continue;
-                }
-                // Usamos la función que creamos antes
+                if (acceptedNeighbors.Count == 0) continue;
+
                 float newDist = CalculateEikonalCost(targetPos, acceptedNeighbors, nodeCost);
 
-                // Si el nuevo coste calculado es mejor, actualizamos y encolamos
                 int nLocal = graph.GetLocalNode(neighborGlobal);
                 if (newDist < regionDataMap[nRegion].IntegrationField[nLocal])
                 {
@@ -249,10 +224,8 @@ public static class FlowFieldEngine
 
     private static float CalculateEikonalCost(Vector3 targetPos, List<NeighborData> neighbors, float localCost)
     {
-        // Ordenar vecinos de menor a mayor coste (Causalidad)
         var sorted = neighbors.OrderBy(n => n.T).ToList();
 
-        // Si estamos en 3D, intentamos usar 3 vecinos para formar un tetraedro
         if (sorted.Count >= 3)
         {
             float t = SolveQuadraticND(targetPos, sorted.Take(3).ToList(), localCost);
@@ -260,7 +233,6 @@ public static class FlowFieldEngine
                 return t;
         }
 
-        // Si falla o estamos en 2D, intentamos con 2 vecinos (Triángulo)
         if (sorted.Count >= 2)
         {
             float t = SolveQuadraticND(targetPos, sorted.Take(2).ToList(), localCost);
@@ -268,16 +240,11 @@ public static class FlowFieldEngine
                 return t;
         }
 
-        // Aquí estamos en 1D Dijkstra puro (el vecino más barato + distancia)
         return sorted[0].T + (Vector3.Distance(targetPos, sorted[0].Pos) * localCost);
     }
 
     private static float SolveQuadraticND(Vector3 pC, List<NeighborData> pts, float f)
     {
-        // Construimos el sistema basado en distancias relativas
-        // Para simplificar a cualquier dimensión usamos una aproximación de Gram-Schmidt 
-        // o resolvemos el sistema lineal: (M^T * M) u = 1
-
         int n = pts.Count;
         Vector3[] v = new Vector3[n];
         float[] t = new float[n];
@@ -288,14 +255,8 @@ public static class FlowFieldEngine
             t[i] = pts[i].T;
         }
 
-        // Aquí resolvemos: sum( (Tc - Ti) / dist_i )^2 = f^2
-        // En un TFG, la forma más limpia es usar la fórmula de "Kimmel":
-        // a*Tc^2 + b*Tc + c = 0
-
         float a = 0, b = 0, c = -f * f;
 
-        // Simplificación para ejes ortonormales (fácil de entender):
-        // Si no son ortonormales, se usa el tensor métrico del simplex.
         for (int i = 0; i < n; i++)
         {
             float d = v[i].magnitude;
@@ -312,23 +273,19 @@ public static class FlowFieldEngine
 
     private static bool IsCausal(float potential, List<NeighborData> pts, Vector3 pC)
     {
-        // el potencial calculado debe ser mayor que el de todos los vecinos que lo crearon
         foreach (var p in pts)
         {
             if (potential <= p.T) return false;
         }
-
-        // Verificación de Ángulo: ¿viene la onda desde el interior del simplex?
-        // Se calcula viendo si el gradiente cae dentro de las caras del triángulo/tetraedro
         return true;
     }
 
-    private static void GenerateVectorFields(INavGraph graph, Dictionary<int, FlowField> regionDataMap)
+    private static void GenerateVectorFields(INavGraph graph, Dictionary<int, FlowField> regionDataMap, int targetNode)
     {
-        // Creamos el set de regiones una sola vez para búsqueda rápida O(1)
         HashSet<int> regionSet = new HashSet<int>(regionDataMap.Keys);
+        int targetRegion = graph.GetRegionId(targetNode);
+        int targetLocal = graph.GetLocalNode(targetNode);
 
-        // Iteramos por cada par Región-FlowField en nuestro set
         foreach (var kvp in regionDataMap)
         {
             int regionId = kvp.Key;
@@ -338,7 +295,13 @@ public static class FlowFieldEngine
             {
                 int globalIdx = graph.GetGlobalNode(localIdx, regionId);
                 if (globalIdx == -1 || !graph.IsWalkable(globalIdx)) continue;
-                if (data.IntegrationField[localIdx] == 0) continue;
+
+                // Si es exactamente el nodo objetivo, su vector de flujo debe apuntar a cero para facilitar la detención
+                if (regionId == targetRegion && localIdx == targetLocal)
+                {
+                    data.FlowDirections[localIdx] = Vector3.zero;
+                    continue;
+                }
 
                 Vector3 currentPos = graph.GetNodePosition(globalIdx);
                 Vector3 flowDir = Vector3.zero;
@@ -348,7 +311,6 @@ public static class FlowFieldEngine
                 {
                     int nRegionId = graph.GetRegionId(neighborGlobal);
 
-                    // Si el vecino pertenece a alguna de las regiones del Multi-FF
                     if (regionSet.Contains(nRegionId))
                     {
                         int nLocal = graph.GetLocalNode(neighborGlobal);
