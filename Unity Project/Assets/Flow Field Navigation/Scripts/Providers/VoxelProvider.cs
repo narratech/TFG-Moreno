@@ -1,9 +1,10 @@
+using UnityEditor;
 using UnityEngine;
 
 [Icon("Assets/Gizmos/Voxel-Icon.png")]
 public class VoxelProvider : NavGraphProvider
 {
-    [Header("Configuración del Voxel 3D")]
+    [Header("Settings")]
     [SerializeField] private int _width = 30;
     [SerializeField] private int _height = 10;
     [SerializeField] private int _depth = 30;
@@ -14,27 +15,19 @@ public class VoxelProvider : NavGraphProvider
 
     [SerializeField] private float _cellSize = 1.0f;
 
-    [Header("Debug Settings")]
-    [SerializeField] private bool _drawWalkability = true;
-    [SerializeField] private bool _drawNodeIndices = false;
-    [SerializeField] private bool _drawCoordinates = false;
-
-    [Header("Scan Options")]
-    [Range(0, 1)]
-    [SerializeField] private float _scanFactor = 1.0f;
-
     public Grid3DNavGraph VoxelGraph => Graph as Grid3DNavGraph;
+
+    protected override bool ValidateConfiguration()
+    {
+        return _width > 0 && _height > 0 && _depth > 0 &&
+               _regionWidth > 0 && _regionHeight > 0 && _regionDepth > 0 && _cellSize > 0f;
+    }
 
     protected override INavGraph CreateGraph()
     {
         return new Grid3DNavGraph(
-            _width,
-            _height,
-            _depth,
-            _cellSize,
-            _regionWidth,
-            _regionHeight,
-            _regionDepth,
+            _width, _height, _depth, _cellSize,
+            _regionWidth, _regionHeight, _regionDepth,
             transform.position
         );
     }
@@ -55,26 +48,39 @@ public class VoxelProvider : NavGraphProvider
         }
     }
 
+    protected override void OnValidate()
+    {
+        base.OnValidate();
+        _width = Mathf.Max(1, _width);
+        _height = Mathf.Max(1, _height);
+        _depth = Mathf.Max(1, _depth);
+        _regionWidth = Mathf.Max(1, _regionWidth);
+        _regionHeight = Mathf.Max(1, _regionHeight);
+        _regionDepth = Mathf.Max(1, _regionDepth);
+        _cellSize = Mathf.Max(0.1f, _cellSize);
+    }
+
     private void OnDrawGizmosSelected()
     {
         if (Graph == null)
         {
             DrawStaticGrid();
-            return;
+            DrawRegions();
         }
-
-        if (_drawWalkability)
+        else
         {
-            DrawRuntimeGrid();
+            if (_drawWalkability) DrawRuntimeGrid();
+            DrawRegions();
         }
 
-        DrawRegions();
+#if UNITY_EDITOR
+        DrawDebugLabels();
+#endif
     }
 
     private void DrawStaticGrid()
     {
         Gizmos.color = new Color(1f, 1f, 1f, 0.1f);
-
         for (int x = 0; x < _width; x++)
         {
             for (int y = 0; y < _height; y++)
@@ -103,7 +109,6 @@ public class VoxelProvider : NavGraphProvider
     private void DrawRegions()
     {
         Gizmos.color = Color.blue;
-
         for (int x = 0; x < _width; x += _regionWidth)
         {
             for (int y = 0; y < _height; y += _regionHeight)
@@ -113,9 +118,52 @@ public class VoxelProvider : NavGraphProvider
                     Vector3 pos = transform.position + new Vector3(x * _cellSize, y * _cellSize, z * _cellSize);
                     Vector3 size = new Vector3(_regionWidth * _cellSize, _regionHeight * _cellSize, _regionDepth * _cellSize);
 
-                    Gizmos.DrawWireCube(pos + size / 2 - Vector3.one * (_cellSize / 2), size);
+                    Gizmos.DrawWireCube(pos + size / 2f - Vector3.one * (_cellSize / 2f), size);
                 }
             }
         }
     }
+
+#if UNITY_EDITOR
+    private void DrawDebugLabels()
+    {
+        if (!_drawNodeIndices && !_drawCoordinates) return;
+
+        Camera cam = SceneView.lastActiveSceneView?.camera;
+        if (cam == null) return;
+
+        Handles.color = Color.white;
+        int totalNodes = Graph != null ? Graph.NodeCount : _width * _height * _depth;
+        int areaXY = _width * _height;
+
+        for (int i = 0; i < totalNodes; i++)
+        {
+            int z = i / areaXY;
+            int remainder = i % areaXY;
+            int y = remainder / _width;
+            int x = remainder % _width;
+
+            Vector3 pos = Graph != null
+                ? Graph.GetNodePosition(i)
+                : transform.position + new Vector3(x * _cellSize, y * _cellSize, z * _cellSize);
+
+            // Optimización de distancia y visibilidad
+            if (Vector3.Distance(cam.transform.position, pos) > 20f) continue;
+            if (Vector3.Dot(cam.transform.forward, pos - cam.transform.position) <= 0f) continue;
+
+            string text = "";
+            if (_drawNodeIndices) text += $"[{i}]";
+            if (_drawCoordinates)
+            {
+                if (!string.IsNullOrEmpty(text)) text += "\n";
+                text += $"({x},{y},{z})";
+            }
+
+            if (!string.IsNullOrEmpty(text))
+            {
+                Handles.Label(pos, text);
+            }
+        }
+    }
+#endif
 }

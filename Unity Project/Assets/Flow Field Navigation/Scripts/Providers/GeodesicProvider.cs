@@ -4,25 +4,19 @@ using UnityEngine;
 
 public class GeodesicProvider : NavGraphProvider
 {
-    [Header("Configuración de Geodésica (QuadSphere)")]
+    [Header("Settings")]
     [SerializeField] private float _radius = 10f;
     [SerializeField] private int _resolution = 32;
     [SerializeField] private int _regionsPerAxis = 4;
 
-    [Header("Debug Settings")]
-    [SerializeField] private bool _drawWalkability = true;
-    [SerializeField] private bool _drawNodeIndices = true;
-    [SerializeField] private bool _drawCoordinates = true;
-    [SerializeField] private bool _drawFace = true;
-
-    [Header("Scan Options")]
-    [Range(0, 1)]
-    [SerializeField] private float _scanFactor = 1.0f;
-
     private int _regionSize => _resolution / _regionsPerAxis;
 
-    // Propiedad tipada opcional para el grafo geodésico
     public QuadSphereNavGraph GeodesicGraph => Graph as QuadSphereNavGraph;
+
+    protected override bool ValidateConfiguration()
+    {
+        return _radius > 0f && _resolution > 0 && _regionsPerAxis > 0;
+    }
 
     protected override INavGraph CreateGraph()
     {
@@ -50,15 +44,17 @@ public class GeodesicProvider : NavGraphProvider
         }
     }
 
-    private void OnValidate()
+    protected override void OnValidate()
     {
-        _regionsPerAxis = GetNearestValidRegionsPerAxis(_resolution, _regionsPerAxis);
+        base.OnValidate();
+        _radius = Mathf.Max(0.1f, _radius);
+        _resolution = Mathf.Max(1, _resolution);
+        _regionsPerAxis = GetNearestValidRegionsPerAxis(_resolution, Mathf.Max(1, _regionsPerAxis));
     }
 
     private static int GetNearestValidRegionsPerAxis(int resolution, int requested)
     {
         requested = Mathf.Clamp(requested, 1, resolution);
-
         int best = 1;
         int bestDistance = int.MaxValue;
 
@@ -73,7 +69,6 @@ public class GeodesicProvider : NavGraphProvider
                 best = i;
             }
         }
-
         return best;
     }
 
@@ -87,17 +82,8 @@ public class GeodesicProvider : NavGraphProvider
                 {
                     GetCellCorners(face, x, y, out Vector3 p00, out Vector3 p10, out Vector3 p11, out Vector3 p01);
 
-                    if (y == 0)
-                    {
-                        Gizmos.color = Color.blue;
-                        Gizmos.DrawLine(p00, p10);
-                    }
-
-                    if (x == 0)
-                    {
-                        Gizmos.color = Color.blue;
-                        Gizmos.DrawLine(p00, p01);
-                    }
+                    if (y == 0) { Gizmos.color = Color.blue; Gizmos.DrawLine(p00, p10); }
+                    if (x == 0) { Gizmos.color = Color.blue; Gizmos.DrawLine(p00, p01); }
 
                     bool rightRegionBorder = (x + 1) % _regionSize == 0 || x == _resolution - 1;
                     Gizmos.color = rightRegionBorder ? Color.blue : new Color(1f, 1f, 1f, 0.25f);
@@ -136,6 +122,7 @@ public class GeodesicProvider : NavGraphProvider
 
     private void DrawDebugLabels()
     {
+        if (!_drawNodeIndices && !_drawCoordinates) return;
         if (GeodesicGraph == null) return;
 
         Camera cam = SceneView.lastActiveSceneView?.camera;
@@ -145,21 +132,29 @@ public class GeodesicProvider : NavGraphProvider
 
         for (int i = 0; i < Graph.NodeCount; i++)
         {
-            CubeCoordinate coord = GeodesicGraph.IndexToCoordinate(i);
             Vector3 pos = Graph.GetNodePosition(i);
-            Vector3 normal = (pos - transform.position).normalized;
 
+            if (Vector3.Distance(cam.transform.position, pos) > 30f) continue;
+
+            Vector3 normal = (pos - transform.position).normalized;
             Vector3 toCamera = (cam.transform.position - pos).normalized;
             if (Vector3.Dot(normal, toCamera) <= 0f) continue;
 
+            CubeCoordinate coord = GeodesicGraph.IndexToCoordinate(i);
             pos += normal * 0.05f;
+
             string text = "";
-
             if (_drawNodeIndices) text += $"[{i}]";
-            if (_drawFace) text += $"\n{coord.Face}";
-            if (_drawCoordinates) text += $"\n({coord.X},{coord.Y})";
+            if (_drawCoordinates)
+            {
+                text += $"\n{coord.Face}";
+                text += $"\n({coord.X},{coord.Y})";
+            }
 
-            Handles.Label(pos, text);
+            if (!string.IsNullOrEmpty(text))
+            {
+                Handles.Label(pos, text);
+            }
         }
     }
 #endif
