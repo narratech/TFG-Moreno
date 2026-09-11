@@ -11,7 +11,7 @@ public class SampleManager : MonoBehaviour
 
     [Header("Configuración del Grafo")]
     public NavGraphProvider graphProvider;
-    public int targetNode = -1;
+    private int targetNode = -1;
 
     [Header("Configuración de Formaciones")]
     [SerializeField] private FormationType formationType;

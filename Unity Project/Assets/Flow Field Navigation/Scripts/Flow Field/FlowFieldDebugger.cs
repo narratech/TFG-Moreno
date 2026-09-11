@@ -17,8 +17,7 @@ public class FlowFieldDebugger : MonoBehaviour
     [SerializeField] private float _arrowLength = 0.4f;
     [SerializeField] private Color _arrowColor = Color.red;
 
-    [Header("Provider")]
-    [SerializeField] private NavGraphProvider _provider;
+    private NavGraphProvider _provider;
 
     private INavGraph _graph;
     private Grid2DNavGraph _gridGraph;
@@ -35,6 +34,7 @@ public class FlowFieldDebugger : MonoBehaviour
 
     private void CacheGraph()
     {
+        _provider = GetComponent<NavGraphProvider>();
         if (_provider == null) return;
 
         _graph = _provider.Graph;

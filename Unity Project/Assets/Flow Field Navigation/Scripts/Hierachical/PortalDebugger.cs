@@ -4,8 +4,7 @@ using UnityEngine;
 [ExecuteAlways]
 public class PortalDebugger : MonoBehaviour
 {
-    [Header("Provider")]
-    [SerializeField] private NavGraphProvider _provider;
+    private NavGraphProvider _provider;
 
     [Header("Visual")]
     [SerializeField] private Color _portalColor = Color.blue;
@@ -35,6 +34,7 @@ public class PortalDebugger : MonoBehaviour
 
     private void CacheGraph()
     {
+        _provider = GetComponent<NavGraphProvider>();
         if (_provider != null)
             _graph = _provider.Graph;
     }
