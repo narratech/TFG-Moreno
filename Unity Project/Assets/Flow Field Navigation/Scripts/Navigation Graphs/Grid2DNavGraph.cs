@@ -305,24 +305,14 @@ public class Grid2DNavGraph : INavGraph
         ref Vector3 velocity,
         ref Quaternion rotation)
     {
-        int node = GetClosestNode(position);
-
-        if (!IsWalkable(node))
-        {
-            position = GetClosestPointOnNode(
-                node,
-                position);
-
-            velocity = Vector3.ProjectOnPlane(
-                velocity,
-                position - GetNodePosition(node));
-        }
-
+        // Opcional: Si quieres asegurarte de que no se salga de los límites del grid del mapa
         if (!IsInBounds(position))
         {
             position.x = Mathf.Clamp(position.x, _origin.x, _origin.x + _width * _cellSize);
             position.z = Mathf.Clamp(position.z, _origin.z, _origin.z + _height * _cellSize);
         }
+
+        // La velocidad ya la gestiona y limpia inteligentemente el NavAgent en su bucle.
     }
 
     public Vector3 GetClosestPointOnNode(int node, Vector3 position)

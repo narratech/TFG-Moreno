@@ -1,53 +1,57 @@
-import json
-import math
 import os
+import json
 import glob
+import math
+import re
+import pandas as pd
+
+# ==============================================================================
+# CONFIGURACIÓN DE PADDING POR TIPO DE MUNDO / ESPACIO
+# Ajusta aquí la tolerancia de distancia (unidades) según la escala del mapa.
+# ==============================================================================
+PADDING_BY_WORLD = {
+    "Voxel": 2.0,
+    "Grid": 2.0,
+    "Geodesic": 2.0
+}
+DEFAULT_PADDING = 1.5
+DEFAULT_OFFSET_THRESHOLD = 0.95
+
 
 def load_json_data(file_path):
     if not os.path.exists(file_path):
-        print(f"Error: File not found at path: {file_path}")
         return None
     with open(file_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        try:
+            return json.load(f)
+        except Exception:
+            return None
+
 
 def vector_distance(v1, v2):
     return math.sqrt((v1['x'] - v2['x'])**2 + (v1['y'] - v2['y'])**2 + (v1['z'] - v2['z'])**2)
 
-def evaluate_single_file(data_dir, json_filename, position_padding=1.5, offset_threshold=0.95):
-    json_path = os.path.join(data_dir, json_filename)
-    
-    # Extrae el sufijo X (ej. FormationData1.json -> "1", FormationData.json -> "")
-    suffix = json_filename[len("FormationData"):-5]
 
-    data = load_json_data(json_path)
+def evaluate_single_file(file_path, position_padding, offset_threshold):
+    data = load_json_data(file_path)
     if not data or 'agents' not in data:
-        print(f"JSON file '{json_filename}' is empty or invalid format.")
-        return
+        return None
 
     agents = data['agents']
     total_agents = len(agents)
 
     if total_agents == 0:
-        print(f"No agents registered in '{json_filename}'.")
-        return
+        return None
 
     arrived_count = 0
     well_positioned_count = 0
     both_criteria_count = 0
 
-    print(f"\n==================================================")
-    print(f"--- ACCURACY EVALUATION ({json_filename}) ---")
-    print(f"Total Agents: {total_agents}")
-    print(f"Allowed Arrival Padding: {position_padding} units")
-    print(f"Optimal Offset Threshold: {offset_threshold * 100}%\n")
-
-    for i, agent in enumerate(agents):
-        name = agent.get('agentName', f'Agent_{i}')
+    for agent in agents:
         sample_pos = agent['samplePosition']
         target_pos = agent['targetNodePosition']
         offset_pct = agent['offsetPercentage']
 
-        # Distancia entre la posición de muestreo con restricción y el nodo destino
         dist = vector_distance(sample_pos, target_pos)
 
         has_arrived = dist <= position_padding
@@ -60,26 +64,15 @@ def evaluate_single_file(data_dir, json_filename, position_padding=1.5, offset_t
         if has_arrived and is_well_positioned:
             both_criteria_count += 1
 
-        status_arrival = "ARRIVED" if has_arrived else "OUT OF RANGE"
-        status_slot = "OPTIMAL SLOT" if is_well_positioned else "ADJUSTING"
+    return {
+        "Arrival_Rate": (arrived_count / total_agents) * 100,
+        "Slot_Rate": (well_positioned_count / total_agents) * 100,
+        "Overall_Success": (both_criteria_count / total_agents) * 100,
+        "Total_Agents_Json": total_agents
+    }
 
-        print(f"• {name} | Target-Sample Distance: {dist:.3f} ({status_arrival}) | Offset: {offset_pct*100:.1f}% ({status_slot})")
 
-    # Estadísticas globales
-    arrival_accuracy = (arrived_count / total_agents) * 100
-    slot_accuracy = (well_positioned_count / total_agents) * 100
-    overall_accuracy = (both_criteria_count / total_agents) * 100
-
-    print("\n" + "="*50)
-    print(f"RESULTS SUMMARY ({json_filename}):")
-    print(f"Total Agents Evaluated: {total_agents}")
-    print(f"Destination Arrival Rate: {arrival_accuracy:.2f}% ({arrived_count}/{total_agents})")
-    print(f"Slot Placement Rate (>= {offset_threshold*100}%): {slot_accuracy:.2f}% ({well_positioned_count}/{total_agents})")
-    print(f"Overall Success Rate (Both criteria): {overall_accuracy:.2f}% ({both_criteria_count}/{total_agents})")
-    print("="*50)
-
-def evaluate_agents(position_padding=1.5, offset_threshold=0.95):
-    # Obtener la ruta absoluta del directorio del script
+def evaluate_all_formations(offset_threshold=DEFAULT_OFFSET_THRESHOLD):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.abspath(os.path.join(script_dir, "..", "data"))
 
@@ -87,18 +80,73 @@ def evaluate_agents(position_padding=1.5, offset_threshold=0.95):
         print(f"Error: Data directory not found at '{data_dir}'")
         return
 
-    # Buscar todos los archivos que coincidan con FormationData*.json
-    search_pattern = os.path.join(data_dir, "FormationData*.json")
+    # Buscar archivos con el formato: FormationData_{N}Agents_{Mundo}.json
+    search_pattern = os.path.join(data_dir, "FormationData_*.json")
     files = glob.glob(search_pattern)
-    
+
     if not files:
-        print(f"No files matching 'FormationData*.json' found in '{data_dir}'.")
+        print(f"No files matching 'FormationData_*.json' found in '{data_dir}'.")
         return
 
-    # Procesar cada archivo en orden numérico/alfabético
-    for file_path in sorted(files):
-        json_filename = os.path.basename(file_path)
-        evaluate_single_file(data_dir, json_filename, position_padding, offset_threshold)
+    # Regex para extraer (Número de Agentes) y (Tipo de Mundo)
+    file_regex = re.compile(r"^FormationData_(\d+)Agents_([A-Za-z0-9]+)\.json$")
+
+    summary_records = []
+
+    for file_path in files:
+        filename = os.path.basename(file_path)
+        match = file_regex.match(filename)
+
+        if not match:
+            continue
+
+        num_agents = int(match.group(1))
+        world_type = match.group(2)
+
+        # Seleccionar padding según el espacio/mundo o usar valor por defecto
+        padding = PADDING_BY_WORLD.get(world_type, DEFAULT_PADDING)
+
+        metrics = evaluate_single_file(file_path, padding, offset_threshold)
+        if not metrics:
+            continue
+
+        summary_records.append({
+            "World Type": world_type,
+            "Agents": num_agents,
+            "Padding (u)": padding,
+            "Arrival Rate (%)": round(metrics["Arrival_Rate"], 2),
+            "Slot Rate (%)": round(metrics["Slot_Rate"], 2),
+            "Overall Success (%)": round(metrics["Overall_Success"], 2)
+        })
+
+    if not summary_records:
+        print("No valid formation files matched the naming pattern.")
+        return
+
+    # Crear DataFrame y ordenar por Tipo de Mundo y Cantidad de Agentes
+    df = pd.DataFrame(summary_records)
+    df = df.sort_values(by=["World Type", "Agents"]).reset_index(drop=True)
+
+    # Crear la fila total con la suma de agentes y el promedio de los porcentajes
+    total_row = pd.DataFrame([{
+        "World Type": "TOTAL / AVERAGE",
+        "Agents": df["Agents"].sum(),
+        "Padding (u)": "-",
+        "Arrival Rate (%)": round(df["Arrival Rate (%)"].mean(), 2),
+        "Slot Rate (%)": round(df["Slot Rate (%)"].mean(), 2),
+        "Overall Success (%)": round(df["Overall Success (%)"].mean(), 2)
+    }])
+
+    # Concatenar la fila resumen al final de la tabla
+    df_final = pd.concat([df, total_row], ignore_index=True)
+
+    # Imprimir tabla en consola
+    print("\n==========================================================================================")
+    print(f"=== FORMATION ACCURACY SUMMARY TABLE (Threshold: {offset_threshold * 100:.0f}%) ===")
+    print("==========================================================================================\n")
+    print(df_final.to_string(index=False))
+    print("\n" + "=" * 90 + "\n")
+
 
 if __name__ == "__main__":
-    evaluate_agents(position_padding=1.5, offset_threshold=0.95)
+    evaluate_all_formations()

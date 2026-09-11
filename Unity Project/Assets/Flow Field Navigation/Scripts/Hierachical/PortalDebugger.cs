@@ -9,8 +9,8 @@ public class PortalDebugger : MonoBehaviour
     [Header("Visual")]
     [SerializeField] private Color _portalColor = Color.blue;
     [SerializeField] private Color _connectionColor = Color.magenta;
-    [SerializeField] private float _sphereRadius = 0.5f;
-    [SerializeField] private float _lineWidth = 6.0f;
+    [SerializeField] private float _sphereRadius = 6.0f;
+    [SerializeField] private float _lineWidth = 5.0f;
     [SerializeField] private bool _drawConnections = true;
 
     private INavGraph _graph;

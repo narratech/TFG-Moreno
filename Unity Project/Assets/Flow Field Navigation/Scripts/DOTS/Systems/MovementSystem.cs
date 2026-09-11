@@ -9,7 +9,11 @@ using Unity.Transforms;
 [BurstCompile]
 public partial struct MovementSystem : ISystem
 {
-    public void OnCreate(ref SystemState state) { }
+    public bool UseJobs;
+    public void OnCreate(ref SystemState state) 
+    {
+        UseJobs = false; // Alternar a false para ejecutar en Main Thread
+    }
     public void OnDestroy(ref SystemState state)
     {
         FlowFieldStorage.DisposeInstance();
@@ -28,7 +32,17 @@ public partial struct MovementSystem : ISystem
             Walkability = storage.Walkability.AsArray()
         };
 
-        state.Dependency = movementJob.ScheduleParallel(state.Dependency);
+        if (UseJobs)
+        {
+            // Modo multihilo en worker threads (asíncrono)
+            state.Dependency = movementJob.ScheduleParallel(state.Dependency);
+        }
+        else
+        {
+            // Fuerza la finalización de los jobs anteriores antes de modificar LocalTransform en el Main Thread
+            state.Dependency.Complete();
+            movementJob.Run();
+        }
     }
 }
 

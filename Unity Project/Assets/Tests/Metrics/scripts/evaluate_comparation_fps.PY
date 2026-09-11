@@ -32,6 +32,7 @@ def compare_fps(target_x):
 
     plt.figure(figsize=(12, 6))
     processed_count = 0
+    fps_averages = {}
 
     print(f"\n==================================================")
     print(f"--- FPS COMPARISON FOR EXPERIMENT X = {clean_target_x} ---")
@@ -63,15 +64,24 @@ def compare_fps(target_x):
             print(f"Warning: No FPS data found in '{json_filename}'.")
             continue
 
-        # Añadir la serie a la gráfica con la etiqueta Y
-        plt.plot(timestamps, fps_list, label=y_label, linewidth=2)
+        # Cálculo de la media de FPS
+        avg_fps = sum(fps_list) / len(fps_list)
+        fps_averages[y_label] = avg_fps
+
+        # Añadir la serie a la gráfica con la media en la etiqueta
+        plt.plot(timestamps, fps_list, label=f"{y_label} (Avg: {avg_fps:.2f} FPS)", linewidth=2)
         processed_count += 1
-        print(f"• Added series '{y_label}' from '{json_filename}' ({len(fps_list)} samples).")
+        print(f"• Added series '{y_label}' ({len(fps_list)} samples) | Avg FPS: {avg_fps:.2f}")
 
     if processed_count == 0:
         print("No valid telemetry data could be processed.")
         plt.close()
         return
+
+    # Resumen general en consola
+    print("\n--- AVERAGE FPS SUMMARY ---")
+    for label, avg in fps_averages.items():
+        print(f"  • {label}: {avg:.2f} FPS")
 
     # Configuración de la gráfica
     plt.title(f"FPS Comparison Over Time (Experiment {clean_target_x} agents)", fontsize=14)
@@ -93,5 +103,5 @@ def compare_fps(target_x):
     print("=" * 50 + "\n")
 
 if __name__ == "__main__":
-    TARGET_X = 100
+    TARGET_X = 5000
     compare_fps(TARGET_X)

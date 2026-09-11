@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: LocalAvoidanceSettings
   m_EditorClassIdentifier: Assembly-CSharp::LocalAvoidanceSettings
   AvoidanceNodeRadius: 2
-  ActionRadius: 10
-  Strength: 0
+  ActionRadius: 5
+  Strength: 10
