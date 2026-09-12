@@ -9,6 +9,7 @@ public static class FormationShapeSampler
 
     public static IReadOnlyList<Vector3> GenerateSample(
         int unitCount,
+        float scale,
         Texture2D shapeTexture)
     {
         List<Vector3> offsets = new List<Vector3>();
@@ -87,9 +88,9 @@ public static class FormationShapeSampler
                 (pixel.y / (shapeTexture.height - 1)) - 0.5f;
 
             Vector3 offset = new Vector3(
-                normalizedX * formationWidth,
+                normalizedX * formationWidth * scale,
                 0f,
-                normalizedY * formationDepth
+                normalizedY * formationDepth * scale
             );
 
             // Aplicar rotación alrededor del centro

@@ -1,80 +1,90 @@
-﻿using UnityEngine;
-using Unity.Entities;
+﻿using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine;
 
-public class AgentAuthoring : MonoBehaviour
+// --- COMPONENTES DE DATOS ECS ---
+
+// Este es el componente que RouteSystem espera encontrar. ¡Intocable!
+public struct AgentComponent : IComponentData
 {
-    [Header("Graph Settings")]
-    public int graphId = 0;
+    public int RouteId;
+    public int NextRouteId;
+    public int GraphId;
+}
 
-    [Header("Movement Settings")]
-    public float speed = 4.0f;
+public struct NavAgentComponent : IComponentData
+{
+    public int CurrentNode;
+    public int CurrentRegion;
 
-    [Header("Smart Offset Settings")]
-    public Vector3 formationOffset = Vector3.zero;
-    public float stepSize = 1.0f;
-    public float timeStamp = 0.1f;
+    public float3 Velocity;
 
-    [Header("Smoothing & Steering Settings")]
-    [Tooltip("Velocidad de lerp para la transición suave de pasos.")]
-    public float offsetSmoothingSpeed = 5.0f;
-    [Tooltip("Peso de la fuerza de arrastre/corrección hacia la posición objetivo (0 a 1).")]
-    [Range(0f, 1f)]
-    public float formationForceWeight = 0.3f;
+    public float MaxSpeed;
+    public float MaxForce;
+    public float MaxAngularSpeed;
+    public float RotationArrivalThreshold;
+    public float BoundaryPadding;
+}
 
-    public class AgentBaker : Baker<AgentAuthoring>
+public struct FlowFieldSteeringComponent : IComponentData
+{
+    public float StepSize;
+    public float StopRadius;
+    public float TimeStamp;
+    public float3 FormationOffset;
+
+    public int CurrentSteps;
+    public int MaxSteps;
+    public float Timer;
+    public float3 LastPosition;
+}
+
+// --- MONOBEHAVIOURS Y BAKERS ---
+
+public class NavAgentBaker : Baker<NavAgent>
+{
+    public override void Bake(NavAgent authoring)
     {
-        public override void Bake(AgentAuthoring authoring)
+        var entity = GetEntity(TransformUsageFlags.Dynamic);
+
+        // 1. Añadimos el componente principal de Enrutamiento para que RouteSystem funcione
+        AddComponent(entity, new AgentComponent
         {
-            var entity = GetEntity(TransformUsageFlags.Dynamic);
+            GraphId = 0,
+            RouteId = -1,
+            NextRouteId = -1
+        });
 
-            AddComponent(entity, new AgentComponent
-            {
-                GraphId = authoring.graphId,
-                NextRouteId = -1,
-                RouteId = -1,
-
-                Speed = authoring.speed,
-                Velocity = float3.zero,
-
-                FormationOffset = authoring.formationOffset,
-                StepSize = authoring.stepSize,
-                TimeStamp = authoring.timeStamp,
-                OffsetSmoothingSpeed = authoring.offsetSmoothingSpeed,
-                FormationForceWeight = authoring.formationForceWeight,
-
-                CurrentSteps = 0,
-                TargetSteps = 0,
-                Timer = 0f,
-                LastPosition = float3.zero
-            });
-        }
+        // 2. Añadimos el componente de navegación
+        AddComponent(entity, new NavAgentComponent
+        {
+            CurrentNode = -1,
+            CurrentRegion = -1,
+            Velocity = float3.zero,
+            MaxSpeed = authoring.MaxSpeed,
+            MaxForce = authoring.MaxForce,
+            MaxAngularSpeed = authoring.MaxAngularSpeed,
+            RotationArrivalThreshold = authoring.RotationArrivalThreshold,
+            BoundaryPadding = authoring.BoundaryPadding
+        });
     }
 }
 
-public struct AgentComponent : IComponentData
+public class FlowBaker : Baker<FlowFieldSteering>
 {
-    public int GraphId;
-    public int NextRouteId;
-    public int RouteId;
-
-    public float Speed;
-    public float3 Velocity;
-
-    // Configuración de Offset
-    public float3 FormationOffset;
-    public float StepSize;
-    public float TimeStamp;
-    public float OffsetSmoothingSpeed;
-    public float FormationForceWeight;
-
-    // Estado interno
-    public int CurrentSteps;
-    public int TargetSteps;
-    public float Timer;
-    public float3 LastPosition;
-    public bool IsInTransitableNode;
-
-    public int MaxSteps;
-    public int CurrentNode;
+    public override void Bake(FlowFieldSteering authoring)
+    {
+        var entity = GetEntity(TransformUsageFlags.Dynamic);
+        AddComponent(entity, new FlowFieldSteeringComponent
+        {
+            StepSize = authoring.GetStepSize(),
+            StopRadius = authoring.GetStopRadius(),
+            TimeStamp = authoring.GetTimeStamp(),
+            FormationOffset = authoring.GetFormationOffset(),
+            CurrentSteps = authoring.CurrentSteps,
+            MaxSteps = 0,
+            Timer = 0f,
+            LastPosition = float3.zero
+        });
+    }
 }

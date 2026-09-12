@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Unity.Entities;
+using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -218,7 +219,12 @@ private void EndSelection()
     {
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
-        EntityQuery query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<AgentComponent>());
+        // CORRECCIÓN: Pedimos explícitamente los 3 componentes que vamos a leer/escribir
+        EntityQuery query = entityManager.CreateEntityQuery(
+            typeof(AgentComponent),
+            typeof(FlowFieldSteeringComponent),
+            typeof(LocalTransform)
+        );
 
         using var entities = query.ToEntityArray(Unity.Collections.Allocator.Temp);
 

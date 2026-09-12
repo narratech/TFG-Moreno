@@ -107,7 +107,7 @@ public static class FormationGenerator
         for (int i = 0; i < count; i++)
         {
             Entity entity = entities[i];
-            AgentComponent agent = entityManager.GetComponentData<AgentComponent>(entity);
+            FlowFieldSteeringComponent agent = entityManager.GetComponentData<FlowFieldSteeringComponent>(entity);
             agent.FormationOffset = (float3)(-offsets[i]); // hay que invertir el offset
             entityManager.SetComponentData(entity, agent);
         }
@@ -360,7 +360,7 @@ public static class FormationGenerator
         while (validOffsets.Count < count && attempt < maxAttempts)
         {
             int requestedCount = (count - validOffsets.Count) * 2 + 5;
-            var rawSamples = FormationShapeSampler.GenerateSample(requestedCount, shapeTexture) as List<Vector3>;
+            var rawSamples = FormationShapeSampler.GenerateSample(requestedCount, spacing, shapeTexture) as List<Vector3>;
 
             if (rawSamples == null || rawSamples.Count == 0) break;
 

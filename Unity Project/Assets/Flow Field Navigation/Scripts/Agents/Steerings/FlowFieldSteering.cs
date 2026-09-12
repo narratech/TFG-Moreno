@@ -13,15 +13,19 @@ public class FlowFieldSteering : IAgentSteering
     [Header("Manual Settings")]
     [SerializeField]
     private float _stepSize = 1f;
+    public float GetStepSize() { return _stepSize; }
 
     [SerializeField]
     private float _stopRadius = 1.0f;
+    public float GetStopRadius() { return _stopRadius; }
 
     [SerializeField]
     private float _timeStamp = 0.1f;
+    public float GetTimeStamp() { return _timeStamp; }
 
     [SerializeField]
     private Vector3 _formationOffset;
+    public Vector3 GetFormationOffset() { return _formationOffset; }
 
     private readonly int[] _nodes = new int[8];
 
@@ -32,7 +36,7 @@ public class FlowFieldSteering : IAgentSteering
     public Vector3 FormationOffset => _formationOffset;
     public int CurrentSteps => _currentSteps;
 
-    public float GetAbsoluteMaxSteps()
+    public int GetAbsoluteMaxSteps()
     {
         Vector3 desiredOffset = GetRealOffset(_formationOffset);
         float offsetLen = desiredOffset.magnitude;

@@ -33,12 +33,12 @@ public class ECSAgentSpawner : MonoBehaviour
             return;
         }
 
-        if (!prefab.TryGetComponent<AgentAuthoring>(
-            out AgentAuthoring agentPrefab))
+        if (!prefab.TryGetComponent<NavAgent>(
+            out NavAgent agentPrefab))
         {
             Debug.LogWarning(
                 "ECSAgentSpawner: El prefab no contiene " +
-                "un AgentAuthoring.",
+                "un NavAgent.",
                 this);
 
             return;
@@ -115,8 +115,8 @@ public class ECSAgentSpawner : MonoBehaviour
                     transform.forward,
                     up));
 
-            AgentAuthoring authoring =
-                obj.GetComponent<AgentAuthoring>();
+            NavAgent authoring =
+                obj.GetComponent<NavAgent>();
 
             SceneManager.MoveGameObjectToScene(
                 obj,
@@ -166,11 +166,11 @@ public class ECSAgentSpawner : MonoBehaviour
 
         foreach (GameObject root in rootObjects)
         {
-            AgentAuthoring[] agents =
-                root.GetComponentsInChildren<AgentAuthoring>(
+            NavAgent[] agents =
+                root.GetComponentsInChildren<NavAgent>(
                     true);
 
-            foreach (AgentAuthoring agent in agents)
+            foreach (NavAgent agent in agents)
             {
                 DestroyImmediate(agent.gameObject);
                 removed++;

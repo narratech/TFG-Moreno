@@ -75,32 +75,48 @@ public class TelemetryTracker : MonoBehaviour
             }
         }
 
-        // 2. Capturar AgentComponent (DOTS / ECS)
+        // 2. Capturar AgentData (DOTS / ECS)
         if (recordECSAgentData && World.DefaultGameObjectInjectionWorld != null)
         {
             EntityManager em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            EntityQuery query = em.CreateEntityQuery(typeof(AgentComponent), typeof(LocalTransform));
 
+            // Añadimos NavAgentComponent y FlowFieldSteeringComponent a la query
+            EntityQuery query = em.CreateEntityQuery(
+                typeof(AgentComponent),
+                typeof(NavAgentComponent),
+                typeof(FlowFieldSteeringComponent),
+                typeof(LocalTransform)
+            );
+
+            // Creamos los arrays temporales para cada componente
             using (var ecsAgents = query.ToComponentDataArray<AgentComponent>(Allocator.TempJob))
+            using (var ecsNavAgents = query.ToComponentDataArray<NavAgentComponent>(Allocator.TempJob))
+            using (var ecsSteering = query.ToComponentDataArray<FlowFieldSteeringComponent>(Allocator.TempJob))
             using (var ecsTransforms = query.ToComponentDataArray<LocalTransform>(Allocator.TempJob))
             using (var entities = query.ToEntityArray(Allocator.TempJob))
             {
                 for (int i = 0; i < ecsAgents.Length; i++)
                 {
                     var agentComp = ecsAgents[i];
+                    var navAgentComp = ecsNavAgents[i];
+                    var steeringComp = ecsSteering[i];
 
-                    float maxSteps = agentComp.MaxSteps;
-                    int currentSteps = agentComp.CurrentSteps;
+                    // Sacamos Steps del componente de Steering
+                    float maxSteps = steeringComp.MaxSteps;
+                    int currentSteps = steeringComp.CurrentSteps;
                     float offsetPercentage = maxSteps > 0f ? (float)currentSteps / maxSteps : 0f;
 
                     frame.ecsAgents.Add(new ECSAgentTelemetryData
                     {
                         entityIndex = entities[i].Index,
                         position = ecsTransforms[i].Position,
-                        velocity = agentComp.Velocity,
-                        currentNode = agentComp.CurrentNode,
-                        targetNode = agentComp.RouteId, // RouteId asignado como targetNode
+
+                        velocity = navAgentComp.Velocity,
+                        currentNode = navAgentComp.CurrentNode,
+
+                        targetNode = agentComp.RouteId,
                         graphId = agentComp.GraphId,
+
                         currentSteps = currentSteps,
                         maxSteps = maxSteps,
                         offsetPercentage = offsetPercentage
